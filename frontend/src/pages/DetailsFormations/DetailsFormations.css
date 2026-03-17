@@ -1,0 +1,161 @@
+.details_page {
+  padding: 2rem 2rem 5rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  min-height: 100vh;
+}
+
+.back_button {
+  margin-bottom: 1.5rem;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.25s;
+}
+
+.back_button:hover {
+  transform: translateY(-2px);
+  background: white;
+}
+
+.details_hero {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  min-height: 320px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f172a, #1d4ed8, #06b6d4);
+  display: flex;
+  align-items: center;
+  padding: 3rem;
+}
+
+.details_hero_overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+}
+
+.details_hero_content {
+  position: relative;
+  color: white;
+}
+
+.status_badge {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-weight: bold;
+}
+
+.status_badge.actif {
+  background: #22c55e;
+}
+
+.status_badge.inactif,
+.status_badge.complet {
+  background: #ef4444;
+}
+
+.details_title {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.details_subtitle {
+  margin-top: 1rem;
+  max-width: 600px;
+}
+
+.details_layout {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.content_block {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.section_title {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.description_text {
+  color: #555;
+  line-height: 1.7;
+}
+
+.info_grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.info_card {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.info_label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.info_data {
+  font-weight: bold;
+}
+
+.status_text.actif {
+  color: green;
+}
+
+.status_text.inactif,
+.status_text.complet {
+  color: red;
+}
+
+.details_sidebar {
+  position: sticky;
+  top: 2rem;
+}
+
+.cta_box {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+}
+
+.cta_title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.cta_text {
+  margin-bottom: 1.5rem;
+}
+
+.cta_button {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 10px;
+  background: blue;
+  color: white;
+  font-weight: bold;
+  border: none;
+}
+
+.cta_button.disabled {
+  background: grey;
+}

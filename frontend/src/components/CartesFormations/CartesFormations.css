@@ -1,0 +1,162 @@
+.section_formations {
+  padding: 4rem 2rem;
+  background: #f8fafc;
+}
+
+.titre_formations {
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.container_cartes_formations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.carte_formation {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 1.4rem;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.carte_formation:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.1);
+  border-color: #cbd5e1;
+}
+
+.top_carte {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.8rem;
+}
+
+.badge_statut {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.badge_statut.actif {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge_statut.inactif,
+.badge_statut.ferme,
+.badge_statut.complet {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.nom_formation {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+.description_formation {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 68px;
+}
+
+.infos_formation {
+  margin-bottom: 1.2rem;
+}
+
+.infos_formation p {
+  margin: 0.35rem 0;
+  font-size: 0.92rem;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.actions_carte {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: auto;
+}
+
+.btn_inscription,
+.btn_details {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn_inscription {
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  color: white;
+}
+
+.btn_inscription:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(59, 130, 246, 0.25);
+}
+
+.btn_inscription.disabled,
+.btn_inscription:disabled {
+  background: #cbd5e1;
+  color: #475569;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn_details {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.btn_details:hover {
+  background: #dbeafe;
+}
+
+.etat_message {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.etat_message.erreur {
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .section_formations {
+    padding: 3rem 1rem;
+  }
+
+  .container_cartes_formations {
+    grid-template-columns: 1fr;
+  }
+}

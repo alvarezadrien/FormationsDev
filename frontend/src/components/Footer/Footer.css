@@ -1,0 +1,135 @@
+.site_footer {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  padding: 3.5rem 1.5rem 1.2rem;
+  margin-top: 4rem;
+}
+
+.site_footer_wrapper {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.site_footer_top {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.site_footer_brand_block,
+.site_footer_links_block,
+.site_footer_contact_block {
+  display: flex;
+  flex-direction: column;
+}
+
+.site_footer_logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.site_footer_logo_mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4f46e5, #2563eb, #06b6d4);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.site_footer_logo_text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.site_footer_description {
+  max-width: 420px;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.8;
+  font-size: 0.96rem;
+}
+
+.site_footer_title {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.site_footer_links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.site_footer_link {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+
+.site_footer_link:hover {
+  color: #93c5fd;
+  transform: translateX(3px);
+}
+
+.site_footer_contact_list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.site_footer_contact_item {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.site_footer_bottom {
+  padding-top: 1.2rem;
+  text-align: center;
+}
+
+.site_footer_copy {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 900px) {
+  .site_footer_top {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+  }
+
+  .site_footer_description {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .site_footer {
+    padding: 3rem 1rem 1rem;
+  }
+
+  .site_footer_logo_text {
+    font-size: 1rem;
+  }
+
+  .site_footer_description,
+  .site_footer_contact_item,
+  .site_footer_link {
+    font-size: 0.92rem;
+  }
+}

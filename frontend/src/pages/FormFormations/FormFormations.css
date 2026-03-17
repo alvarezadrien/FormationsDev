@@ -1,0 +1,157 @@
+.training-form-page {
+  min-height: 100vh;
+  padding: 4rem 1.5rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.training-form-shell {
+  width: 100%;
+  max-width: 1000px;
+}
+
+.training-form-banner {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.training-form-badge {
+  display: inline-block;
+  padding: 0.45rem 0.95rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.12);
+  color: #4338ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.training-form-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.training-form-subtitle {
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.training-form-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.training-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.training-form-row {
+  display: flex;
+  gap: 1.2rem;
+}
+
+.training-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.55rem;
+}
+
+.training-field label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.training-field input,
+.training-field select,
+.training-field textarea {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 14px;
+  background: #f8fbff;
+  font-size: 0.96rem;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.training-field input::placeholder,
+.training-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.training-field input:focus,
+.training-field select:focus,
+.training-field textarea:focus {
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+}
+
+.training-field textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.training-form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.training-submit-button {
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 2rem;
+  min-width: 220px;
+  background: linear-gradient(135deg, #4f46e5, #2563eb, #06b6d4);
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.22);
+}
+
+.training-submit-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(59, 130, 246, 0.28);
+}
+
+@media (max-width: 768px) {
+  .training-form-page {
+    padding: 3rem 1rem;
+  }
+
+  .training-form-title {
+    font-size: 2rem;
+  }
+
+  .training-form-card {
+    padding: 1.5rem;
+    border-radius: 22px;
+  }
+
+  .training-form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

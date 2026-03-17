@@ -1,0 +1,54 @@
+/* Reset général */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base du document */
+html, body {
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Liens */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Listes */
+ul, ol {
+  list-style: none;
+}
+
+/* Boutons */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Inputs */
+input, textarea, select {
+  font-family: inherit;
+  outline: none;
+  border: none;
+}
+
+/* Containers utiles */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
