@@ -1,0 +1,157 @@
+.contact_section {
+  padding: 100px 8%;
+  background: linear-gradient(180deg, #f8fafc, #eef2ff);
+}
+
+.contact_container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.contact_left {
+  color: #1e293b;
+}
+
+.contact_badge {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.contact_left h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.contact_left p {
+  font-size: 1.05rem;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+.contact_infos {
+  display: grid;
+  gap: 18px;
+}
+
+.contact_info_card {
+  background: white;
+  padding: 18px 20px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.contact_info_card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #334155;
+}
+
+.contact_info_card p {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.contact_right {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  padding: 35px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.contact_form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form_group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form_group label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.form_group input,
+.form_group textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  outline: none;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form_group input:focus,
+.form_group textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.form_group textarea {
+  resize: none;
+}
+
+.contact_btn {
+  background: linear-gradient(120deg, #4f46e5, #06b6d4);
+  color: white;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.contact_btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(79, 70, 229, 0.25);
+}
+
+@media (max-width: 900px) {
+  .contact_container {
+    grid-template-columns: 1fr;
+  }
+
+  .contact_left h2 {
+    font-size: 2rem;
+  }
+
+  .contact_right {
+    padding: 25px;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact_section {
+    padding: 70px 20px;
+  }
+
+  .contact_left h2 {
+    font-size: 1.8rem;
+  }
+}

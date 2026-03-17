@@ -7,6 +7,7 @@ import { FormFormations } from "./pages/FormFormations/FormFormations";
 import { DetailsFormations } from "./pages/DetailsFormations/DetailsFormations";
 import LoginRegister from "./pages/Login/Login";
 import AdminFormationsDashboard from "./pages/Dashboard/Dashboard";
+import { Contact } from "./pages/Contact/Contact";
 
 // import components
 import { Navbar } from "./components/Navbar/Navbar";
@@ -32,6 +33,7 @@ function App() {
         <Route path="/inscription-formations" element={<FormFormations />} />
         <Route path="/details-formations/:id" element={<DetailsFormations />} />
         <Route path="/login" element={<LoginRegister />} />
+        <Route path="/contact" element={<Contact />} />
         <Route
           path="/dashboard"
           element={
