@@ -15,25 +15,22 @@ export function CartesFormations() {
         const res = await fetch(`${API_URL}/formations`);
         const data = await res.json();
 
-        if (!res.ok) throw new Error("Erreur API");
+        if (!res.ok) throw new Error("Erreur lors du chargement des formations");
 
         setFormations(
           data.map((f) => ({
             id: f.id,
             nom_formation: f.nom,
-            formateurs: f.formateur
-              ? f.formateur.split(",").map((n) => n.trim())
-              : [],
             lieu: f.lieu,
             description: f.description,
             nombre_participants: f.nombre_participants ?? 0,
-            statut: f.statut ?? "actif",
+            statut: (f.statut ?? "actif").toLowerCase(),
             date_debut: f.date_debut || "",
             date_fin: f.date_fin || "",
           }))
         );
       } catch (err) {
-        setErreur(err.message);
+        setErreur(err.message || "Une erreur est survenue");
       } finally {
         setLoading(false);
       }
@@ -42,18 +39,50 @@ export function CartesFormations() {
     fetchFormations();
   }, []);
 
-  if (loading) return <p className="etat_message">Chargement...</p>;
-  if (erreur) return <p className="etat_message erreur">Erreur : {erreur}</p>;
+  const formatDate = (date) => {
+    if (!date) return "Non renseignée";
+
+    try {
+      return new Date(date).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return date;
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="section_formations">
+        <p className="etat_message">Chargement des formations...</p>
+      </section>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <section className="section_formations">
+        <p className="etat_message erreur">Erreur : {erreur}</p>
+      </section>
+    );
+  }
 
   return (
-    <section className="section_formations">
-      <h2 className="titre_formations">Nos formations</h2>
+    <section className="section_formations" id="formations">
+      <div className="formations_entete">
+        <span className="formations_badge">Nos formations</span>
+        <h2 className="titre_formations">Choisissez la formation qui vous correspond</h2>
+        <p className="texte_formations">
+          Des formations modernes, accessibles et conçues pour vous aider à évoluer rapidement.
+        </p>
+      </div>
 
       <div className="container_cartes_formations">
         {formations.map((formation) => {
           const inscriptionActive =
-            formation.statut === "actif" &&
-            formation.nombre_participants > 0;
+            formation.statut === "actif" && formation.nombre_participants > 0;
 
           return (
             <article
@@ -61,43 +90,42 @@ export function CartesFormations() {
               key={formation.id}
               onClick={() => navigate(`/details-formations/${formation.id}`)}
             >
-              <div className="top_carte">
+              <div className="carte_top">
                 <span className={`badge_statut ${formation.statut}`}>
                   {formation.statut}
+                </span>
+
+                <span className="badge_places">
+                  {formation.nombre_participants} place
+                  {formation.nombre_participants > 1 ? "s" : ""}
                 </span>
               </div>
 
               <h3 className="nom_formation">{formation.nom_formation}</h3>
 
               <p className="description_formation">
-                {formation.description}
+                {formation.description || "Aucune description disponible."}
               </p>
 
-              <div className="infos_formation">
-                <p>
-                  <strong>Formateur(s) :</strong>{" "}
-                  {formation.formateurs.length > 0
-                    ? formation.formateurs.join(", ")
-                    : "Non renseigné"}
-                </p>
+              <div className="meta_formation">
+                <div className="meta_item">
+                  <span className="meta_label">Lieu</span>
+                  <span className="meta_value">
+                    {formation.lieu || "Non renseigné"}
+                  </span>
+                </div>
 
-                <p>
-                  <strong>Lieu :</strong> {formation.lieu || "Non renseigné"}
-                </p>
+                <div className="meta_row">
+                  <div className="meta_item small">
+                    <span className="meta_label">Début</span>
+                    <span className="meta_value">{formatDate(formation.date_debut)}</span>
+                  </div>
 
-                <p>
-                  <strong>Places :</strong> {formation.nombre_participants}
-                </p>
-
-                <p>
-                  <strong>Date de début :</strong>{" "}
-                  {formation.date_debut || "Non renseignée"}
-                </p>
-
-                <p>
-                  <strong>Date de fin :</strong>{" "}
-                  {formation.date_fin || "Non renseignée"}
-                </p>
+                  <div className="meta_item small">
+                    <span className="meta_label">Fin</span>
+                    <span className="meta_value">{formatDate(formation.date_fin)}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="actions_carte">
