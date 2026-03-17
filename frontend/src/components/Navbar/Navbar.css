@@ -368,3 +368,24 @@
     transform: translateX(50%);
   }
 }
+
+.navbar_profile_visual,
+.navbar_dropdown_avatar {
+  position: relative;
+}
+
+.navbar_status_dot {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+}
+
+.navbar_status_dot.large {
+  width: 12px;
+  height: 12px;
+}

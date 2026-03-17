@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-// images
 import userImg from "/images/utilisateur.png";
 
-// icons
 import { FaUserShield } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import { HiOutlineLogout } from "react-icons/hi";
@@ -15,24 +13,36 @@ export function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("token");
-      const role = localStorage.getItem("role");
+  const API_URL = "http://localhost:8080";
 
-      setIsConnected(!!token);
-      setIsAdmin(role === "admin");
+  const syncAuthState = () => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const role = localStorage.getItem("role");
+    const user = localStorage.getItem("user");
+
+    setIsConnected(isLoggedIn);
+    setIsAdmin(isLoggedIn && role === "admin");
+    setCurrentUser(user ? JSON.parse(user) : null);
+  };
+
+  useEffect(() => {
+    syncAuthState();
+
+    const handleAuthChanged = () => {
+      syncAuthState();
     };
 
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
+    window.addEventListener("storage", handleAuthChanged);
+    window.addEventListener("auth-changed", handleAuthChanged);
 
     return () => {
-      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("storage", handleAuthChanged);
+      window.removeEventListener("auth-changed", handleAuthChanged);
     };
   }, []);
 
@@ -50,17 +60,27 @@ export function Navbar() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
-    localStorage.removeItem("isLoggedIn");
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Erreur logout :", err);
+    } finally {
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      localStorage.removeItem("isLoggedIn");
 
-    setIsConnected(false);
-    setIsAdmin(false);
-    setDropdownOpen(false);
+      setIsConnected(false);
+      setIsAdmin(false);
+      setCurrentUser(null);
+      setDropdownOpen(false);
 
-    navigate("/login");
+      window.dispatchEvent(new Event("auth-changed"));
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -69,7 +89,7 @@ export function Navbar() {
         <div className="navbar_brand_zone">
           <Link to="/" className="navbar_brand">
             <span className="navbar_brand_mark">CF</span>
-            <span className="navbar_brand_text">CentreFormations</span>
+            <span className="navbar_brand_text">CodingFormations</span>
           </Link>
         </div>
 
@@ -122,7 +142,9 @@ export function Navbar() {
                 </div>
 
                 <span className="navbar_profile_label">
-                  {isAdmin ? "Admin" : "Mon compte"}
+                  {isAdmin
+                    ? "Admin"
+                    : currentUser?.prenom || currentUser?.nom || "Mon compte"}
                 </span>
 
                 <IoChevronDown
@@ -151,31 +173,21 @@ export function Navbar() {
                       </div>
 
                       <div className="navbar_dropdown_texts">
-                        <strong>{isAdmin ? "Compte administrateur" : "Compte connecté"}</strong>
+                        <strong>
+                          {isAdmin
+                            ? "Compte administrateur"
+                            : `${currentUser?.prenom || ""} ${currentUser?.nom || ""}`.trim() || "Compte connecté"}
+                        </strong>
                         <span>
                           {isAdmin
                             ? "Accès au tableau de bord"
-                            : "Vous êtes bien connecté"}
+                            : currentUser?.email || "Vous êtes bien connecté"}
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="navbar_dropdown_actions">
-                    {isAdmin && (
-                      <button
-                        className="navbar_dropdown_item"
-                        type="button"
-                        onClick={() => {
-                          navigate("/dashboard");
-                          setDropdownOpen(false);
-                        }}
-                      >
-                        <MdDashboard size={18} />
-                        <span>Dashboard admin</span>
-                      </button>
-                    )}
-
                     <button
                       className="navbar_dropdown_item navbar_logout_item"
                       type="button"

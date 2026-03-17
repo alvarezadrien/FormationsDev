@@ -3,52 +3,14 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\FormationModel;
+use App\Models\UserModel;
 
-class Formation extends Controller
+class Auth extends Controller
 {
-    public function index()
+    public function register()
     {
         try {
-            $model = new FormationModel();
-            $formations = $model->findAll();
-
-            return $this->response->setJSON($formations);
-        } catch (\Throwable $e) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
-                'message' => $e->getMessage()
-            ]);
-        }
-    }
-
-    public function show($id = null)
-    {
-        try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
-
-            if (!$formation) {
-                return $this->response->setStatusCode(404)->setJSON([
-                    'error' => true,
-                    'message' => 'Formation introuvable'
-                ]);
-            }
-
-            return $this->response->setJSON($formation);
-        } catch (\Throwable $e) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
-                'message' => $e->getMessage()
-            ]);
-        }
-    }
-
-    public function create()
-    {
-        try {
-            $model = new FormationModel();
-
+            $model = new UserModel();
             $data = $this->request->getJSON(true);
 
             if (!$data) {
@@ -58,39 +20,67 @@ class Formation extends Controller
                 ]);
             }
 
-            $payload = [
-                'nom' => trim($data['nom'] ?? ''),
-                'formateur' => trim($data['formateur'] ?? ''),
-                'lieu' => trim($data['lieu'] ?? ''),
-                'description' => trim($data['description'] ?? ''),
-                'nombre_participants' => isset($data['nombre_participants']) ? (int) $data['nombre_participants'] : 0,
-                'statut' => trim($data['statut'] ?? 'actif'),
-            ];
+            $nom = trim($data['nom'] ?? '');
+            $prenom = trim($data['prenom'] ?? '');
+            $email = trim($data['email'] ?? '');
+            $password = trim($data['password'] ?? '');
 
-            if (
-                !$payload['nom'] ||
-                !$payload['formateur'] ||
-                !$payload['lieu'] ||
-                !$payload['description']
-            ) {
+            if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
-                    'message' => 'Tous les champs obligatoires doivent être remplis'
+                    'message' => 'Tous les champs sont requis'
                 ]);
             }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Adresse email invalide'
+                ]);
+            }
+
+            $existingUser = $model->where('email', $email)->first();
+
+            if ($existingUser) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'error' => true,
+                    'message' => 'Cet email est déjà utilisé'
+                ]);
+            }
+
+            $now = date('Y-m-d H:i:s');
+
+            $payload = [
+                'nom' => $nom,
+                'prenom' => $prenom,
+                'email' => $email,
+                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'role' => 'user',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
 
             $inserted = $model->insert($payload);
 
             if (!$inserted) {
                 return $this->response->setStatusCode(500)->setJSON([
                     'error' => true,
-                    'message' => 'Impossible de créer la formation'
+                    'message' => 'Impossible de créer le compte'
                 ]);
             }
 
+            $user = $model->find($inserted);
+
             return $this->response->setStatusCode(201)->setJSON([
                 'error' => false,
-                'message' => 'Formation créée avec succès'
+                'message' => 'Compte créé avec succès',
+                'user' => [
+                    'id' => $user['id'],
+                    'nom' => $user['nom'],
+                    'prenom' => $user['prenom'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
@@ -100,19 +90,11 @@ class Formation extends Controller
         }
     }
 
-    public function update($id = null)
+    public function login()
     {
         try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
-
-            if (!$formation) {
-                return $this->response->setStatusCode(404)->setJSON([
-                    'error' => true,
-                    'message' => 'Formation introuvable'
-                ]);
-            }
-
+            $model = new UserModel();
+            $session = session();
             $data = $this->request->getJSON(true);
 
             if (!$data) {
@@ -122,39 +104,51 @@ class Formation extends Controller
                 ]);
             }
 
-            $payload = [
-                'nom' => trim($data['nom'] ?? ''),
-                'formateur' => trim($data['formateur'] ?? ''),
-                'lieu' => trim($data['lieu'] ?? ''),
-                'description' => trim($data['description'] ?? ''),
-                'nombre_participants' => isset($data['nombre_participants']) ? (int) $data['nombre_participants'] : 0,
-                'statut' => trim($data['statut'] ?? 'actif'),
-            ];
+            $email = trim($data['email'] ?? '');
+            $password = trim($data['password'] ?? '');
 
-            if (
-                !$payload['nom'] ||
-                !$payload['formateur'] ||
-                !$payload['lieu'] ||
-                !$payload['description']
-            ) {
+            if ($email === '' || $password === '') {
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
-                    'message' => 'Tous les champs obligatoires doivent être remplis'
+                    'message' => 'Email et mot de passe requis'
                 ]);
             }
 
-            $updated = $model->update($id, $payload);
+            $user = $model->where('email', $email)->first();
 
-            if (!$updated) {
-                return $this->response->setStatusCode(500)->setJSON([
+            if (!$user) {
+                return $this->response->setStatusCode(401)->setJSON([
                     'error' => true,
-                    'message' => 'Impossible de modifier la formation'
+                    'message' => 'Identifiants invalides'
                 ]);
             }
+
+            if (empty($user['password']) || !password_verify($password, $user['password'])) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'error' => true,
+                    'message' => 'Identifiants invalides'
+                ]);
+            }
+
+            $session->set([
+                'user_id' => $user['id'],
+                'nom' => $user['nom'],
+                'prenom' => $user['prenom'],
+                'email' => $user['email'],
+                'role' => $user['role'],
+                'isLoggedIn' => true
+            ]);
 
             return $this->response->setJSON([
                 'error' => false,
-                'message' => 'Formation modifiée avec succès'
+                'message' => 'Connexion réussie',
+                'user' => [
+                    'id' => $user['id'],
+                    'nom' => $user['nom'],
+                    'prenom' => $user['prenom'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
@@ -164,31 +158,27 @@ class Formation extends Controller
         }
     }
 
-    public function delete($id = null)
+    public function me()
     {
         try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
+            $session = session();
 
-            if (!$formation) {
-                return $this->response->setStatusCode(404)->setJSON([
+            if (!$session->get('isLoggedIn')) {
+                return $this->response->setStatusCode(401)->setJSON([
                     'error' => true,
-                    'message' => 'Formation introuvable'
-                ]);
-            }
-
-            $deleted = $model->delete($id);
-
-            if (!$deleted) {
-                return $this->response->setStatusCode(500)->setJSON([
-                    'error' => true,
-                    'message' => 'Impossible de supprimer la formation'
+                    'message' => 'Non authentifié'
                 ]);
             }
 
             return $this->response->setJSON([
                 'error' => false,
-                'message' => 'Formation supprimée avec succès'
+                'user' => [
+                    'id' => $session->get('user_id'),
+                    'nom' => $session->get('nom'),
+                    'prenom' => $session->get('prenom'),
+                    'email' => $session->get('email'),
+                    'role' => $session->get('role'),
+                ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
@@ -198,20 +188,16 @@ class Formation extends Controller
         }
     }
 
-    public function edit($id = null)
+    public function logout()
     {
         try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
+            $session = session();
+            $session->destroy();
 
-            if (!$formation) {
-                return $this->response->setStatusCode(404)->setJSON([
-                    'error' => true,
-                    'message' => 'Formation introuvable'
-                ]);
-            }
-
-            return $this->response->setJSON($formation);
+            return $this->response->setJSON([
+                'error' => false,
+                'message' => 'Déconnexion réussie'
+            ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
                 'error' => true,

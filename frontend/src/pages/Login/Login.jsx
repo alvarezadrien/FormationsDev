@@ -9,8 +9,9 @@ export default function LoginRegister() {
   const [userEmail, setUserEmail] = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [authError, setAuthError] = useState("");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
   const API_URL = "http://localhost:8080";
 
   const parseResponse = async (res) => {
@@ -26,6 +27,7 @@ export default function LoginRegister() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
+    setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/login`, {
@@ -35,7 +37,7 @@ export default function LoginRegister() {
         },
         credentials: "include",
         body: JSON.stringify({
-          email: userEmail,
+          email: userEmail.trim(),
           password: userPassword,
         }),
       });
@@ -53,20 +55,25 @@ export default function LoginRegister() {
       localStorage.setItem("role", data.user.role || "user");
       localStorage.setItem("isLoggedIn", "true");
 
+      window.dispatchEvent(new Event("auth-changed"));
+
       if (data.user.role === "admin") {
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
       console.error("Erreur login :", err);
       setAuthError("Erreur serveur");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError("");
+    setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/register`, {
@@ -76,9 +83,9 @@ export default function LoginRegister() {
         },
         credentials: "include",
         body: JSON.stringify({
-          nom: lastName,
-          prenom: firstName,
-          email: userEmail,
+          nom: lastName.trim(),
+          prenom: firstName.trim(),
+          email: userEmail.trim(),
           password: userPassword,
         }),
       });
@@ -92,17 +99,20 @@ export default function LoginRegister() {
         return;
       }
 
-      alert("Compte créé, connectez-vous");
-
       setAuthMode("login");
       setLastName("");
       setFirstName("");
       setUserEmail("");
       setUserPassword("");
-      navigate("/login");
+      setAuthError("");
+
+      alert("Compte créé, connectez-vous");
+      navigate("/login", { replace: true });
     } catch (err) {
       console.error("Erreur register :", err);
       setAuthError("Erreur serveur");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -181,8 +191,8 @@ export default function LoginRegister() {
                 />
               </div>
 
-              <button className="auth_submit_button" type="submit">
-                Se connecter
+              <button className="auth_submit_button" type="submit" disabled={loading}>
+                {loading ? "Connexion..." : "Se connecter"}
               </button>
             </form>
           )}
@@ -243,8 +253,8 @@ export default function LoginRegister() {
                 />
               </div>
 
-              <button className="auth_submit_button" type="submit">
-                Créer un compte
+              <button className="auth_submit_button" type="submit" disabled={loading}>
+                {loading ? "Création..." : "Créer un compte"}
               </button>
             </form>
           )}

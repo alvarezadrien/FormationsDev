@@ -27,6 +27,7 @@ export default function AdminFormationsPage() {
   const [message, setMessage] = useState("");
   const [messageInscriptions, setMessageInscriptions] = useState("");
 
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const isAdmin = localStorage.getItem("role") === "admin";
   const isEditing = useMemo(() => editingId !== null, [editingId]);
 
@@ -77,11 +78,11 @@ export default function AdminFormationsPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isLoggedIn && isAdmin) {
       fetchFormations();
       fetchInscriptions();
     }
-  }, [isAdmin]);
+  }, [isLoggedIn, isAdmin]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -233,8 +234,8 @@ export default function AdminFormationsPage() {
     }
   };
 
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
+  if (!isLoggedIn || !isAdmin) {
+    return <Navigate to="/login" replace />;
   }
 
   return (

@@ -9,7 +9,7 @@ export function Footer() {
           <div className="site_footer_brand_block">
             <div className="site_footer_logo">
               <span className="site_footer_logo_mark">CF</span>
-              <span className="site_footer_logo_text">CentreFormations</span>
+              <span className="site_footer_logo_text">CodingFormations</span>
             </div>
 
             <p className="site_footer_description">

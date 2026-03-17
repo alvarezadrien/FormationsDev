@@ -24,16 +24,41 @@ function ProtectedAdminRoute({ children }) {
   return children;
 }
 
+function GuestRoute({ children }) {
+  const isAdmin = localStorage.getItem("role") === "admin";
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+  if (isLoggedIn && isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (isLoggedIn) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <Router>
       <Navbar />
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/inscription-formations" element={<FormFormations />} />
         <Route path="/details-formations/:id" element={<DetailsFormations />} />
-        <Route path="/login" element={<LoginRegister />} />
         <Route path="/contact" element={<Contact />} />
+
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <LoginRegister />
+            </GuestRoute>
+          }
+        />
+
         <Route
           path="/dashboard"
           element={
@@ -43,7 +68,8 @@ function App() {
           }
         />
       </Routes>
-      <Footer/>
+
+      <Footer />
     </Router>
   );
 }
