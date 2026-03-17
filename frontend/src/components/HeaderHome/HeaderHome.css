@@ -1,0 +1,83 @@
+/* HEADER */
+.header_home {
+  position: relative;
+  height: 80vh;
+  background: linear-gradient(120deg, #4f46e5, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  overflow: hidden;
+}
+
+/* Effet overlay */
+.header_home .overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f') center/cover;
+  opacity: 0.15;
+}
+
+/* Contenu */
+.header_content {
+  position: relative;
+  max-width: 800px;
+  padding: 20px;
+}
+
+.header_content h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.header_content h1 span {
+  display: block;
+  color: #fde68a;
+}
+
+.header_content p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+/* Boutons */
+.header_buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn_primary {
+  background: #facc15;
+  color: #1e293b;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn_primary:hover {
+  background: #fde047;
+  transform: scale(1.05);
+}
+
+.btn_secondary {
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn_secondary:hover {
+  background: white;
+  color: #1e293b;
+}
