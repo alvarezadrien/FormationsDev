@@ -1,0 +1,50 @@
+.cartes-avis {
+  padding: 40px 20px;
+  background: #f8f9fb;
+}
+
+.cartes-avis__title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #222;
+}
+
+.cartes-avis__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.avis-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avis-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.avis-card__nom {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #111;
+}
+
+.avis-card__stars {
+  color: #f5b301;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.avis-card__commentaire {
+  color: #555;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
