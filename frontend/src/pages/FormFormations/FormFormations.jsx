@@ -30,51 +30,96 @@ export function FormFormations() {
   useEffect(() => {
     const controller = new AbortController();
 
-    const fetchFormations = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
         setErreur("");
 
-        const res = await fetch(`${API_URL}/formations`, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          signal: controller.signal,
-        });
+        const [formationsResult, meResult] = await Promise.allSettled([
+          fetch(`${API_URL}/formations`, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            signal: controller.signal,
+          }),
+          fetch(`${API_URL}/me`, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            credentials: "include",
+            signal: controller.signal,
+          }),
+        ]);
 
-        let data = null;
+        if (
+          formationsResult.status === "fulfilled" &&
+          formationsResult.value instanceof Response
+        ) {
+          const res = formationsResult.value;
 
-        try {
-          data = await res.json();
-        } catch {
-          throw new Error(
-            "Réponse JSON invalide lors du chargement des formations"
-          );
+          let data = null;
+
+          try {
+            data = await res.json();
+          } catch {
+            throw new Error(
+              "Réponse JSON invalide lors du chargement des formations"
+            );
+          }
+
+          if (!res.ok) {
+            throw new Error(
+              data?.message || "Erreur lors du chargement des formations"
+            );
+          }
+
+          if (!Array.isArray(data)) {
+            throw new Error("Format des formations invalide");
+          }
+
+          const formationsPubliques = data
+            .filter((formation) => {
+              const statut = String(formation.statut ?? "actif").toLowerCase();
+              return statut === "actif";
+            })
+            .map((formation) => ({
+              id: formation.id,
+              nom: formation.nom ?? "Formation sans nom",
+              nombre_participants: Number(formation.nombre_participants ?? 0),
+            }));
+
+          setFormations(formationsPubliques);
+        } else {
+          throw new Error("Impossible de charger les formations");
         }
 
-        if (!res.ok) {
-          throw new Error(
-            data?.message || "Erreur lors du chargement des formations"
-          );
+        if (
+          meResult.status === "fulfilled" &&
+          meResult.value instanceof Response
+        ) {
+          const res = meResult.value;
+
+          if (res.ok) {
+            let data = null;
+
+            try {
+              data = await res.json();
+            } catch {
+              data = null;
+            }
+
+            if (data?.user) {
+              setFormData((prev) => ({
+                ...prev,
+                nom: data.user.nom ?? "",
+                prenom: data.user.prenom ?? "",
+                email: data.user.email ?? "",
+              }));
+            }
+          }
         }
-
-        if (!Array.isArray(data)) {
-          throw new Error("Format des formations invalide");
-        }
-
-        const formationsPubliques = data
-          .filter((formation) => {
-            const statut = String(formation.statut ?? "actif").toLowerCase();
-            return statut === "actif";
-          })
-          .map((formation) => ({
-            id: formation.id,
-            nom: formation.nom ?? "Formation sans nom",
-            nombre_participants: Number(formation.nombre_participants ?? 0),
-          }));
-
-        setFormations(formationsPubliques);
       } catch (err) {
         if (err.name === "AbortError") return;
         setErreur(err.message || "Erreur serveur");
@@ -83,7 +128,7 @@ export function FormFormations() {
       }
     };
 
-    fetchFormations();
+    fetchInitialData();
 
     return () => controller.abort();
   }, []);
@@ -116,14 +161,14 @@ export function FormFormations() {
   };
 
   const resetForm = () => {
-    setFormData({
-      nom: "",
-      prenom: "",
-      email: "",
+    setFormData((prev) => ({
+      nom: prev.nom,
+      prenom: prev.prenom,
+      email: prev.email,
       telephone: "",
       formation_id: formationIdFromUrl ? String(formationIdFromUrl) : "",
       message: "",
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -153,6 +198,7 @@ export function FormFormations() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -218,6 +264,7 @@ export function FormFormations() {
                   onChange={handleChange}
                   placeholder="Votre nom"
                   required
+                  disabled={saving}
                 />
               </div>
 
@@ -231,6 +278,7 @@ export function FormFormations() {
                   onChange={handleChange}
                   placeholder="Votre prénom"
                   required
+                  disabled={saving}
                 />
               </div>
             </div>
@@ -246,6 +294,7 @@ export function FormFormations() {
                   onChange={handleChange}
                   placeholder="exemple@email.com"
                   required
+                  disabled={saving}
                 />
               </div>
 
@@ -258,7 +307,7 @@ export function FormFormations() {
                   value={formData.telephone}
                   onChange={handleChange}
                   placeholder="Votre numéro"
-                  required
+                  disabled={saving}
                 />
               </div>
             </div>
@@ -299,6 +348,7 @@ export function FormFormations() {
                 value={formData.message}
                 onChange={handleChange}
                 placeholder="Ajoutez un message ou une précision..."
+                disabled={saving}
               />
             </div>
 
