@@ -3,6 +3,27 @@ import "./StatsPage.css";
 
 const API_URL = "http://localhost:8080";
 
+function CircularProgress({ value }) {
+  const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
+
+  return (
+    <div
+      className="circular-progress"
+      style={{
+        background: `conic-gradient(
+          #2563eb 0% ${safeValue}%,
+          #10b981 ${safeValue}% 100%
+        )`,
+      }}
+    >
+      <div className="circular-progress__inner">
+        <span className="circular-progress__value">{safeValue}%</span>
+        <span className="circular-progress__label">rempli</span>
+      </div>
+    </div>
+  );
+}
+
 export function StatsPage() {
   const [formations, setFormations] = useState([]);
   const [inscriptions, setInscriptions] = useState([]);
@@ -129,7 +150,10 @@ export function StatsPage() {
 
     const formationsAvecStats = formationsActives.map((formation) => {
       const inscrits = inscriptionsParFormation[Number(formation.id)] || 0;
-      const placesRestantes = Math.max(0, Number(formation.nombre_participants || 0));
+      const placesRestantes = Math.max(
+        0,
+        Number(formation.nombre_participants || 0)
+      );
       const capaciteTotale = inscrits + placesRestantes;
       const tauxRemplissage =
         capaciteTotale > 0 ? Math.round((inscrits / capaciteTotale) * 100) : 0;
@@ -156,7 +180,12 @@ export function StatsPage() {
     const totalFormationsActives = formationsAvecStats.length;
 
     const formationsPopulaires = [...formationsAvecStats]
-      .sort((a, b) => b.inscrits - a.inscrits)
+      .sort((a, b) => {
+        if (b.tauxRemplissage !== a.tauxRemplissage) {
+          return b.tauxRemplissage - a.tauxRemplissage;
+        }
+        return b.inscrits - a.inscrits;
+      })
       .slice(0, 3);
 
     const presqueCompletes = formationsAvecStats
@@ -213,83 +242,112 @@ export function StatsPage() {
   return (
     <main className="stats-page">
       <section className="stats-page__hero">
-        <span className="stats-page__badge">Vue d’ensemble</span>
+        <div className="stats-page__hero-badge">Vue intelligente</div>
+
         <h1 className="stats-page__title">Statistiques des formations</h1>
+
         <p className="stats-page__subtitle">
-          Découvrez les formations les plus suivies, les places encore
-          disponibles et les sessions qui se remplissent rapidement.
+          Une lecture claire des tendances, des formations les plus demandées
+          et des places encore disponibles pour aider chaque visiteur à choisir
+          plus rapidement.
         </p>
       </section>
 
       <section className="stats-page__summary">
         <article className="summary-card summary-card--blue">
+          <div className="summary-card__icon">👥</div>
           <span className="summary-card__label">Apprenants inscrits</span>
           <strong className="summary-card__value">{stats.totalApprenants}</strong>
           <p className="summary-card__text">
-            Nombre total d’apprenants actuellement engagés dans nos formations.
+            Nombre total d’apprenants actuellement engagés dans les formations.
           </p>
         </article>
 
         <article className="summary-card summary-card--green">
-          <span className="summary-card__label">Places encore disponibles</span>
+          <div className="summary-card__icon">🎯</div>
+          <span className="summary-card__label">Places disponibles</span>
           <strong className="summary-card__value">
             {stats.totalPlacesRestantes}
           </strong>
           <p className="summary-card__text">
-            Places restantes sur l’ensemble des formations actives.
+            Nombre de places encore ouvertes sur toutes les formations actives.
           </p>
         </article>
 
         <article className="summary-card summary-card--dark">
+          <div className="summary-card__icon">📚</div>
           <span className="summary-card__label">Formations actives</span>
           <strong className="summary-card__value">
             {stats.totalFormationsActives}
           </strong>
           <p className="summary-card__text">
-            Sessions actuellement ouvertes aux inscriptions.
+            Sessions actuellement proposées aux futurs apprenants.
           </p>
         </article>
       </section>
 
       <section className="stats-page__grid">
-        <div className="stats-panel">
+        <div className="stats-panel stats-panel--popular">
           <div className="stats-panel__header">
-            <h2 className="stats-panel__title">Formations les plus populaires</h2>
+            <h2 className="stats-panel__title">Les plus populaires</h2>
             <p className="stats-panel__subtitle">
-              Les formations qui attirent actuellement le plus d’apprenants.
+              Les formations qui se remplissent le plus rapidement.
             </p>
           </div>
 
-          <div className="stats-list">
+          <div className="popular-grid">
             {stats.formationsPopulaires.length === 0 ? (
               <p className="stats-empty">Aucune donnée disponible.</p>
             ) : (
               stats.formationsPopulaires.map((formation, index) => (
-                <article className="formation-stat-card" key={formation.id}>
-                  <div className="formation-stat-card__top">
-                    <span className="ranking-badge">Top {index + 1}</span>
-                    <span className="fill-badge">
-                      {formation.tauxRemplissage}% rempli
+                <article className="popular-card" key={formation.id}>
+                  <div className="popular-card__top">
+                    <span className="popular-card__rank">Top {index + 1}</span>
+                    <span className="popular-card__tag">
+                      {formation.inscrits} inscrits
                     </span>
                   </div>
 
-                  <h3 className="formation-stat-card__title">{formation.nom}</h3>
+                  <div className="popular-card__body">
+                    <div className="popular-card__content">
+                      <h3 className="popular-card__title">{formation.nom}</h3>
 
-                  <p className="formation-stat-card__meta">
-                    {formation.lieu} • Début : {formatDate(formation.date_debut)}
-                  </p>
+                      <p className="popular-card__meta">
+                        📍 {formation.lieu}
+                      </p>
 
-                  <div className="progress-block">
-                    <div className="progress-block__labels">
-                      <span>{formation.inscrits} inscrits</span>
-                      <span>{formation.placesRestantes} places restantes</span>
+                      <p className="popular-card__meta">
+                        📅 Début : {formatDate(formation.date_debut)}
+                      </p>
+
+                      <p className="popular-card__desc">
+                        {formation.description ||
+                          "Formation très demandée par les apprenants."}
+                      </p>
+
+                      <div className="popular-card__stats">
+                        <div className="popular-mini-stat">
+                          <span className="popular-mini-stat__label">
+                            Inscrits
+                          </span>
+                          <strong className="popular-mini-stat__value">
+                            {formation.inscrits}
+                          </strong>
+                        </div>
+
+                        <div className="popular-mini-stat">
+                          <span className="popular-mini-stat__label">
+                            Places restantes
+                          </span>
+                          <strong className="popular-mini-stat__value">
+                            {formation.placesRestantes}
+                          </strong>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="progress-bar">
-                      <div
-                        className="progress-bar__fill"
-                        style={{ width: `${formation.tauxRemplissage}%` }}
-                      ></div>
+                    <div className="popular-card__chart">
+                      <CircularProgress value={formation.tauxRemplissage} />
                     </div>
                   </div>
                 </article>
@@ -302,8 +360,7 @@ export function StatsPage() {
           <div className="stats-panel__header">
             <h2 className="stats-panel__title">Presque complet</h2>
             <p className="stats-panel__subtitle">
-              Les formations à forte demande avec peu de places encore
-              disponibles.
+              Les sessions qui approchent rapidement de leur capacité maximale.
             </p>
           </div>
 
@@ -316,17 +373,29 @@ export function StatsPage() {
               stats.presqueCompletes.map((formation) => (
                 <article className="formation-alert-card" key={formation.id}>
                   <div className="formation-alert-card__content">
-                    <h3 className="formation-alert-card__title">
-                      {formation.nom}
-                    </h3>
+                    <div className="formation-alert-card__top">
+                      <h3 className="formation-alert-card__title">
+                        {formation.nom}
+                      </h3>
+                      <span className="formation-alert-card__fill">
+                        {formation.tauxRemplissage}% rempli
+                      </span>
+                    </div>
 
                     <p className="formation-alert-card__text">
                       {formation.placesRestantes <= 3
                         ? `Il ne reste plus que ${formation.placesRestantes} place${
                             formation.placesRestantes > 1 ? "s" : ""
-                          }.`
+                          } pour cette formation.`
                         : `${formation.tauxRemplissage}% des places sont déjà réservées.`}
                     </p>
+
+                    <div className="formation-alert-card__bar">
+                      <div
+                        className="formation-alert-card__bar-fill"
+                        style={{ width: `${formation.tauxRemplissage}%` }}
+                      ></div>
+                    </div>
                   </div>
 
                   <div className="formation-alert-card__side">
@@ -344,9 +413,9 @@ export function StatsPage() {
 
       <section className="stats-panel stats-panel--full">
         <div className="stats-panel__header">
-          <h2 className="stats-panel__title">Toutes les formations</h2>
+          <h2 className="stats-panel__title">Toutes les formations actives</h2>
           <p className="stats-panel__subtitle">
-            Vue détaillée des sessions actives avec leur niveau de remplissage.
+            Une vision complète avec progression, capacité et disponibilité.
           </p>
         </div>
 
@@ -374,17 +443,21 @@ export function StatsPage() {
                   <span>📅 {formatDate(formation.date_debut)}</span>
                 </div>
 
-                <div className="progress-block">
-                  <div className="progress-block__labels">
-                    <span>{formation.inscrits} inscrits</span>
-                    <span>{formation.placesRestantes} places restantes</span>
+                <div className="all-formation-card__bottom">
+                  <div className="all-formation-card__ring">
+                    <CircularProgress value={formation.tauxRemplissage} />
                   </div>
 
-                  <div className="progress-bar">
-                    <div
-                      className="progress-bar__fill"
-                      style={{ width: `${formation.tauxRemplissage}%` }}
-                    ></div>
+                  <div className="all-formation-card__numbers">
+                    <div className="all-formation-card__number">
+                      <span>Inscrits</span>
+                      <strong>{formation.inscrits}</strong>
+                    </div>
+
+                    <div className="all-formation-card__number">
+                      <span>Places restantes</span>
+                      <strong>{formation.placesRestantes}</strong>
+                    </div>
                   </div>
                 </div>
               </article>
