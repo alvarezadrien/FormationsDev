@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MesDonnees } from "../../components/MesDonnees/MesDonnees";
-import "./ProfilFormateurPage.css";
+import { FichePresenceFormateur } from "../../components/FichePresenceFormateur/FichePresenceFormateur";
+import "./ProfilFormateurPage";
 
 function ProfilFormateurPage() {
   const [userData, setUserData] = useState({
@@ -58,8 +59,8 @@ function ProfilFormateurPage() {
             <h1 className="profile_main_title">Profil formateur</h1>
 
             <p className="profile_main_text">
-              Retrouvez ici les informations liées à votre compte formateur et à
-              votre espace personnel.
+              Retrouvez ici les informations liées à votre compte formateur,
+              votre espace personnel et vos fiches de présence.
             </p>
           </div>
         </div>
@@ -105,6 +106,16 @@ function ProfilFormateurPage() {
               >
                 Espace formateur
               </button>
+
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "fiches" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("fiches")}
+                type="button"
+              >
+                Fiches de présence
+              </button>
             </div>
           </aside>
 
@@ -138,6 +149,16 @@ function ProfilFormateurPage() {
                     type="button"
                   >
                     Espace formateur
+                  </button>
+
+                  <button
+                    className={`profile_nav_button ${
+                      activeSection === "fiches" ? "active" : ""
+                    }`}
+                    onClick={() => handleSectionChange("fiches")}
+                    type="button"
+                  >
+                    Fiches de présence
                   </button>
                 </div>
               )}
@@ -173,11 +194,7 @@ function ProfilFormateurPage() {
 
                   <div className="profile_info_card">
                     <span className="profile_info_label">Rôle</span>
-                    <span className="profile_info_value">
-                      {userData.role === "formateur"
-                        ? "Formateur"
-                        : "Utilisateur"}
-                    </span>
+                    <span className="profile_info_value">Formateur</span>
                   </div>
                 </div>
               </div>
@@ -193,6 +210,18 @@ function ProfilFormateurPage() {
                 </p>
 
                 <MesDonnees />
+              </div>
+            )}
+
+            {activeSection === "fiches" && (
+              <div className="profile_info_block">
+                <h2 className="profile_section_title">Fiches de présence</h2>
+
+                <p className="profile_description">
+                  Créez, consultez et supprimez vos fiches de présence.
+                </p>
+
+                <FichePresenceFormateur />
               </div>
             )}
           </div>

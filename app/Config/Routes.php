@@ -48,6 +48,15 @@ $routes->delete('formations/(:num)', 'Formation::delete/$1', ['filter' => 'admin
 $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin']);
 
 // =========================
+// Fiches de présence
+// =========================
+$routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
+$routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
+$routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
+$routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
+$routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
+
+// =========================
 // Avis
 // =========================
 $routes->get('avis', 'AvisController::index');

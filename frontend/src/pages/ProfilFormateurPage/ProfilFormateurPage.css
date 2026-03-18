@@ -1,0 +1,10 @@
+.profile_role_badge.formateur {
+  background: rgba(253, 224, 71, 0.16);
+  color: #fde047;
+  border: 1px solid rgba(253, 224, 71, 0.32);
+}
+
+.profile_status_chip.formateur {
+  background: #ede9fe;
+  color: #5b21b6;
+}

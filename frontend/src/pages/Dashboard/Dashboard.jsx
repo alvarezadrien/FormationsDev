@@ -7,8 +7,9 @@ import { FormationsCrees } from "../../components/FormationsCrees/FormationsCree
 import { FormActif } from "../../components/FormActif/FormActif";
 import { AvisAdmin } from "../../components/AvisAdmin/AvisAdmin";
 import { CreationCompteFormateur } from "../../components/CreationCompteFormateur/CreationCompteFormateur";
+import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePresenceAdmin";
 
-export default function AdminFormationsPage() {
+export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -24,7 +25,8 @@ export default function AdminFormationsPage() {
       <div className="admin-dashboard__header">
         <h1 className="admin-dashboard__title">Dashboard Admin Formations</h1>
         <p className="admin-dashboard__subtitle">
-          Crée, modifie et supprime les formations, gère les avis et crée des comptes formateurs.
+          Crée, modifie et supprime les formations, gère les avis, les comptes
+          formateurs et les fiches de présence.
         </p>
       </div>
 
@@ -57,10 +59,10 @@ export default function AdminFormationsPage() {
           />
 
           <FormActif />
-          
           <AvisAdmin />
+          <FichesPresenceAdmin />
         </div>
       </div>
     </main>
   );
-}
+} 
