@@ -34,7 +34,7 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             'cors',
-            // 'csrf', // à laisser désactivé si API JSON pour React
+            // 'csrf',
         ],
         'after' => [
             'cors',
@@ -57,10 +57,6 @@ class Filters extends BaseFilters
             'before' => [
                 'dashboard',
                 'dashboard/*',
-                'inscriptions-formations',
-                'inscriptions-formations/*',
-                'formations',
-                'formations/*',
             ],
         ],
     ];

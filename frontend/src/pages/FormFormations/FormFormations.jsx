@@ -16,24 +16,54 @@ export function FormFormations() {
     email: "",
     telephone: "",
     formation_id: "",
-    message: ""
+    message: "",
   });
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchFormations = async () => {
       try {
         setLoading(true);
         setErreur("");
 
-        const res = await fetch(`${API_URL}/formations`);
-        const data = await res.json();
+        const res = await fetch(`${API_URL}/formations`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        });
+
+        let data = null;
+
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error("Réponse JSON invalide lors du chargement des formations");
+        }
 
         if (!res.ok) {
           throw new Error(data?.message || "Erreur lors du chargement des formations");
         }
 
-        setFormations(Array.isArray(data) ? data : []);
+        if (!Array.isArray(data)) {
+          throw new Error("Format des formations invalide");
+        }
+
+        const formationsPubliques = data
+          .filter((formation) => {
+            const statut = String(formation.statut ?? "actif").toLowerCase();
+            return statut === "actif";
+          })
+          .map((formation) => ({
+            id: formation.id,
+            nom: formation.nom ?? "Formation sans nom",
+          }));
+
+        setFormations(formationsPubliques);
       } catch (err) {
+        if (err.name === "AbortError") return;
         setErreur(err.message || "Erreur serveur");
       } finally {
         setLoading(false);
@@ -41,6 +71,8 @@ export function FormFormations() {
     };
 
     fetchFormations();
+
+    return () => controller.abort();
   }, []);
 
   const handleChange = (e) => {
@@ -48,7 +80,7 @@ export function FormFormations() {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "formation_id" ? value : value
+      [name]: value,
     }));
   };
 
@@ -59,7 +91,7 @@ export function FormFormations() {
       email: "",
       telephone: "",
       formation_id: "",
-      message: ""
+      message: "",
     });
   };
 
@@ -71,24 +103,35 @@ export function FormFormations() {
       setErreur("");
       setMessage("");
 
+      if (!formData.formation_id) {
+        throw new Error("Veuillez sélectionner une formation");
+      }
+
       const payload = {
         nom: formData.nom.trim(),
         prenom: formData.prenom.trim(),
         email: formData.email.trim(),
         telephone: formData.telephone.trim(),
         formation_id: Number(formData.formation_id),
-        message: formData.message.trim()
+        message: formData.message.trim(),
       };
 
       const res = await fetch(`${API_URL}/inscriptions-formations`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json().catch(() => ({}));
+      let data = {};
+
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Réponse JSON invalide lors de l'envoi de l'inscription");
+      }
 
       if (!res.ok) {
         throw new Error(data?.message || "Impossible d'envoyer l'inscription");
@@ -184,10 +227,12 @@ export function FormFormations() {
                 value={formData.formation_id}
                 onChange={handleChange}
                 required
-                disabled={loading}
+                disabled={loading || saving}
               >
                 <option value="">
-                  {loading ? "Chargement des formations..." : "Sélectionner une formation"}
+                  {loading
+                    ? "Chargement des formations..."
+                    : "Sélectionner une formation"}
                 </option>
 
                 {formations.map((formation) => (
@@ -211,11 +256,15 @@ export function FormFormations() {
             </div>
 
             {message && (
-              <p style={{ color: "green", marginBottom: "1rem" }}>{message}</p>
+              <p style={{ color: "green", marginBottom: "1rem" }}>
+                {message}
+              </p>
             )}
 
             {erreur && (
-              <p style={{ color: "red", marginBottom: "1rem" }}>{erreur}</p>
+              <p style={{ color: "red", marginBottom: "1rem" }}>
+                {erreur}
+              </p>
             )}
 
             <div className="training-form-actions">

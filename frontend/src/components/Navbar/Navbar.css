@@ -377,9 +377,9 @@
 .navbar_status_dot {
   position: absolute;
   right: -2px;
-  bottom: -1px;
-  width: 10px;
-  height: 10px;
+  bottom: 5px;
+  width: 15px;
+  height: 15px;
   background: #22c55e;
   border: 2px solid #ffffff;
   border-radius: 999px;
