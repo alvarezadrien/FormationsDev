@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import "./Dashboard.css";
 
+// import components
+import { CreationFormations } from "../../components/CreationFormations/CreationFormations";
+import { FormationsCrees } from "../../components/FormationsCrees/FormationsCrees";
+import { FormActif } from "../../components/FormActif/FormActif";
+
 const API_URL = "http://localhost:8080";
 
 const initialForm = {
@@ -43,7 +48,9 @@ export default function AdminFormationsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.message || "Erreur lors du chargement des formations");
+        throw new Error(
+          data?.message || "Erreur lors du chargement des formations"
+        );
       }
 
       setFormations(Array.isArray(data) ? data : []);
@@ -66,7 +73,9 @@ export default function AdminFormationsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.message || "Erreur lors du chargement des inscriptions");
+        throw new Error(
+          data?.message || "Erreur lors du chargement des inscriptions"
+        );
       }
 
       setInscriptions(Array.isArray(data) ? data : []);
@@ -96,12 +105,17 @@ export default function AdminFormationsPage() {
   const resetForm = () => {
     setFormData(initialForm);
     setEditingId(null);
+    setErreur("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.date_debut && formData.date_fin && formData.date_fin < formData.date_debut) {
+    if (
+      formData.date_debut &&
+      formData.date_fin &&
+      formData.date_fin < formData.date_debut
+    ) {
       setErreur("La date de fin ne peut pas être avant la date de début.");
       return;
     }
@@ -140,8 +154,12 @@ export default function AdminFormationsPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.message || "Impossible d'enregistrer la formation");
+        throw new Error(
+          data?.message || "Impossible d'enregistrer la formation"
+        );
       }
+
+      resetForm();
 
       setMessage(
         isEditing
@@ -149,8 +167,7 @@ export default function AdminFormationsPage() {
           : "La formation a bien été créée."
       );
 
-      resetForm();
-      fetchFormations();
+      await fetchFormations();
     } catch (err) {
       setErreur(err.message || "Erreur lors de l'enregistrement");
     } finally {
@@ -178,7 +195,9 @@ export default function AdminFormationsPage() {
   };
 
   const handleDelete = async (id) => {
-    const confirmation = window.confirm("Voulez-vous vraiment supprimer cette formation ?");
+    const confirmation = window.confirm(
+      "Voulez-vous vraiment supprimer cette formation ?"
+    );
     if (!confirmation) return;
 
     try {
@@ -193,7 +212,9 @@ export default function AdminFormationsPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.message || "Impossible de supprimer la formation");
+        throw new Error(
+          data?.message || "Impossible de supprimer la formation"
+        );
       }
 
       if (editingId === id) {
@@ -201,15 +222,17 @@ export default function AdminFormationsPage() {
       }
 
       setMessage("La formation a bien été supprimée.");
-      fetchFormations();
-      fetchInscriptions();
+      await fetchFormations();
+      await fetchInscriptions();
     } catch (err) {
       setErreur(err.message || "Erreur lors de la suppression");
     }
   };
 
   const handleDeleteInscription = async (id) => {
-    const confirmation = window.confirm("Voulez-vous vraiment supprimer cette inscription ?");
+    const confirmation = window.confirm(
+      "Voulez-vous vraiment supprimer cette inscription ?"
+    );
     if (!confirmation) return;
 
     try {
@@ -224,11 +247,13 @@ export default function AdminFormationsPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.message || "Impossible de supprimer l'inscription");
+        throw new Error(
+          data?.message || "Impossible de supprimer l'inscription"
+        );
       }
 
       setMessageInscriptions("L'inscription a bien été supprimée.");
-      fetchInscriptions();
+      await fetchInscriptions();
     } catch (err) {
       setErreur(err.message || "Erreur lors de la suppression de l'inscription");
     }
@@ -243,286 +268,37 @@ export default function AdminFormationsPage() {
       <div className="admin-dashboard__header">
         <h1 className="admin-dashboard__title">Dashboard Admin Formations</h1>
         <p className="admin-dashboard__subtitle">
-          Crée, modifie et supprime les formations, puis consulte les inscriptions envoyées.
+          Crée, modifie et supprime les formations, puis consulte les
+          inscriptions envoyées.
         </p>
       </div>
 
       <div className="admin-dashboard__layout">
-        <section className="admin-panel">
-          <h2 className="admin-panel__title">
-            {isEditing ? "Modifier une formation" : "Créer une nouvelle formation"}
-          </h2>
-          <p className="admin-panel__text">
-            Remplis le formulaire puis enregistre. Cette page est séparée de l'accueil.
-          </p>
-
-          <form className="admin-form" onSubmit={handleSubmit}>
-            <div className="admin-form__group">
-              <label className="admin-form__label">Nom de la formation</label>
-              <input
-                className="admin-form__input"
-                type="text"
-                name="nom"
-                value={formData.nom}
-                onChange={handleChange}
-                placeholder="Ex: Développement Web"
-                required
-              />
-            </div>
-
-            <div className="admin-form__group">
-              <label className="admin-form__label">Formateur(s)</label>
-              <input
-                className="admin-form__input"
-                type="text"
-                name="formateur"
-                value={formData.formateur}
-                onChange={handleChange}
-                placeholder="Ex: Marie Dupont, Jean Martin"
-                required
-              />
-            </div>
-
-            <div className="admin-form__row">
-              <div className="admin-form__group">
-                <label className="admin-form__label">Lieu</label>
-                <input
-                  className="admin-form__input"
-                  type="text"
-                  name="lieu"
-                  value={formData.lieu}
-                  onChange={handleChange}
-                  placeholder="Ex: Bruxelles"
-                  required
-                />
-              </div>
-
-              <div className="admin-form__group">
-                <label className="admin-form__label">Participants</label>
-                <input
-                  className="admin-form__input"
-                  type="number"
-                  name="nombre_participants"
-                  value={formData.nombre_participants}
-                  onChange={handleChange}
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="admin-form__row">
-              <div className="admin-form__group">
-                <label className="admin-form__label">Date de début</label>
-                <input
-                  className="admin-form__input"
-                  type="date"
-                  name="date_debut"
-                  value={formData.date_debut}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="admin-form__group">
-                <label className="admin-form__label">Date de fin</label>
-                <input
-                  className="admin-form__input"
-                  type="date"
-                  name="date_fin"
-                  value={formData.date_fin}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="admin-form__group">
-              <label className="admin-form__label">Statut</label>
-              <select
-                className="admin-form__select"
-                name="statut"
-                value={formData.statut}
-                onChange={handleChange}
-              >
-                <option value="actif">Actif</option>
-                <option value="inactif">Inactif</option>
-                <option value="annule">Annulé</option>
-              </select>
-            </div>
-
-            <div className="admin-form__group">
-              <label className="admin-form__label">Description</label>
-              <textarea
-                className="admin-form__textarea"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Décris la formation..."
-                required
-              />
-            </div>
-
-            {message && <div className="admin-feedback admin-feedback--success">{message}</div>}
-            {erreur && <div className="admin-feedback admin-feedback--error">{erreur}</div>}
-
-            <div className="admin-form__actions">
-              <button className="admin-btn admin-btn--primary" type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : isEditing
-                  ? "Mettre à jour"
-                  : "Créer la formation"}
-              </button>
-
-              {isEditing && (
-                <button
-                  className="admin-btn admin-btn--secondary"
-                  type="button"
-                  onClick={resetForm}
-                >
-                  Annuler
-                </button>
-              )}
-            </div>
-          </form>
-        </section>
+        <CreationFormations
+          isEditing={isEditing}
+          formData={formData}
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          message={message}
+          erreur={erreur}
+          saving={saving}
+          resetForm={resetForm}
+        />
 
         <div className="admin-dashboard__content">
-          <section className="admin-list">
-            <h2 className="admin-list__title">Liste des formations</h2>
-            <p className="admin-list__text">
-              Clique sur une carte pour modifier ou supprimer une formation existante.
-            </p>
+          <FormationsCrees
+            loading={loading}
+            formations={formations}
+            handleEdit={handleEdit}
+            handleDelete={handleDelete}
+          />
 
-            {loading ? (
-              <div className="admin-loading">Chargement des formations...</div>
-            ) : formations.length === 0 ? (
-              <div className="admin-empty">Aucune formation disponible pour le moment.</div>
-            ) : (
-              <div className="admin-list__grid">
-                {formations.map((formation) => {
-                  const badgeClass = `admin-badge admin-badge--${formation.statut || "actif"}`;
-                  const formateurs = formation.formateur
-                    ? formation.formateur.split(",").map((nom) => nom.trim())
-                    : [];
-
-                  return (
-                    <article className="admin-card" key={formation.id}>
-                      <h3 className="admin-card__title">{formation.nom}</h3>
-
-                      <div className="admin-card__meta">
-                        <p>
-                          <strong>Formateur(s) :</strong>{" "}
-                          {formateurs.join(", ") || "Non renseigné"}
-                        </p>
-                        <p>
-                          <strong>Lieu :</strong> {formation.lieu}
-                        </p>
-                        <p>
-                          <strong>Participants :</strong> {formation.nombre_participants ?? 0}
-                        </p>
-                        <p>
-                          <strong>Date début :</strong>{" "}
-                          {formation.date_debut || "Non renseignée"}
-                        </p>
-                        <p>
-                          <strong>Date fin :</strong>{" "}
-                          {formation.date_fin || "Non renseignée"}
-                        </p>
-                        <p>
-                          <strong>Statut :</strong>{" "}
-                          <span className={badgeClass}>{formation.statut || "actif"}</span>
-                        </p>
-                      </div>
-
-                      <p className="admin-card__description">{formation.description}</p>
-
-                      <div className="admin-card__actions">
-                        <button
-                          className="admin-btn admin-btn--edit"
-                          type="button"
-                          onClick={() => handleEdit(formation)}
-                        >
-                          Modifier
-                        </button>
-
-                        <button
-                          className="admin-btn admin-btn--delete"
-                          type="button"
-                          onClick={() => handleDelete(formation.id)}
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          <section className="admin-list admin-list--inscriptions">
-            <h2 className="admin-list__title">Inscriptions reçues</h2>
-            <p className="admin-list__text">
-              Consulte les coordonnées des personnes inscrites et la formation choisie.
-            </p>
-
-            {messageInscriptions && (
-              <div className="admin-feedback admin-feedback--success">
-                {messageInscriptions}
-              </div>
-            )}
-
-            {loadingInscriptions ? (
-              <div className="admin-loading">Chargement des inscriptions...</div>
-            ) : inscriptions.length === 0 ? (
-              <div className="admin-empty">Aucune inscription pour le moment.</div>
-            ) : (
-              <div className="admin-inscriptions__grid">
-                {inscriptions.map((inscription) => (
-                  <article className="admin-card admin-card--inscription" key={inscription.id}>
-                    <h3 className="admin-card__title">
-                      {inscription.prenom} {inscription.nom}
-                    </h3>
-
-                    <div className="admin-card__meta">
-                      <p>
-                        <strong>Email :</strong> {inscription.email || "Non renseigné"}
-                      </p>
-                      <p>
-                        <strong>Téléphone :</strong> {inscription.telephone || "Non renseigné"}
-                      </p>
-                      <p>
-                        <strong>Formation :</strong>{" "}
-                        {inscription.formation_nom || inscription.formation_id || "Non renseignée"}
-                      </p>
-                      <p>
-                        <strong>Date inscription :</strong>{" "}
-                        {inscription.date_inscription || "Non renseignée"}
-                      </p>
-                    </div>
-
-                    <p className="admin-card__description">
-                      {inscription.message?.trim()
-                        ? inscription.message
-                        : "Aucun message laissé par l'utilisateur."}
-                    </p>
-
-                    <div className="admin-card__actions">
-                      <button
-                        className="admin-btn admin-btn--delete"
-                        type="button"
-                        onClick={() => handleDeleteInscription(inscription.id)}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
+          <FormActif
+            messageInscriptions={messageInscriptions}
+            loadingInscriptions={loadingInscriptions}
+            inscriptions={inscriptions}
+            handleDeleteInscription={handleDeleteInscription}
+          />
         </div>
       </div>
     </main>
