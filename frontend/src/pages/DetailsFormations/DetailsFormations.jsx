@@ -15,26 +15,43 @@ export function DetailsFormations() {
   useEffect(() => {
     const fetchFormation = async () => {
       try {
-        const res = await fetch(`${API_URL}/formations/${id}`);
-        const data = await res.json();
+        setLoading(true);
+        setErreur("");
 
-        if (!res.ok) throw new Error("Erreur API");
+        const res = await fetch(`${API_URL}/formations/${id}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        let data = null;
+
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error("Réponse JSON invalide du serveur");
+        }
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Erreur API");
+        }
 
         setFormation({
           id: data.id,
-          nom_formation: data.nom,
+          nom_formation: data.nom ?? "Formation sans nom",
           formateurs: data.formateur
             ? data.formateur.split(",").map((n) => n.trim())
             : [],
-          lieu: data.lieu,
-          description: data.description,
-          nombre_participants: data.nombre_participants ?? 0,
-          statut: data.statut ?? "actif",
+          lieu: data.lieu ?? "",
+          description: data.description ?? "",
+          nombre_participants: Number(data.nombre_participants ?? 0),
+          statut: String(data.statut ?? "actif").toLowerCase(),
           date_debut: data.date_debut || "",
           date_fin: data.date_fin || "",
         });
       } catch (err) {
-        setErreur(err.message);
+        setErreur(err.message || "Une erreur est survenue");
       } finally {
         setLoading(false);
       }
@@ -69,6 +86,12 @@ export function DetailsFormations() {
 
   const inscriptionActive =
     formation.statut === "actif" && formation.nombre_participants > 0;
+
+  const handleInscription = () => {
+    if (!inscriptionActive) return;
+
+    navigate(`/inscription-formations?formation=${formation.id}`);
+  };
 
   return (
     <section className="details_page">
@@ -156,9 +179,7 @@ export function DetailsFormations() {
 
         <aside className="details_sidebar">
           <div className="cta_box">
-            <h3 className="cta_title">
-              Prêt à rejoindre cette formation ?
-            </h3>
+            <h3 className="cta_title">Prêt à rejoindre cette formation ?</h3>
 
             <p className="cta_text">
               Réservez votre place dès maintenant et profitez d’un apprentissage
@@ -166,15 +187,9 @@ export function DetailsFormations() {
             </p>
 
             <button
-              className={`cta_button ${
-                !inscriptionActive ? "disabled" : ""
-              }`}
+              className={`cta_button ${!inscriptionActive ? "disabled" : ""}`}
               disabled={!inscriptionActive}
-              onClick={() => {
-                if (inscriptionActive) {
-                  navigate("/inscription-formations");
-                }
-              }}
+              onClick={handleInscription}
             >
               {!inscriptionActive
                 ? formation.statut !== "actif"

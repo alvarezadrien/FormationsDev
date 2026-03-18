@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import "./FormFormations.css";
 
 const API_URL = "http://localhost:8080";
 
 export function FormFormations() {
+  const location = useLocation();
+
   const [formations, setFormations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -18,6 +21,11 @@ export function FormFormations() {
     formation_id: "",
     message: "",
   });
+
+  const formationIdFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("formation");
+  }, [location.search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -40,11 +48,15 @@ export function FormFormations() {
         try {
           data = await res.json();
         } catch {
-          throw new Error("Réponse JSON invalide lors du chargement des formations");
+          throw new Error(
+            "Réponse JSON invalide lors du chargement des formations"
+          );
         }
 
         if (!res.ok) {
-          throw new Error(data?.message || "Erreur lors du chargement des formations");
+          throw new Error(
+            data?.message || "Erreur lors du chargement des formations"
+          );
         }
 
         if (!Array.isArray(data)) {
@@ -76,6 +88,24 @@ export function FormFormations() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!formationIdFromUrl) return;
+    if (formations.length === 0) return;
+
+    const formationTrouvee = formations.find(
+      (formation) =>
+        String(formation.id) === String(formationIdFromUrl) &&
+        formation.nombre_participants > 0
+    );
+
+    if (formationTrouvee) {
+      setFormData((prev) => ({
+        ...prev,
+        formation_id: String(formationTrouvee.id),
+      }));
+    }
+  }, [formationIdFromUrl, formations]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -91,7 +121,7 @@ export function FormFormations() {
       prenom: "",
       email: "",
       telephone: "",
-      formation_id: "",
+      formation_id: formationIdFromUrl ? String(formationIdFromUrl) : "",
       message: "",
     });
   };
@@ -131,7 +161,9 @@ export function FormFormations() {
       try {
         data = await res.json();
       } catch {
-        throw new Error("Réponse JSON invalide lors de l'envoi de l'inscription");
+        throw new Error(
+          "Réponse JSON invalide lors de l'envoi de l'inscription"
+        );
       }
 
       if (!res.ok) {
@@ -139,7 +171,6 @@ export function FormFormations() {
       }
 
       setMessage("Votre demande d’inscription a bien été envoyée.");
-      resetForm();
 
       setFormations((prev) =>
         prev.map((f) =>
@@ -151,6 +182,8 @@ export function FormFormations() {
             : f
         )
       );
+
+      resetForm();
     } catch (err) {
       setErreur(err.message || "Erreur lors de l'envoi");
     } finally {

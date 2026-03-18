@@ -59,7 +59,6 @@ export function CartesFormations() {
         setFormations(formattedData);
       } catch (err) {
         if (err.name === "AbortError") return;
-
         setErreur(err.message || "Une erreur est survenue");
       } finally {
         setLoading(false);
@@ -87,6 +86,10 @@ export function CartesFormations() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleInscription = (formationId) => {
+    navigate(`/inscription-formations?formation=${formationId}`);
   };
 
   if (loading) {
@@ -120,7 +123,9 @@ export function CartesFormations() {
 
       <div className="container_cartes_formations">
         {formations.length === 0 ? (
-          <p className="etat_message">Aucune formation disponible pour le moment.</p>
+          <p className="etat_message">
+            Aucune formation disponible pour le moment.
+          </p>
         ) : (
           formations.map((formation) => {
             const inscriptionActive =
@@ -185,7 +190,7 @@ export function CartesFormations() {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (inscriptionActive) {
-                        navigate("/inscription-formations");
+                        handleInscription(formation.id);
                       }
                     }}
                   >

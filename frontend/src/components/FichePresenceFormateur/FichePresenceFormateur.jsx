@@ -376,6 +376,7 @@ export function FichePresenceFormateur() {
 
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button
+                    className="btn-voir"
                       type="button"
                       onClick={() => fetchFicheDetails(fiche.id)}
                     >
@@ -431,7 +432,7 @@ export function FichePresenceFormateur() {
                 <p><strong>Remarques :</strong> {selectedFiche.fiche.remarques || "Aucune remarque"}</p>
               </div>
 
-              <div className="fiche-detail__actions">
+              <div className="fiche-detail__actions ">
                 <button type="button" onClick={handlePrint}>
                   Imprimer / Télécharger PDF
                 </button>

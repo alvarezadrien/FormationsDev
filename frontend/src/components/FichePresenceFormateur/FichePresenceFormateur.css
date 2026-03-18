@@ -179,3 +179,47 @@
   }
 }
 
+.btn-action {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Voir */
+.btn-voir {
+  border: none;
+  background: #3662e3;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-voir:hover {
+  background-color: #2980b9;
+}
+
+/* Imprimer */
+.btn-print {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.btn-print:hover {
+  background-color: #27ae60;
+}
+
+/* Télécharger */
+.btn-download {
+  background-color: #9b59b6;
+  color: white;
+}
+
+.btn-download:hover {
+  background-color: #8e44ad;
+}
