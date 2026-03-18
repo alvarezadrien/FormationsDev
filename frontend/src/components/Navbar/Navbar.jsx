@@ -101,6 +101,10 @@ export function Navbar() {
           <Link to="/inscription-formations" className="navbar_item">
             Formulaire inscription
           </Link>
+
+          <Link to="/statistique" className="navbar_item">
+            Statistiques
+          </Link>
         </div>
 
         <div className="navbar_actions">

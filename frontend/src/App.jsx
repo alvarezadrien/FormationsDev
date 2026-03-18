@@ -10,6 +10,7 @@ import AdminFormationsDashboard from "./pages/Dashboard/Dashboard";
 import ProfilCompte from "./pages/ProfilCompte/ProfilCompte";
 import ProfilFormateurPage from "./pages/ProfilFormateurPage/ProfilFormateurPage";
 import { Contact } from "./pages/Contact/Contact";
+import { StatsPage } from "./pages/StatsPage/StatsPage";
 
 // import components
 import { Navbar } from "./components/Navbar/Navbar";
@@ -109,6 +110,7 @@ function App() {
         <Route path="/inscription-formations" element={<FormFormations />} />
         <Route path="/details-formations/:id" element={<DetailsFormations />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/statistique" element={<StatsPage />} />
 
         <Route
           path="/profil-compte"
