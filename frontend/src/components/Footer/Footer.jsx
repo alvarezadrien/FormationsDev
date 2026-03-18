@@ -49,7 +49,7 @@ export function Footer() {
 
         <div className="site_footer_bottom">
           <p className="site_footer_copy">
-            © 2026 CentreFormations. Tous droits réservés.
+            © 2026 CodingFormations. Tous droits réservés.
           </p>
         </div>
       </div>
