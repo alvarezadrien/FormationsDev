@@ -7,6 +7,7 @@ import { FormFormations } from "./pages/FormFormations/FormFormations";
 import { DetailsFormations } from "./pages/DetailsFormations/DetailsFormations";
 import LoginRegister from "./pages/Login/Login";
 import AdminFormationsDashboard from "./pages/Dashboard/Dashboard";
+import ProfilCompte from "./pages/ProfilCompte/ProfilCompte";
 import { Contact } from "./pages/Contact/Contact";
 
 // import components
@@ -14,26 +15,46 @@ import { Navbar } from "./components/Navbar/Navbar";
 import { Footer } from "./components/Footer/Footer";
 
 function ProtectedAdminRoute({ children }) {
-  const isAdmin = localStorage.getItem("role") === "admin";
+  const role = localStorage.getItem("role");
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
-  if (!isLoggedIn || !isAdmin) {
+  if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
+function ProtectedUserRoute({ children }) {
+  const role = localStorage.getItem("role");
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // admin n'a pas accès au profil-compte
+  if (role !== "user") {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 }
 
 function GuestRoute({ children }) {
-  const isAdmin = localStorage.getItem("role") === "admin";
+  const role = localStorage.getItem("role");
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
-  if (isLoggedIn && isAdmin) {
+  if (isLoggedIn && role === "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (isLoggedIn) {
-    return <Navigate to="/" replace />;
+  if (isLoggedIn && role === "user") {
+    return <Navigate to="/profil-compte" replace />;
   }
 
   return children;
@@ -49,6 +70,15 @@ function App() {
         <Route path="/inscription-formations" element={<FormFormations />} />
         <Route path="/details-formations/:id" element={<DetailsFormations />} />
         <Route path="/contact" element={<Contact />} />
+
+        <Route
+          path="/profil-compte"
+          element={
+            <ProtectedUserRoute>
+              <ProfilCompte />
+            </ProtectedUserRoute>
+          }
+        />
 
         <Route
           path="/login"

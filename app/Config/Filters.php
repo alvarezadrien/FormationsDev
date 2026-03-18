@@ -14,6 +14,7 @@ use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AuthFilter;
 use App\Filters\AdminFilter;
+use App\Filters\UserFilter;
 
 class Filters extends BaseFilters
 {
@@ -29,6 +30,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'auth'          => AuthFilter::class,
         'admin'         => AdminFilter::class,
+        'user'          => UserFilter::class,
     ];
 
     public array $globals = [
@@ -47,8 +49,6 @@ class Filters extends BaseFilters
     public array $filters = [
         'auth' => [
             'before' => [
-                'profil',
-                'profil/*',
                 'me',
                 'logout',
             ],
@@ -57,6 +57,12 @@ class Filters extends BaseFilters
             'before' => [
                 'dashboard',
                 'dashboard/*',
+            ],
+        ],
+        'user' => [
+            'before' => [
+                'profil',
+                'profil/*',
             ],
         ],
     ];

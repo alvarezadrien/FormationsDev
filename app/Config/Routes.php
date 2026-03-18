@@ -20,7 +20,7 @@ $routes->get('me', 'Auth::me', ['filter' => 'auth']);
 // Pages protégées
 // =========================
 $routes->get('dashboard', 'Dashboard::index', ['filter' => 'admin']);
-$routes->get('profil', 'Profil::index', ['filter' => 'auth']);
+$routes->get('profil', 'Profil::index', ['filter' => 'user']);
 
 // =========================
 // Formations publiques
