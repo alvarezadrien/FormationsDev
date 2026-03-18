@@ -5,6 +5,8 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use App\Models\InscriptionFormationModel;
 use App\Models\FormationModel;
+use App\Models\FichePresenceModel;
+use App\Models\FichePresenceParticipantModel;
 
 class InscriptionFormation extends Controller
 {
@@ -100,6 +102,8 @@ class InscriptionFormation extends Controller
         try {
             $inscriptionModel = new InscriptionFormationModel();
             $formationModel = new FormationModel();
+            $ficheModel = new FichePresenceModel();
+            $ficheParticipantModel = new FichePresenceParticipantModel();
 
             $data = $this->request->getJSON(true);
 
@@ -200,6 +204,8 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
+            $inscriptionId = $inscriptionModel->getInsertID();
+
             $updated = $formationModel->update($payload['formation_id'], [
                 'nombre_participants' => $placesRestantes - 1,
             ]);
@@ -213,6 +219,26 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
+            // Ajouter automatiquement l'inscrit dans toutes les fiches existantes de cette formation
+            $fiches = $ficheModel
+                ->where('formation_id', $payload['formation_id'])
+                ->findAll();
+
+            foreach ($fiches as $fiche) {
+                $existsInFiche = $ficheParticipantModel
+                    ->where('fiche_presence_id', $fiche['id'])
+                    ->where('inscription_id', $inscriptionId)
+                    ->first();
+
+                if (!$existsInFiche) {
+                    $ficheParticipantModel->insert([
+                        'fiche_presence_id' => $fiche['id'],
+                        'inscription_id' => $inscriptionId,
+                        'present' => 0,
+                    ]);
+                }
+            }
+
             $db->transComplete();
 
             if ($db->transStatus() === false) {
@@ -222,7 +248,7 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
-            $inscription = $inscriptionModel->find($inserted);
+            $inscription = $inscriptionModel->find($inscriptionId);
             $formationUpdated = $formationModel->find($payload['formation_id']);
 
             return $this->response->setStatusCode(201)->setJSON([
