@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./FichePresenceFormateur.css";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -11,6 +11,11 @@ export function FichePresenceFormateur() {
   const [deletingId, setDeletingId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const [selectedFiche, setSelectedFiche] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const printRef = useRef(null);
 
   const [formData, setFormData] = useState({
     formation_id: "",
@@ -67,6 +72,33 @@ export function FichePresenceFormateur() {
       setError(err.message || "Une erreur est survenue");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFicheDetails = async (id) => {
+    try {
+      setLoadingDetails(true);
+      setError("");
+
+      const response = await fetch(`${API_BASE_URL}/fiches-presence/${id}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Impossible de charger la fiche");
+      }
+
+      setSelectedFiche(data);
+    } catch (err) {
+      setError(err.message || "Erreur lors du chargement de la fiche");
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -139,7 +171,11 @@ export function FichePresenceFormateur() {
 
       setMessage(data?.message || "Fiche créée avec succès");
       resetForm();
-      fetchMesFiches();
+      await fetchMesFiches();
+
+      if (data?.fiche_id) {
+        fetchFicheDetails(data.fiche_id);
+      }
     } catch (err) {
       setError(err.message || "Une erreur est survenue");
     } finally {
@@ -174,6 +210,11 @@ export function FichePresenceFormateur() {
       }
 
       setFiches((prev) => prev.filter((item) => item.id !== id));
+
+      if (selectedFiche?.fiche?.id === id) {
+        setSelectedFiche(null);
+      }
+
       setMessage(data?.message || "Fiche supprimée avec succès");
     } catch (err) {
       setError(err.message || "Une erreur est survenue");
@@ -181,6 +222,51 @@ export function FichePresenceFormateur() {
       setDeletingId(null);
     }
   };
+
+  const togglePresence = async (participantId, currentValue) => {
+    if (!selectedFiche?.fiche?.id) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/fiches-presence/${selectedFiche.fiche.id}/participants/${participantId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            present: !currentValue,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Impossible de modifier la présence");
+      }
+
+      setSelectedFiche((prev) => ({
+        ...prev,
+        participants: prev.participants.map((participant) =>
+          participant.id === participantId
+            ? { ...participant, present: currentValue ? 0 : 1 }
+            : participant
+        ),
+      }));
+    } catch (err) {
+      setError(err.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const participantsCount = useMemo(() => {
+    return selectedFiche?.participants?.length || 0;
+  }, [selectedFiche]);
 
   return (
     <div className="fiche-formateur">
@@ -255,7 +341,7 @@ export function FichePresenceFormateur() {
                 name="remarques"
                 value={formData.remarques}
                 onChange={handleChange}
-                placeholder="Observations, participants présents, notes..."
+                placeholder="Observations, notes..."
                 rows="4"
               />
             </div>
@@ -288,13 +374,22 @@ export function FichePresenceFormateur() {
                     <p>{fiche.nom_formation}</p>
                   </div>
 
-                  <button
-                    className="fiche-formateur__delete"
-                    onClick={() => handleDelete(fiche.id)}
-                    disabled={deletingId === fiche.id}
-                  >
-                    {deletingId === fiche.id ? "Suppression..." : "Supprimer"}
-                  </button>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button
+                      type="button"
+                      onClick={() => fetchFicheDetails(fiche.id)}
+                    >
+                      Voir
+                    </button>
+
+                    <button
+                      className="fiche-formateur__delete"
+                      onClick={() => handleDelete(fiche.id)}
+                      disabled={deletingId === fiche.id}
+                    >
+                      {deletingId === fiche.id ? "Suppression..." : "Supprimer"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="fiche-formateur__meta">
@@ -309,6 +404,80 @@ export function FichePresenceFormateur() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="fiche-formateur__block" ref={printRef}>
+        <h3 className="fiche-formateur__title">Détail de la fiche</h3>
+
+        {loadingDetails ? (
+          <div className="fiche-formateur__empty">Chargement de la fiche...</div>
+        ) : !selectedFiche ? (
+          <div className="fiche-formateur__empty">
+            Cliquez sur “Voir” pour afficher une fiche.
+          </div>
+        ) : (
+          <div className="fiche-detail">
+            <div className="fiche-detail__header">
+              <div>
+                <h4>{selectedFiche.fiche.titre_seance}</h4>
+                <p><strong>Formation :</strong> {selectedFiche.fiche.nom_formation}</p>
+                <p><strong>Lieu :</strong> {selectedFiche.fiche.lieu || "Non renseigné"}</p>
+                <p><strong>Date :</strong> {selectedFiche.fiche.date_presence}</p>
+                <p>
+                  <strong>Horaires :</strong> {selectedFiche.fiche.heure_debut} - {selectedFiche.fiche.heure_fin}
+                </p>
+                <p><strong>Remarques :</strong> {selectedFiche.fiche.remarques || "Aucune remarque"}</p>
+              </div>
+
+              <div className="fiche-detail__actions">
+                <button type="button" onClick={handlePrint}>
+                  Imprimer / Télécharger PDF
+                </button>
+              </div>
+            </div>
+
+            <div className="fiche-detail__count">
+              Participants inscrits : {participantsCount}
+            </div>
+
+            {selectedFiche.participants?.length === 0 ? (
+              <div className="fiche-formateur__empty">
+                Aucun inscrit pour cette formation.
+              </div>
+            ) : (
+              <table className="fiche-detail__table">
+                <thead>
+                  <tr>
+                    <th>Nom complet</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Présent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedFiche.participants.map((participant) => (
+                    <tr key={participant.id}>
+                      <td>
+                        {participant.prenom} {participant.nom}
+                      </td>
+                      <td>{participant.email || "Non renseigné"}</td>
+                      <td>{participant.telephone || "Non renseigné"}</td>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(participant.present)}
+                          onChange={() =>
+                            togglePresence(participant.id, Boolean(participant.present))
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

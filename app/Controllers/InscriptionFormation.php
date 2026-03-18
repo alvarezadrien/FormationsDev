@@ -59,8 +59,44 @@ class InscriptionFormation extends Controller
         }
     }
 
+    public function byFormation($formationId = null)
+    {
+        try {
+            $formationModel = new FormationModel();
+            $inscriptionModel = new InscriptionFormationModel();
+
+            $formation = $formationModel->find($formationId);
+
+            if (!$formation) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'error' => true,
+                    'message' => 'Formation introuvable',
+                ]);
+            }
+
+            $inscriptions = $inscriptionModel
+                ->where('formation_id', (int) $formationId)
+                ->orderBy('prenom', 'ASC')
+                ->orderBy('nom', 'ASC')
+                ->findAll();
+
+            return $this->response->setJSON([
+                'error' => false,
+                'formation' => $formation,
+                'inscriptions' => $inscriptions,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => true,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function create()
     {
+        $db = \Config\Database::connect();
+
         try {
             $inscriptionModel = new InscriptionFormationModel();
             $formationModel = new FormationModel();
@@ -112,23 +148,92 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
-            $inserted = $inscriptionModel->insert($payload);
+            $statut = strtolower(trim((string) ($formation['statut'] ?? 'actif')));
+            $placesRestantes = (int) ($formation['nombre_participants'] ?? 0);
+
+            if ($statut !== 'actif') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Cette formation est indisponible',
+                ]);
+            }
+
+            if ($placesRestantes <= 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Cette formation est complète',
+                ]);
+            }
+
+            $alreadyExists = $inscriptionModel
+                ->where('formation_id', $payload['formation_id'])
+                ->where('email', $payload['email'])
+                ->first();
+
+            if ($alreadyExists) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'error' => true,
+                    'message' => 'Cet email est déjà inscrit à cette formation',
+                ]);
+            }
+
+            $db->transStart();
+
+            $insertPayload = [
+                'nom' => $payload['nom'],
+                'prenom' => $payload['prenom'],
+                'email' => $payload['email'],
+                'telephone' => $payload['telephone'],
+                'formation_id' => $payload['formation_id'],
+                'message' => $payload['message'],
+                'date_inscription' => date('Y-m-d H:i:s'),
+            ];
+
+            $inserted = $inscriptionModel->insert($insertPayload);
 
             if (!$inserted) {
+                $db->transRollback();
+
                 return $this->response->setStatusCode(500)->setJSON([
                     'error' => true,
                     'message' => 'Impossible d’enregistrer l’inscription',
                 ]);
             }
 
+            $updated = $formationModel->update($payload['formation_id'], [
+                'nombre_participants' => $placesRestantes - 1,
+            ]);
+
+            if (!$updated) {
+                $db->transRollback();
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => true,
+                    'message' => 'Impossible de mettre à jour le nombre de places',
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => true,
+                    'message' => 'Erreur lors de l’enregistrement de l’inscription',
+                ]);
+            }
+
             $inscription = $inscriptionModel->find($inserted);
+            $formationUpdated = $formationModel->find($payload['formation_id']);
 
             return $this->response->setStatusCode(201)->setJSON([
                 'error' => false,
                 'message' => 'Inscription enregistrée avec succès',
                 'data' => $inscription,
+                'formation' => $formationUpdated,
             ]);
         } catch (\Throwable $e) {
+            $db->transRollback();
+
             return $this->response->setStatusCode(500)->setJSON([
                 'error' => true,
                 'message' => $e->getMessage(),
@@ -138,9 +243,13 @@ class InscriptionFormation extends Controller
 
     public function delete($id = null)
     {
+        $db = \Config\Database::connect();
+
         try {
-            $model = new InscriptionFormationModel();
-            $inscription = $model->find($id);
+            $inscriptionModel = new InscriptionFormationModel();
+            $formationModel = new FormationModel();
+
+            $inscription = $inscriptionModel->find($id);
 
             if (!$inscription) {
                 return $this->response->setStatusCode(404)->setJSON([
@@ -149,12 +258,35 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
-            $deleted = $model->delete($id);
+            $formation = $formationModel->find($inscription['formation_id']);
+
+            $db->transStart();
+
+            $deleted = $inscriptionModel->delete($id);
 
             if (!$deleted) {
+                $db->transRollback();
+
                 return $this->response->setStatusCode(500)->setJSON([
                     'error' => true,
                     'message' => 'Impossible de supprimer l’inscription',
+                ]);
+            }
+
+            if ($formation) {
+                $placesRestantes = (int) ($formation['nombre_participants'] ?? 0);
+
+                $formationModel->update($formation['id'], [
+                    'nombre_participants' => $placesRestantes + 1,
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => true,
+                    'message' => 'Erreur lors de la suppression de l’inscription',
                 ]);
             }
 
@@ -163,6 +295,8 @@ class InscriptionFormation extends Controller
                 'message' => 'Inscription supprimée avec succès',
             ]);
         } catch (\Throwable $e) {
+            $db->transRollback();
+
             return $this->response->setStatusCode(500)->setJSON([
                 'error' => true,
                 'message' => $e->getMessage(),

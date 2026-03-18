@@ -36,6 +36,7 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index', ['filter' => 'admin']);
 $routes->get('inscriptions-formations/(:num)', 'InscriptionFormation::show/$1', ['filter' => 'admin']);
+$routes->get('formations/(:num)/inscriptions', 'InscriptionFormation::byFormation/$1', ['filter' => 'auth']);
 $routes->post('inscriptions-formations', 'InscriptionFormation::create');
 $routes->delete('inscriptions-formations/(:num)', 'InscriptionFormation::delete/$1', ['filter' => 'admin']);
 
@@ -51,9 +52,11 @@ $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin
 // Fiches de présence
 // =========================
 $routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
+$routes->get('fiches-presence/(:num)', 'FichePresenceController::show/$1', ['filter' => 'auth']);
 $routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
 $routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
 $routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
+$routes->put('fiches-presence/(:num)/participants/(:num)', 'FichePresenceController::updateParticipantPresence/$1/$2', ['filter' => 'auth']);
 $routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
 
 // =========================

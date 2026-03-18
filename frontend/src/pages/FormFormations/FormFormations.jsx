@@ -59,6 +59,7 @@ export function FormFormations() {
           .map((formation) => ({
             id: formation.id,
             nom: formation.nom ?? "Formation sans nom",
+            nombre_participants: Number(formation.nombre_participants ?? 0),
           }));
 
         setFormations(formationsPubliques);
@@ -139,6 +140,17 @@ export function FormFormations() {
 
       setMessage("Votre demande d’inscription a bien été envoyée.");
       resetForm();
+
+      setFormations((prev) =>
+        prev.map((f) =>
+          f.id === Number(payload.formation_id)
+            ? {
+                ...f,
+                nombre_participants: Math.max(0, f.nombre_participants - 1),
+              }
+            : f
+        )
+      );
     } catch (err) {
       setErreur(err.message || "Erreur lors de l'envoi");
     } finally {
@@ -156,8 +168,7 @@ export function FormFormations() {
           </h2>
           <p className="training-form-subtitle">
             Complétez le formulaire ci-dessous pour envoyer votre demande
-            d’inscription. Notre équipe vous recontactera rapidement avec les
-            prochaines étapes.
+            d’inscription.
           </p>
         </div>
 
@@ -235,11 +246,14 @@ export function FormFormations() {
                     : "Sélectionner une formation"}
                 </option>
 
-                {formations.map((formation) => (
-                  <option key={formation.id} value={formation.id}>
-                    {formation.nom}
-                  </option>
-                ))}
+                {formations
+                  .filter((formation) => formation.nombre_participants > 0)
+                  .map((formation) => (
+                    <option key={formation.id} value={formation.id}>
+                      {formation.nom} ({formation.nombre_participants} place
+                      {formation.nombre_participants > 1 ? "s" : ""})
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -256,15 +270,11 @@ export function FormFormations() {
             </div>
 
             {message && (
-              <p style={{ color: "green", marginBottom: "1rem" }}>
-                {message}
-              </p>
+              <p style={{ color: "green", marginBottom: "1rem" }}>{message}</p>
             )}
 
             {erreur && (
-              <p style={{ color: "red", marginBottom: "1rem" }}>
-                {erreur}
-              </p>
+              <p style={{ color: "red", marginBottom: "1rem" }}>{erreur}</p>
             )}
 
             <div className="training-form-actions">
