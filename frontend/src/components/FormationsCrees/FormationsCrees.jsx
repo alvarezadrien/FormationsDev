@@ -102,9 +102,12 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
               formation.statut || "actif"
             }`;
 
-            const formateurs = formation.formateur
-              ? formation.formateur.split(",").map((nom) => nom.trim())
-              : [];
+            const nomFormateur =
+              formation.formateur_prenom || formation.formateur_nom
+                ? `${formation.formateur_prenom || ""} ${
+                    formation.formateur_nom || ""
+                  }`.trim()
+                : "Non renseigné";
 
             return (
               <article className="admin-card" key={formation.id}>
@@ -112,8 +115,11 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
 
                 <div className="admin-card__meta">
                   <p>
-                    <strong>Formateur(s) :</strong>{" "}
-                    {formateurs.join(", ") || "Non renseigné"}
+                    <strong>Formateur :</strong> {nomFormateur}
+                  </p>
+                  <p>
+                    <strong>Email formateur :</strong>{" "}
+                    {formation.formateur_email || "Non renseigné"}
                   </p>
                   <p>
                     <strong>Lieu :</strong> {formation.lieu || "Non renseigné"}

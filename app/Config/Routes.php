@@ -17,6 +17,7 @@ $routes->post('logout', 'Auth::logout', ['filter' => 'auth']);
 $routes->get('me', 'Auth::me', ['filter' => 'auth']);
 $routes->put('me', 'Auth::updateMe', ['filter' => 'auth']);
 $routes->post('formateurs', 'Auth::createFormateur', ['filter' => 'admin']);
+$routes->get('users/formateurs', 'Auth::getFormateurs', ['filter' => 'admin']);
 
 // =========================
 // Pages protégées
@@ -36,7 +37,6 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index', ['filter' => 'admin']);
 $routes->get('inscriptions-formations/(:num)', 'InscriptionFormation::show/$1', ['filter' => 'admin']);
-$routes->get('formations/(:num)/inscriptions', 'InscriptionFormation::byFormation/$1', ['filter' => 'auth']);
 $routes->post('inscriptions-formations', 'InscriptionFormation::create');
 $routes->delete('inscriptions-formations/(:num)', 'InscriptionFormation::delete/$1', ['filter' => 'admin']);
 
@@ -49,17 +49,6 @@ $routes->delete('formations/(:num)', 'Formation::delete/$1', ['filter' => 'admin
 $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin']);
 
 // =========================
-// Fiches de présence
-// =========================
-$routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
-$routes->get('fiches-presence/(:num)', 'FichePresenceController::show/$1', ['filter' => 'auth']);
-$routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
-$routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
-$routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
-$routes->put('fiches-presence/(:num)/participants/(:num)', 'FichePresenceController::updateParticipantPresence/$1/$2', ['filter' => 'auth']);
-$routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
-
-// =========================
 // Avis
 // =========================
 $routes->get('avis', 'AvisController::index');
@@ -68,6 +57,15 @@ $routes->get('avis/formation/(:num)', 'AvisController::avisByFormation/$1');
 $routes->get('avis/user/(:num)', 'AvisController::avisByUser/$1');
 $routes->get('avis/moyenne/formation/(:num)', 'AvisController::moyenneByFormation/$1');
 $routes->delete('avis/(:num)', 'AvisController::delete/$1');
+
+// =========================
+// Fiches de présence
+// =========================
+$routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
+$routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
+$routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
+$routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
+$routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
 
 // =========================
 // OPTIONS pour préflight CORS

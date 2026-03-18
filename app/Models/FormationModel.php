@@ -13,13 +13,15 @@ class FormationModel extends Model
 
     protected $allowedFields = [
         'nom',
-        'formateur',
+        'formateur_id',
         'lieu',
         'description',
         'nombre_participants',
         'statut',
         'date_debut',
-        'date_fin'
+        'date_fin',
+        'created_at',
+        'updated_at',
     ];
 
     protected $useTimestamps = false;

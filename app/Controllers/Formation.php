@@ -4,14 +4,26 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use App\Models\FormationModel;
+use App\Models\UserModel;
 
 class Formation extends Controller
 {
     public function index()
     {
         try {
-            $model = new FormationModel();
-            $formations = $model->findAll();
+            $db = \Config\Database::connect();
+
+            $formations = $db->table('formations')
+                ->select('
+                    formations.*,
+                    users.nom AS formateur_nom,
+                    users.prenom AS formateur_prenom,
+                    users.email AS formateur_email
+                ')
+                ->join('users', 'users.id = formations.formateur_id', 'left')
+                ->orderBy('formations.id', 'DESC')
+                ->get()
+                ->getResultArray();
 
             return $this->response->setJSON($formations);
         } catch (\Throwable $e) {
@@ -25,8 +37,19 @@ class Formation extends Controller
     public function show($id = null)
     {
         try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
+            $db = \Config\Database::connect();
+
+            $formation = $db->table('formations')
+                ->select('
+                    formations.*,
+                    users.nom AS formateur_nom,
+                    users.prenom AS formateur_prenom,
+                    users.email AS formateur_email
+                ')
+                ->join('users', 'users.id = formations.formateur_id', 'left')
+                ->where('formations.id', $id)
+                ->get()
+                ->getRowArray();
 
             if (!$formation) {
                 return $this->response->setStatusCode(404)->setJSON([
@@ -48,6 +71,7 @@ class Formation extends Controller
     {
         try {
             $model = new FormationModel();
+            $userModel = new UserModel();
             $data = $this->request->getJSON(true);
 
             if (!$data) {
@@ -59,7 +83,7 @@ class Formation extends Controller
 
             $payload = [
                 'nom' => trim($data['nom'] ?? ''),
-                'formateur' => trim($data['formateur'] ?? ''),
+                'formateur_id' => isset($data['formateur_id']) ? (int) $data['formateur_id'] : 0,
                 'lieu' => trim($data['lieu'] ?? ''),
                 'description' => trim($data['description'] ?? ''),
                 'nombre_participants' => isset($data['nombre_participants']) ? (int) $data['nombre_participants'] : 0,
@@ -70,7 +94,7 @@ class Formation extends Controller
 
             if (
                 $payload['nom'] === '' ||
-                $payload['formateur'] === '' ||
+                $payload['formateur_id'] <= 0 ||
                 $payload['lieu'] === '' ||
                 $payload['description'] === '' ||
                 $payload['date_debut'] === '' ||
@@ -79,6 +103,15 @@ class Formation extends Controller
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
                     'message' => 'Tous les champs sont requis'
+                ]);
+            }
+
+            $formateur = $userModel->find($payload['formateur_id']);
+
+            if (!$formateur || ($formateur['role'] ?? '') !== 'formateur') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Le formateur sélectionné est invalide'
                 ]);
             }
 
@@ -98,7 +131,19 @@ class Formation extends Controller
                 ]);
             }
 
-            $formation = $model->find($inserted);
+            $db = \Config\Database::connect();
+
+            $formation = $db->table('formations')
+                ->select('
+                    formations.*,
+                    users.nom AS formateur_nom,
+                    users.prenom AS formateur_prenom,
+                    users.email AS formateur_email
+                ')
+                ->join('users', 'users.id = formations.formateur_id', 'left')
+                ->where('formations.id', $inserted)
+                ->get()
+                ->getRowArray();
 
             return $this->response->setStatusCode(201)->setJSON([
                 'error' => false,
@@ -117,6 +162,7 @@ class Formation extends Controller
     {
         try {
             $model = new FormationModel();
+            $userModel = new UserModel();
             $formation = $model->find($id);
 
             if (!$formation) {
@@ -137,7 +183,9 @@ class Formation extends Controller
 
             $payload = [
                 'nom' => trim($data['nom'] ?? $formation['nom']),
-                'formateur' => trim($data['formateur'] ?? $formation['formateur']),
+                'formateur_id' => isset($data['formateur_id'])
+                    ? (int) $data['formateur_id']
+                    : (int) ($formation['formateur_id'] ?? 0),
                 'lieu' => trim($data['lieu'] ?? $formation['lieu']),
                 'description' => trim($data['description'] ?? $formation['description']),
                 'nombre_participants' => isset($data['nombre_participants'])
@@ -150,7 +198,7 @@ class Formation extends Controller
 
             if (
                 $payload['nom'] === '' ||
-                $payload['formateur'] === '' ||
+                $payload['formateur_id'] <= 0 ||
                 $payload['lieu'] === '' ||
                 $payload['description'] === '' ||
                 $payload['date_debut'] === '' ||
@@ -159,6 +207,15 @@ class Formation extends Controller
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
                     'message' => 'Tous les champs sont requis'
+                ]);
+            }
+
+            $formateur = $userModel->find($payload['formateur_id']);
+
+            if (!$formateur || ($formateur['role'] ?? '') !== 'formateur') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Le formateur sélectionné est invalide'
                 ]);
             }
 
@@ -178,7 +235,19 @@ class Formation extends Controller
                 ]);
             }
 
-            $formationUpdated = $model->find($id);
+            $db = \Config\Database::connect();
+
+            $formationUpdated = $db->table('formations')
+                ->select('
+                    formations.*,
+                    users.nom AS formateur_nom,
+                    users.prenom AS formateur_prenom,
+                    users.email AS formateur_email
+                ')
+                ->join('users', 'users.id = formations.formateur_id', 'left')
+                ->where('formations.id', $id)
+                ->get()
+                ->getRowArray();
 
             return $this->response->setJSON([
                 'error' => false,
@@ -230,8 +299,19 @@ class Formation extends Controller
     public function edit($id = null)
     {
         try {
-            $model = new FormationModel();
-            $formation = $model->find($id);
+            $db = \Config\Database::connect();
+
+            $formation = $db->table('formations')
+                ->select('
+                    formations.*,
+                    users.nom AS formateur_nom,
+                    users.prenom AS formateur_prenom,
+                    users.email AS formateur_email
+                ')
+                ->join('users', 'users.id = formations.formateur_id', 'left')
+                ->where('formations.id', $id)
+                ->get()
+                ->getRowArray();
 
             if (!$formation) {
                 return $this->response->setStatusCode(404)->setJSON([

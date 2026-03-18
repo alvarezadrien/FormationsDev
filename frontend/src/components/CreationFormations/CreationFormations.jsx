@@ -4,7 +4,7 @@ const API_URL = "http://localhost:8080";
 
 const initialForm = {
   nom: "",
-  formateur: "",
+  formateur_id: "",
   lieu: "",
   description: "",
   nombre_participants: 0,
@@ -19,6 +19,8 @@ export function CreationFormations({
   onCancelEdit,
 }) {
   const [formData, setFormData] = useState(initialForm);
+  const [formateurs, setFormateurs] = useState([]);
+  const [loadingFormateurs, setLoadingFormateurs] = useState(true);
   const [saving, setSaving] = useState(false);
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
@@ -29,10 +31,45 @@ export function CreationFormations({
   );
 
   useEffect(() => {
+    const fetchFormateurs = async () => {
+      try {
+        setLoadingFormateurs(true);
+        setErreur("");
+
+        const res = await fetch(`${API_URL}/users/formateurs`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(
+            data?.message || "Impossible de charger les formateurs"
+          );
+        }
+
+        setFormateurs(Array.isArray(data?.formateurs) ? data.formateurs : []);
+      } catch (err) {
+        setErreur(err.message || "Erreur lors du chargement des formateurs");
+      } finally {
+        setLoadingFormateurs(false);
+      }
+    };
+
+    fetchFormateurs();
+  }, []);
+
+  useEffect(() => {
     if (formationEnEdition) {
       setFormData({
         nom: formationEnEdition.nom || "",
-        formateur: formationEnEdition.formateur || "",
+        formateur_id: formationEnEdition.formateur_id
+          ? String(formationEnEdition.formateur_id)
+          : "",
         lieu: formationEnEdition.lieu || "",
         description: formationEnEdition.description || "",
         nombre_participants: formationEnEdition.nombre_participants ?? 0,
@@ -45,6 +82,7 @@ export function CreationFormations({
     } else {
       setFormData(initialForm);
       setErreur("");
+      setMessage("");
     }
   }, [formationEnEdition]);
 
@@ -70,6 +108,9 @@ export function CreationFormations({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setErreur("");
+    setMessage("");
+
     if (
       formData.date_debut &&
       formData.date_fin &&
@@ -79,10 +120,13 @@ export function CreationFormations({
       return;
     }
 
+    if (!formData.formateur_id) {
+      setErreur("Veuillez sélectionner un formateur.");
+      return;
+    }
+
     try {
       setSaving(true);
-      setErreur("");
-      setMessage("");
 
       const url = isEditing
         ? `${API_URL}/formations/${formationEnEdition.id}`
@@ -92,7 +136,7 @@ export function CreationFormations({
 
       const payload = {
         nom: formData.nom.trim(),
-        formateur: formData.formateur.trim(),
+        formateur_id: Number(formData.formateur_id),
         lieu: formData.lieu.trim(),
         description: formData.description.trim(),
         nombre_participants: Number(formData.nombre_participants),
@@ -143,8 +187,8 @@ export function CreationFormations({
       </h2>
 
       <p className="admin-panel__text">
-        Remplis le formulaire puis enregistre. Cette page est séparée de
-        l'accueil.
+        Remplis le formulaire puis enregistre. Le champ formateur récupère
+        automatiquement les utilisateurs ayant le rôle formateur.
       </p>
 
       <form className="admin-form" onSubmit={handleSubmit}>
@@ -165,19 +209,30 @@ export function CreationFormations({
         </div>
 
         <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="formateur">
-            Formateur(s)
+          <label className="admin-form__label" htmlFor="formateur_id">
+            Formateur
           </label>
-          <input
-            id="formateur"
-            className="admin-form__input"
-            type="text"
-            name="formateur"
-            value={formData.formateur}
+          <select
+            id="formateur_id"
+            className="admin-form__select"
+            name="formateur_id"
+            value={formData.formateur_id}
             onChange={handleChange}
-            placeholder="Ex: Marie Dupont, Jean Martin"
             required
-          />
+            disabled={loadingFormateurs}
+          >
+            <option value="">
+              {loadingFormateurs
+                ? "Chargement des formateurs..."
+                : "Sélectionner un formateur"}
+            </option>
+
+            {formateurs.map((formateur) => (
+              <option key={formateur.id} value={formateur.id}>
+                {formateur.prenom} {formateur.nom} - {formateur.email}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="admin-form__row">
@@ -290,7 +345,7 @@ export function CreationFormations({
           <button
             className="admin-btn admin-btn--primary"
             type="submit"
-            disabled={saving}
+            disabled={saving || loadingFormateurs}
           >
             {saving
               ? "Enregistrement..."

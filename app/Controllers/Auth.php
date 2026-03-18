@@ -402,6 +402,45 @@ class Auth extends Controller
         }
     }
 
+    public function getFormateurs()
+    {
+        try {
+            $session = session();
+            $model = new UserModel();
+
+            if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'error' => true,
+                    'message' => 'Non authentifié'
+                ]);
+            }
+
+            if ($session->get('role') !== 'admin') {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'error' => true,
+                    'message' => 'Accès interdit'
+                ]);
+            }
+
+            $formateurs = $model
+                ->select('id, nom, prenom, email, role')
+                ->where('role', 'formateur')
+                ->orderBy('prenom', 'ASC')
+                ->orderBy('nom', 'ASC')
+                ->findAll();
+
+            return $this->response->setJSON([
+                'error' => false,
+                'formateurs' => $formateurs
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function logout()
     {
         try {
