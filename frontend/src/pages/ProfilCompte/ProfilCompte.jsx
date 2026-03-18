@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import "./ProfilCompte.css";
 
+import { FormAvis } from "../../components/FormAvis/FormAvis";
+import { MesAvis } from "../../components/MesAvis/MesAvis";
+
 function ProfilCompte() {
   const [userData, setUserData] = useState({
     nom: "",
@@ -8,6 +11,9 @@ function ProfilCompte() {
     email: "",
     role: "user",
   });
+
+  const [activeSection, setActiveSection] = useState("infos");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -24,6 +30,11 @@ function ProfilCompte() {
       });
     }
   }, []);
+
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <section className="profile_page">
@@ -63,52 +74,182 @@ function ProfilCompte() {
                 {userData.role === "admin" ? "Compte admin" : "Compte actif"}
               </span>
             </div>
+
+            <div className="profile_nav_desktop">
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "infos" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("infos")}
+                type="button"
+              >
+                Informations
+              </button>
+
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "espace" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("espace")}
+                type="button"
+              >
+                Espace compte
+              </button>
+
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "avis" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("avis")}
+                type="button"
+              >
+                Votre avis
+              </button>
+
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "mes-avis" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("mes-avis")}
+                type="button"
+              >
+                Mes avis
+              </button>
+            </div>
           </aside>
 
           <div className="profile_content">
-            <div className="profile_info_block">
-              <h2 className="profile_section_title">Informations personnelles</h2>
+            <div className="profile_mobile_menu_box">
+              <button
+                className="profile_mobile_toggle"
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+              >
+                {mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu profil"}
+              </button>
 
-              <div className="profile_info_grid">
-                <div className="profile_info_card">
-                  <span className="profile_info_label">Nom</span>
-                  <span className="profile_info_value">
-                    {userData.nom || "Non renseigné"}
-                  </span>
+              {mobileMenuOpen && (
+                <div className="profile_mobile_menu">
+                  <button
+                    className={`profile_nav_button ${
+                      activeSection === "infos" ? "active" : ""
+                    }`}
+                    onClick={() => handleSectionChange("infos")}
+                    type="button"
+                  >
+                    Informations
+                  </button>
+
+                  <button
+                    className={`profile_nav_button ${
+                      activeSection === "espace" ? "active" : ""
+                    }`}
+                    onClick={() => handleSectionChange("espace")}
+                    type="button"
+                  >
+                    Espace compte
+                  </button>
+
+                  <button
+                    className={`profile_nav_button ${
+                      activeSection === "avis" ? "active" : ""
+                    }`}
+                    onClick={() => handleSectionChange("avis")}
+                    type="button"
+                  >
+                    Votre avis
+                  </button>
+
+                  <button
+                    className={`profile_nav_button ${
+                      activeSection === "mes-avis" ? "active" : ""
+                    }`}
+                    onClick={() => handleSectionChange("mes-avis")}
+                    type="button"
+                  >
+                    Mes avis
+                  </button>
                 </div>
+              )}
+            </div>
 
-                <div className="profile_info_card">
-                  <span className="profile_info_label">Prénom</span>
-                  <span className="profile_info_value">
-                    {userData.prenom || "Non renseigné"}
-                  </span>
-                </div>
+            {activeSection === "infos" && (
+              <div className="profile_info_block">
+                <h2 className="profile_section_title">
+                  Informations personnelles
+                </h2>
 
-                <div className="profile_info_card">
-                  <span className="profile_info_label">Email</span>
-                  <span className="profile_info_value">
-                    {userData.email || "Non renseigné"}
-                  </span>
-                </div>
+                <div className="profile_info_grid">
+                  <div className="profile_info_card">
+                    <span className="profile_info_label">Nom</span>
+                    <span className="profile_info_value">
+                      {userData.nom || "Non renseigné"}
+                    </span>
+                  </div>
 
-                <div className="profile_info_card">
-                  <span className="profile_info_label">Rôle</span>
-                  <span className="profile_info_value">
-                    {userData.role === "admin" ? "Administrateur" : "Utilisateur"}
-                  </span>
+                  <div className="profile_info_card">
+                    <span className="profile_info_label">Prénom</span>
+                    <span className="profile_info_value">
+                      {userData.prenom || "Non renseigné"}
+                    </span>
+                  </div>
+
+                  <div className="profile_info_card">
+                    <span className="profile_info_label">Email</span>
+                    <span className="profile_info_value">
+                      {userData.email || "Non renseigné"}
+                    </span>
+                  </div>
+
+                  <div className="profile_info_card">
+                    <span className="profile_info_label">Rôle</span>
+                    <span className="profile_info_value">
+                      {userData.role === "admin"
+                        ? "Administrateur"
+                        : "Utilisateur"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="profile_info_block">
-              <h2 className="profile_section_title">Espace compte</h2>
+            {activeSection === "espace" && (
+              <div className="profile_info_block">
+                <h2 className="profile_section_title">Espace compte</h2>
 
-              <p className="profile_description">
-                Votre espace personnel vous permet de consulter vos informations
-                de compte, gérer votre compte, déposer des avis et suivre votre
-                activité sur la plateforme.
-              </p>
-            </div>
+                <p className="profile_description">
+                  Votre espace personnel vous permet de consulter vos informations
+                  de compte, gérer votre compte, déposer des avis et suivre votre
+                  activité sur la plateforme.
+                </p>
+              </div>
+            )}
+
+            {activeSection === "avis" && (
+              <div className="profile_info_block">
+                <h2 className="profile_section_title">Votre avis</h2>
+
+                <p className="profile_description">
+                  Partagez votre expérience pour nous aider à améliorer nos
+                  formations.
+                </p>
+
+                <FormAvis />
+              </div>
+            )}
+
+            {activeSection === "mes-avis" && (
+              <div className="profile_info_block">
+                <h2 className="profile_section_title">Mes avis publiés</h2>
+
+                <p className="profile_description">
+                  Retrouvez ici tous les avis que vous avez déjà laissés sur les
+                  formations suivies.
+                </p>
+
+                <MesAvis />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,0 +1,130 @@
+.review_form_box {
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  margin-top: 1rem;
+}
+
+.review_form_header {
+  margin-bottom: 1.5rem;
+}
+
+.review_form_title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+}
+
+.review_form_subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.review_form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.review_field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.review_field label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.review_field select,
+.review_field textarea {
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.review_field select:focus,
+.review_field textarea:focus {
+  border-color: #4f46e5;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+}
+
+.review_field textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.review_feedback {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.review_feedback.success {
+  background: #ecfdf5;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.review_feedback.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.review_form_actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.review_submit_button {
+  padding: 0.9rem 1.4rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  color: white;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.review_submit_button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+}
+
+.review_submit_button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .review_form_box {
+    padding: 1.4rem;
+  }
+
+  .review_submit_button {
+    width: 100%;
+  }
+
+  .review_form_actions {
+    justify-content: stretch;
+  }
+}

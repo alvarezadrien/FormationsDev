@@ -45,6 +45,17 @@ $routes->delete('formations/(:num)', 'Formation::delete/$1', ['filter' => 'admin
 $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin']);
 
 // =========================
+// Avis
+// =========================
+
+$routes->get('avis', 'AvisController::index');
+$routes->post('avis', 'AvisController::create');
+$routes->get('avis/formation/(:num)', 'AvisController::avisByFormation/$1');
+$routes->get('avis/user/(:num)', 'AvisController::avisByUser/$1');
+$routes->get('avis/moyenne/formation/(:num)', 'AvisController::moyenneByFormation/$1');
+$routes->delete('avis/(:num)', 'AvisController::delete/$1');
+
+// =========================
 // OPTIONS pour préflight CORS
 // =========================
 $routes->options('(:any)', static function () {

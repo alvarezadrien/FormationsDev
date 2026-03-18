@@ -6,7 +6,7 @@ import userImg from "/images/utilisateur.png";
 
 import { FaUserShield } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
-import { HiOutlineLogout } from "react-icons/hi";
+import { HiOutlineLogout, HiOutlineUserCircle } from "react-icons/hi";
 import { IoChevronDown } from "react-icons/io5";
 
 export function Navbar() {
@@ -104,6 +104,17 @@ export function Navbar() {
         </div>
 
         <div className="navbar_actions">
+          {isConnected && !isAdmin && (
+            <Link
+              to="/profil-compte"
+              className="navbar_profile_link"
+              title="Profil compte"
+            >
+              <HiOutlineUserCircle size={20} />
+              <span>Profil compte</span>
+            </Link>
+          )}
+
           {isAdmin && (
             <Link
               to="/dashboard"
@@ -117,7 +128,11 @@ export function Navbar() {
 
           {!isConnected ? (
             <Link to="/login" className="navbar_login_link" title="Connexion">
-              <img src={userImg} alt="Utilisateur" className="navbar_login_avatar" />
+              <img
+                src={userImg}
+                alt="Utilisateur"
+                className="navbar_login_avatar"
+              />
               <span>Connexion</span>
             </Link>
           ) : (
@@ -176,7 +191,10 @@ export function Navbar() {
                         <strong>
                           {isAdmin
                             ? "Compte administrateur"
-                            : `${currentUser?.prenom || ""} ${currentUser?.nom || ""}`.trim() || "Compte connecté"}
+                            : `${
+                                currentUser?.prenom || ""
+                              } ${currentUser?.nom || ""}`.trim() ||
+                              "Compte connecté"}
                         </strong>
                         <span>
                           {isAdmin
@@ -188,6 +206,20 @@ export function Navbar() {
                   </div>
 
                   <div className="navbar_dropdown_actions">
+                    {isAdmin && (
+                      <button
+                        className="navbar_dropdown_item"
+                        type="button"
+                        onClick={() => {
+                          navigate("/dashboard");
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        <MdDashboard size={18} />
+                        <span>Dashboard admin</span>
+                      </button>
+                    )}
+
                     <button
                       className="navbar_dropdown_item navbar_logout_item"
                       type="button"

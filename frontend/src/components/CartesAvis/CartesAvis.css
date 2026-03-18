@@ -1,50 +1,85 @@
 .cartes-avis {
-  padding: 40px 20px;
-  background: #f8f9fb;
+  padding: 4rem 1.5rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
 }
 
 .cartes-avis__title {
   text-align: center;
-  font-size: 2rem;
-  margin-bottom: 30px;
-  color: #222;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2.2rem;
 }
 
 .cartes-avis__grid {
+  max-width: 1200px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 .avis-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 22px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  transition: all 0.25s ease;
 }
 
 .avis-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.1);
+}
+
+.avis-card__top {
+  margin-bottom: 0.85rem;
 }
 
 .avis-card__nom {
   font-size: 1.1rem;
-  margin-bottom: 10px;
-  color: #111;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.3rem;
+}
+
+.avis-card__formation {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0;
 }
 
 .avis-card__stars {
-  color: #f5b301;
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-  font-size: 1rem;
+  gap: 0.25rem;
+  color: #f59e0b;
+  margin-bottom: 1rem;
 }
 
 .avis-card__commentaire {
-  color: #555;
-  line-height: 1.5;
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.cartes-avis__state {
+  text-align: center;
+  color: #475569;
+  font-size: 1rem;
+}
+
+.cartes-avis__state--error {
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .cartes-avis {
+    padding: 3rem 1rem;
+  }
+
+  .cartes-avis__title {
+    font-size: 1.9rem;
+  }
 }
