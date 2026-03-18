@@ -2,6 +2,7 @@ import './Home.css'
 import { CartesFormations } from '../../components/CartesFormations/CartesFormations'
 import { HeaderHome } from '../../components/HeaderHome/HeaderHome'
 import { CartesAvis } from '../../components/CartesAvis/CartesAvis'
+import { Faq } from "../../components/Faq/Faq"
 
 function Home() {
   return (
@@ -18,6 +19,8 @@ function Home() {
       </section>
 
       <CartesAvis/>
+
+      <Faq/>
     </>
   )
 }
