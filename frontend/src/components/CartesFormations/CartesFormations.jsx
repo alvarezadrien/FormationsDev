@@ -105,7 +105,6 @@ export function CartesFormations() {
         formation.nom_formation,
         formation.lieu,
         formation.description,
-        formation.langage,
         formation.date_debut,
         formation.date_fin,
         formation.statut,
@@ -194,14 +193,6 @@ export function CartesFormations() {
                       {formation.lieu || "Non renseigné"}
                     </span>
                   </div>
-
-                  <div className="meta_item">
-                    <span className="meta_label">Langage</span>
-                    <span className="meta_value">
-                      {formation.langage || "Non renseigné"}
-                    </span>
-                  </div>
-
                   <div className="meta_row">
                     <div className="meta_item small">
                       <span className="meta_label">Début</span>
