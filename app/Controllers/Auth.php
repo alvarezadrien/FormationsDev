@@ -296,6 +296,112 @@ class Auth extends Controller
         }
     }
 
+    public function createFormateur()
+    {
+        try {
+            $session = session();
+            $model = new UserModel();
+
+            if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'error' => true,
+                    'message' => 'Non authentifié'
+                ]);
+            }
+
+            if ($session->get('role') !== 'admin') {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'error' => true,
+                    'message' => 'Accès interdit'
+                ]);
+            }
+
+            $data = $this->request->getJSON(true);
+
+            if (!$data) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'error' => true,
+                    'message' => 'Données JSON invalides ou absentes'
+                ]);
+            }
+
+            $nom = trim($data['nom'] ?? '');
+            $prenom = trim($data['prenom'] ?? '');
+            $email = trim($data['email'] ?? '');
+            $password = trim($data['password'] ?? '');
+
+            if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Tous les champs sont obligatoires'
+                ]);
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Adresse email invalide'
+                ]);
+            }
+
+            if (strlen($password) < 6) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Le mot de passe doit contenir au moins 6 caractères'
+                ]);
+            }
+
+            $existingUser = $model->where('email', $email)->first();
+
+            if ($existingUser) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'error' => true,
+                    'message' => 'Cet email est déjà utilisé'
+                ]);
+            }
+
+            $now = date('Y-m-d H:i:s');
+
+            $payload = [
+                'nom'        => $nom,
+                'prenom'     => $prenom,
+                'email'      => $email,
+                'password'   => password_hash($password, PASSWORD_DEFAULT),
+                'role'       => 'formateur',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            $inserted = $model->insert($payload);
+
+            if (!$inserted) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => true,
+                    'message' => 'Impossible de créer le compte formateur'
+                ]);
+            }
+
+            $user = $model->find($inserted);
+
+            return $this->response->setStatusCode(201)->setJSON([
+                'error'   => false,
+                'message' => 'Compte formateur créé avec succès',
+                'user'    => [
+                    'id'     => $user['id'],
+                    'nom'    => $user['nom'],
+                    'prenom' => $user['prenom'],
+                    'email'  => $user['email'],
+                    'role'   => $user['role'],
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function logout()
     {
         try {

@@ -6,7 +6,7 @@ use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Filters\FilterInterface;
 
-class AuthFilter implements FilterInterface
+class FormateurFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
@@ -21,11 +21,19 @@ class AuthFilter implements FilterInterface
                 ]);
         }
 
+        if ($session->get('role') !== 'formateur') {
+            return service('response')
+                ->setStatusCode(403)
+                ->setJSON([
+                    'error'   => true,
+                    'message' => 'Accès réservé aux formateurs'
+                ]);
+        }
+
         return null;
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // rien
     }
 }

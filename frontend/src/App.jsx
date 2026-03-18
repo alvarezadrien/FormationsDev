@@ -8,6 +8,7 @@ import { DetailsFormations } from "./pages/DetailsFormations/DetailsFormations";
 import LoginRegister from "./pages/Login/Login";
 import AdminFormationsDashboard from "./pages/Dashboard/Dashboard";
 import ProfilCompte from "./pages/ProfilCompte/ProfilCompte";
+import ProfilFormateurPage from "./pages/ProfilFormateurPage/ProfilFormateurPage";
 import { Contact } from "./pages/Contact/Contact";
 
 // import components
@@ -23,6 +24,10 @@ function ProtectedAdminRoute({ children }) {
   }
 
   if (role !== "admin") {
+    if (role === "formateur") {
+      return <Navigate to="/profil-formateur" replace />;
+    }
+
     return <Navigate to="/" replace />;
   }
 
@@ -37,9 +42,39 @@ function ProtectedUserRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // admin n'a pas accès au profil-compte
   if (role !== "user") {
-    return <Navigate to="/dashboard" replace />;
+    if (role === "admin") {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    if (role === "formateur") {
+      return <Navigate to="/profil-formateur" replace />;
+    }
+
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
+function ProtectedFormateurRoute({ children }) {
+  const role = localStorage.getItem("role");
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== "formateur") {
+    if (role === "admin") {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    if (role === "user") {
+      return <Navigate to="/profil-compte" replace />;
+    }
+
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -55,6 +90,10 @@ function GuestRoute({ children }) {
 
   if (isLoggedIn && role === "user") {
     return <Navigate to="/profil-compte" replace />;
+  }
+
+  if (isLoggedIn && role === "formateur") {
+    return <Navigate to="/profil-formateur" replace />;
   }
 
   return children;
@@ -77,6 +116,15 @@ function App() {
             <ProtectedUserRoute>
               <ProfilCompte />
             </ProtectedUserRoute>
+          }
+        />
+
+        <Route
+          path="/profil-formateur"
+          element={
+            <ProtectedFormateurRoute>
+              <ProfilFormateurPage />
+            </ProtectedFormateurRoute>
           }
         />
 

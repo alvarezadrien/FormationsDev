@@ -16,12 +16,14 @@ $routes->post('register', 'Auth::register');
 $routes->post('logout', 'Auth::logout', ['filter' => 'auth']);
 $routes->get('me', 'Auth::me', ['filter' => 'auth']);
 $routes->put('me', 'Auth::updateMe', ['filter' => 'auth']);
+$routes->post('formateurs', 'Auth::createFormateur', ['filter' => 'admin']);
 
 // =========================
 // Pages protégées
 // =========================
 $routes->get('dashboard', 'Dashboard::index', ['filter' => 'admin']);
 $routes->get('profil', 'Profil::index', ['filter' => 'user']);
+$routes->get('profil-formateur', 'ProfilFormateur::index', ['filter' => 'formateur']);
 
 // =========================
 // Formations publiques

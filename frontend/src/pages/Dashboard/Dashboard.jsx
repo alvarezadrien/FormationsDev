@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import "./Dashboard.css";
 
-// import components
 import { CreationFormations } from "../../components/CreationFormations/CreationFormations";
 import { FormationsCrees } from "../../components/FormationsCrees/FormationsCrees";
 import { FormActif } from "../../components/FormActif/FormActif";
 import { AvisAdmin } from "../../components/AvisAdmin/AvisAdmin";
+import { CreationCompteFormateur } from "../../components/CreationCompteFormateur/CreationCompteFormateur";
 
 export default function AdminFormationsPage() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
@@ -24,8 +24,7 @@ export default function AdminFormationsPage() {
       <div className="admin-dashboard__header">
         <h1 className="admin-dashboard__title">Dashboard Admin Formations</h1>
         <p className="admin-dashboard__subtitle">
-          Crée, modifie et supprime les formations, puis consulte les
-          inscriptions envoyées et les avis laissés par les utilisateurs.
+          Crée, modifie et supprime les formations, gère les avis et crée des comptes formateurs.
         </p>
       </div>
 
@@ -40,6 +39,8 @@ export default function AdminFormationsPage() {
         />
 
         <div className="admin-dashboard__content">
+          <CreationCompteFormateur />
+
           <FormationsCrees
             refreshKey={refreshKey}
             onEdit={(formation) => {
@@ -56,7 +57,7 @@ export default function AdminFormationsPage() {
           />
 
           <FormActif />
-
+          
           <AvisAdmin />
         </div>
       </div>

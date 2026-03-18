@@ -74,10 +74,7 @@ export function MesDonnees() {
       return;
     }
 
-    if (
-      formData.password.trim() !== "" &&
-      formData.password !== formData.confirmPassword
-    ) {
+    if (formData.password.trim() !== "" && formData.password !== formData.confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
       return;
     }

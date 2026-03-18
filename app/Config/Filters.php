@@ -15,6 +15,7 @@ use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AuthFilter;
 use App\Filters\AdminFilter;
 use App\Filters\UserFilter;
+use App\Filters\FormateurFilter;
 
 class Filters extends BaseFilters
 {
@@ -31,12 +32,12 @@ class Filters extends BaseFilters
         'auth'          => AuthFilter::class,
         'admin'         => AdminFilter::class,
         'user'          => UserFilter::class,
+        'formateur'     => FormateurFilter::class,
     ];
 
     public array $globals = [
         'before' => [
             'cors',
-            // 'csrf',
         ],
         'after' => [
             'cors',
@@ -63,6 +64,14 @@ class Filters extends BaseFilters
             'before' => [
                 'profil',
                 'profil/*',
+            ],
+        ],
+        'formateur' => [
+            'before' => [
+                'profil-formateur',
+                'profil-formateur/*',
+                'espace-formateur',
+                'espace-formateur/*',
             ],
         ],
     ];
