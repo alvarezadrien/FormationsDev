@@ -15,7 +15,7 @@ class Auth extends Controller
 
             if (!$data) {
                 return $this->response->setStatusCode(400)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Données JSON invalides ou absentes'
                 ]);
             }
@@ -27,14 +27,14 @@ class Auth extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Tous les champs sont requis'
                 ]);
             }
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Adresse email invalide'
                 ]);
             }
@@ -43,7 +43,7 @@ class Auth extends Controller
 
             if ($existingUser) {
                 return $this->response->setStatusCode(409)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Cet email est déjà utilisé'
                 ]);
             }
@@ -51,11 +51,11 @@ class Auth extends Controller
             $now = date('Y-m-d H:i:s');
 
             $payload = [
-                'nom' => $nom,
-                'prenom' => $prenom,
-                'email' => $email,
-                'password' => password_hash($password, PASSWORD_DEFAULT),
-                'role' => 'user',
+                'nom'        => $nom,
+                'prenom'     => $prenom,
+                'email'      => $email,
+                'password'   => password_hash($password, PASSWORD_DEFAULT),
+                'role'       => 'user',
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -64,7 +64,7 @@ class Auth extends Controller
 
             if (!$inserted) {
                 return $this->response->setStatusCode(500)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Impossible de créer le compte'
                 ]);
             }
@@ -72,19 +72,19 @@ class Auth extends Controller
             $user = $model->find($inserted);
 
             return $this->response->setStatusCode(201)->setJSON([
-                'error' => false,
+                'error'   => false,
                 'message' => 'Compte créé avec succès',
-                'user' => [
-                    'id' => $user['id'],
-                    'nom' => $user['nom'],
+                'user'    => [
+                    'id'     => $user['id'],
+                    'nom'    => $user['nom'],
                     'prenom' => $user['prenom'],
-                    'email' => $user['email'],
-                    'role' => $user['role'],
+                    'email'  => $user['email'],
+                    'role'   => $user['role'],
                 ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }
@@ -99,7 +99,7 @@ class Auth extends Controller
 
             if (!$data) {
                 return $this->response->setStatusCode(400)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Données JSON invalides ou absentes'
                 ]);
             }
@@ -109,7 +109,7 @@ class Auth extends Controller
 
             if ($email === '' || $password === '') {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Email et mot de passe requis'
                 ]);
             }
@@ -118,41 +118,41 @@ class Auth extends Controller
 
             if (!$user) {
                 return $this->response->setStatusCode(401)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Identifiants invalides'
                 ]);
             }
 
             if (empty($user['password']) || !password_verify($password, $user['password'])) {
                 return $this->response->setStatusCode(401)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Identifiants invalides'
                 ]);
             }
 
             $session->set([
-                'user_id' => $user['id'],
-                'nom' => $user['nom'],
-                'prenom' => $user['prenom'],
-                'email' => $user['email'],
-                'role' => $user['role'],
-                'isLoggedIn' => true
+                'user_id'    => $user['id'],
+                'nom'        => $user['nom'],
+                'prenom'     => $user['prenom'],
+                'email'      => $user['email'],
+                'role'       => $user['role'],
+                'isLoggedIn' => true,
             ]);
 
             return $this->response->setJSON([
-                'error' => false,
+                'error'   => false,
                 'message' => 'Connexion réussie',
-                'user' => [
-                    'id' => $user['id'],
-                    'nom' => $user['nom'],
+                'user'    => [
+                    'id'     => $user['id'],
+                    'nom'    => $user['nom'],
                     'prenom' => $user['prenom'],
-                    'email' => $user['email'],
-                    'role' => $user['role'],
+                    'email'  => $user['email'],
+                    'role'   => $user['role'],
                 ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }
@@ -163,26 +163,26 @@ class Auth extends Controller
         try {
             $session = session();
 
-            if (!$session->get('isLoggedIn')) {
+            if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
                 return $this->response->setStatusCode(401)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Non authentifié'
                 ]);
             }
 
             return $this->response->setJSON([
                 'error' => false,
-                'user' => [
-                    'id' => $session->get('user_id'),
-                    'nom' => $session->get('nom'),
+                'user'  => [
+                    'id'     => $session->get('user_id'),
+                    'nom'    => $session->get('nom'),
                     'prenom' => $session->get('prenom'),
-                    'email' => $session->get('email'),
-                    'role' => $session->get('role'),
+                    'email'  => $session->get('email'),
+                    'role'   => $session->get('role'),
                 ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }
@@ -192,15 +192,23 @@ class Auth extends Controller
     {
         try {
             $session = session();
+
+            if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'error'   => true,
+                    'message' => 'Non authentifié'
+                ]);
+            }
+
             $session->destroy();
 
             return $this->response->setJSON([
-                'error' => false,
+                'error'   => false,
                 'message' => 'Déconnexion réussie'
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }
