@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./CartesFormations.css";
 
 export function CartesFormations() {
@@ -9,6 +9,12 @@ export function CartesFormations() {
 
   const API_URL = "http://localhost:8080";
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchTerm = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return (params.get("search") || "").trim().toLowerCase();
+  }, [location.search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -50,6 +56,7 @@ export function CartesFormations() {
           nom_formation: f.nom ?? "Formation sans nom",
           lieu: f.lieu ?? "",
           description: f.description ?? "",
+          langage: f.langage ?? "",
           nombre_participants: Number(f.nombre_participants ?? 0),
           statut: String(f.statut ?? "actif").toLowerCase(),
           date_debut: f.date_debut ?? "",
@@ -88,6 +95,30 @@ export function CartesFormations() {
     });
   };
 
+  const formationsFiltrees = useMemo(() => {
+    if (!searchTerm) {
+      return formations;
+    }
+
+    return formations.filter((formation) => {
+      const searchableText = [
+        formation.nom_formation,
+        formation.lieu,
+        formation.description,
+        formation.langage,
+        formation.date_debut,
+        formation.date_fin,
+        formation.statut,
+        formatDate(formation.date_debut),
+        formatDate(formation.date_fin),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(searchTerm);
+    });
+  }, [formations, searchTerm]);
+
   const handleInscription = (formationId) => {
     navigate(`/inscription-formations?formation=${formationId}`);
   };
@@ -116,18 +147,19 @@ export function CartesFormations() {
           Choisissez la formation qui vous correspond
         </h2>
         <p className="texte_formations">
-          Des formations modernes, accessibles et conçues pour vous aider à
-          évoluer rapidement.
+          {searchTerm
+            ? `Résultats pour : "${searchTerm}"`
+            : "Des formations modernes, accessibles et conçues pour vous aider à évoluer rapidement."}
         </p>
       </div>
 
       <div className="container_cartes_formations">
-        {formations.length === 0 ? (
+        {formationsFiltrees.length === 0 ? (
           <p className="etat_message">
-            Aucune formation disponible pour le moment.
+            Aucune formation ne correspond à votre recherche.
           </p>
         ) : (
-          formations.map((formation) => {
+          formationsFiltrees.map((formation) => {
             const inscriptionActive =
               formation.statut === "actif" &&
               formation.nombre_participants > 0;
@@ -160,6 +192,13 @@ export function CartesFormations() {
                     <span className="meta_label">Lieu</span>
                     <span className="meta_value">
                       {formation.lieu || "Non renseigné"}
+                    </span>
+                  </div>
+
+                  <div className="meta_item">
+                    <span className="meta_label">Langage</span>
+                    <span className="meta_value">
+                      {formation.langage || "Non renseigné"}
                     </span>
                   </div>
 

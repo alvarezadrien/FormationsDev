@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
 import userImg from "/images/utilisateur.png";
@@ -7,16 +7,20 @@ import userImg from "/images/utilisateur.png";
 import { FaUserShield } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import { HiOutlineLogout, HiOutlineUserCircle } from "react-icons/hi";
-import { IoChevronDown } from "react-icons/io5";
+import { IoChevronDown, IoSearch, IoClose } from "react-icons/io5";
 
 export function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const API_URL = "http://localhost:8080";
 
@@ -47,9 +51,29 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const currentSearch = params.get("search") || "";
+    setSearchTerm(currentSearch);
+
+    if (currentSearch.trim()) {
+      setSearchOpen(true);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target) &&
+        !event.target.closest(".navbar_search_toggle")
+      ) {
+        if (!searchTerm.trim()) {
+          setSearchOpen(false);
+        }
       }
     };
 
@@ -58,7 +82,7 @@ export function Navbar() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [searchTerm]);
 
   const handleLogout = async () => {
     try {
@@ -81,6 +105,31 @@ export function Navbar() {
       window.dispatchEvent(new Event("auth-changed"));
       navigate("/login", { replace: true });
     }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+
+    const keyword = searchTerm.trim();
+
+    if (!keyword) {
+      navigate("/", { replace: false });
+      return;
+    }
+
+    navigate(`/?search=${encodeURIComponent(keyword)}#formations`, {
+      replace: false,
+    });
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    navigate("/", { replace: false });
+    setSearchOpen(false);
+  };
+
+  const toggleSearch = () => {
+    setSearchOpen((prev) => !prev);
   };
 
   return (
@@ -108,6 +157,16 @@ export function Navbar() {
         </div>
 
         <div className="navbar_actions">
+          <button
+            type="button"
+            className={`navbar_search_toggle ${searchOpen ? "active" : ""}`}
+            onClick={toggleSearch}
+            title="Rechercher une formation"
+            aria-label="Rechercher une formation"
+          >
+            <IoSearch size={20} />
+          </button>
+
           {isConnected && !isAdmin && (
             <Link
               to="/profil-compte"
@@ -239,6 +298,40 @@ export function Navbar() {
           )}
         </div>
       </nav>
+
+      {searchOpen && (
+        <div className="navbar_search_panel" ref={searchRef}>
+          <form className="navbar_search_form" onSubmit={handleSearchSubmit}>
+            <div className="navbar_search_box">
+              <IoSearch className="navbar_search_icon" size={18} />
+
+              <input
+                type="text"
+                className="navbar_search_input"
+                placeholder="Rechercher une formation, un langage, un lieu, une date..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+
+              {searchTerm.trim() && (
+                <button
+                  type="button"
+                  className="navbar_clear_button"
+                  onClick={handleClearSearch}
+                  title="Effacer la recherche"
+                  aria-label="Effacer la recherche"
+                >
+                  <IoClose size={18} />
+                </button>
+              )}
+
+              <button type="submit" className="navbar_search_button">
+                Rechercher
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </header>
   );
 }
