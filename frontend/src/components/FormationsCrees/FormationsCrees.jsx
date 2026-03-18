@@ -1,15 +1,93 @@
-export function FormationsCrees({
-  loading,
-  formations,
-  handleEdit,
-  handleDelete,
-}) {
+import { useEffect, useState } from "react";
+
+const API_URL = "http://localhost:8080";
+
+export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
+  const [formations, setFormations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erreur, setErreur] = useState("");
+  const [message, setMessage] = useState("");
+
+  const fetchFormations = async () => {
+    try {
+      setLoading(true);
+      setErreur("");
+
+      const res = await fetch(`${API_URL}/formations`, {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || "Erreur lors du chargement des formations"
+        );
+      }
+
+      setFormations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setErreur(err.message || "Erreur serveur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFormations();
+  }, [refreshKey]);
+
+  const handleDelete = async (id) => {
+    const confirmation = window.confirm(
+      "Voulez-vous vraiment supprimer cette formation ?"
+    );
+
+    if (!confirmation) return;
+
+    try {
+      setErreur("");
+      setMessage("");
+
+      const res = await fetch(`${API_URL}/formations/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || "Impossible de supprimer la formation"
+        );
+      }
+
+      setMessage("La formation a bien été supprimée.");
+
+      if (onDeleted) {
+        onDeleted(id);
+      }
+
+      await fetchFormations();
+    } catch (err) {
+      setErreur(err.message || "Erreur lors de la suppression");
+    }
+  };
+
   return (
     <section className="admin-list">
       <h2 className="admin-list__title">Liste des formations</h2>
       <p className="admin-list__text">
-        Clique sur une carte pour modifier ou supprimer une formation existante.
+        Clique sur une carte pour modifier ou supprimer une formation
+        existante.
       </p>
+
+      {message && (
+        <div className="admin-feedback admin-feedback--success">{message}</div>
+      )}
+
+      {erreur && (
+        <div className="admin-feedback admin-feedback--error">{erreur}</div>
+      )}
 
       {loading ? (
         <div className="admin-loading">Chargement des formations...</div>
@@ -68,7 +146,7 @@ export function FormationsCrees({
                   <button
                     className="admin-btn admin-btn--edit"
                     type="button"
-                    onClick={() => handleEdit(formation)}
+                    onClick={() => onEdit && onEdit(formation)}
                   >
                     Modifier
                   </button>

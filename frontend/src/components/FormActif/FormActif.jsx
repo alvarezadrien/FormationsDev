@@ -1,15 +1,86 @@
-export function FormActif({
-  messageInscriptions,
-  loadingInscriptions,
-  inscriptions,
-  handleDeleteInscription,
-}) {
+import { useEffect, useState } from "react";
+
+const API_URL = "http://localhost:8080";
+
+export function FormActif() {
+  const [inscriptions, setInscriptions] = useState([]);
+  const [loadingInscriptions, setLoadingInscriptions] = useState(true);
+  const [messageInscriptions, setMessageInscriptions] = useState("");
+  const [erreur, setErreur] = useState("");
+
+  const fetchInscriptions = async () => {
+    try {
+      setLoadingInscriptions(true);
+      setErreur("");
+
+      const res = await fetch(`${API_URL}/inscriptions-formations`, {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || "Erreur lors du chargement des inscriptions"
+        );
+      }
+
+      setInscriptions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setErreur(err.message || "Erreur serveur");
+    } finally {
+      setLoadingInscriptions(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInscriptions();
+  }, []);
+
+  const handleDeleteInscription = async (id) => {
+    const confirmation = window.confirm(
+      "Voulez-vous vraiment supprimer cette inscription ?"
+    );
+    if (!confirmation) return;
+
+    try {
+      setErreur("");
+      setMessageInscriptions("");
+
+      const res = await fetch(`${API_URL}/inscriptions-formations/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || "Impossible de supprimer l'inscription"
+        );
+      }
+
+      setMessageInscriptions("L'inscription a bien été supprimée.");
+      await fetchInscriptions();
+    } catch (err) {
+      setErreur(
+        err.message || "Erreur lors de la suppression de l'inscription"
+      );
+    }
+  };
+
   return (
     <section className="admin-list admin-list--inscriptions">
       <h2 className="admin-list__title">Inscriptions reçues</h2>
       <p className="admin-list__text">
         Consulte les coordonnées des personnes inscrites et la formation choisie.
       </p>
+
+      {erreur && (
+        <div className="admin-feedback admin-feedback--error">
+          {erreur}
+        </div>
+      )}
 
       {messageInscriptions && (
         <div className="admin-feedback admin-feedback--success">

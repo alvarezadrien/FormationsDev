@@ -1,13 +1,141 @@
+import { useEffect, useMemo, useState } from "react";
+
+const API_URL = "http://localhost:8080";
+
+const initialForm = {
+  nom: "",
+  formateur: "",
+  lieu: "",
+  description: "",
+  nombre_participants: 0,
+  statut: "actif",
+  date_debut: "",
+  date_fin: "",
+};
+
 export function CreationFormations({
-  isEditing,
-  formData,
-  handleChange,
-  handleSubmit,
-  message,
-  erreur,
-  saving,
-  resetForm,
+  formationEnEdition,
+  onSaved,
+  onCancelEdit,
 }) {
+  const [formData, setFormData] = useState(initialForm);
+  const [saving, setSaving] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [message, setMessage] = useState("");
+
+  const isEditing = useMemo(
+    () => formationEnEdition !== null,
+    [formationEnEdition]
+  );
+
+  useEffect(() => {
+    if (formationEnEdition) {
+      setFormData({
+        nom: formationEnEdition.nom || "",
+        formateur: formationEnEdition.formateur || "",
+        lieu: formationEnEdition.lieu || "",
+        description: formationEnEdition.description || "",
+        nombre_participants: formationEnEdition.nombre_participants ?? 0,
+        statut: formationEnEdition.statut ?? "actif",
+        date_debut: formationEnEdition.date_debut || "",
+        date_fin: formationEnEdition.date_fin || "",
+      });
+      setErreur("");
+      setMessage("");
+    } else {
+      setFormData(initialForm);
+      setErreur("");
+    }
+  }, [formationEnEdition]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "nombre_participants" ? Number(value) : value,
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData(initialForm);
+    setErreur("");
+    setMessage("");
+
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (
+      formData.date_debut &&
+      formData.date_fin &&
+      formData.date_fin < formData.date_debut
+    ) {
+      setErreur("La date de fin ne peut pas être avant la date de début.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setErreur("");
+      setMessage("");
+
+      const url = isEditing
+        ? `${API_URL}/formations/${formationEnEdition.id}`
+        : `${API_URL}/formations`;
+
+      const method = isEditing ? "PUT" : "POST";
+
+      const payload = {
+        nom: formData.nom.trim(),
+        formateur: formData.formateur.trim(),
+        lieu: formData.lieu.trim(),
+        description: formData.description.trim(),
+        nombre_participants: Number(formData.nombre_participants),
+        statut: formData.statut,
+        date_debut: formData.date_debut,
+        date_fin: formData.date_fin,
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || "Impossible d'enregistrer la formation"
+        );
+      }
+
+      setMessage(
+        isEditing
+          ? "La formation a bien été modifiée."
+          : "La formation a bien été créée."
+      );
+
+      setFormData(initialForm);
+
+      if (onSaved) {
+        onSaved();
+      }
+    } catch (err) {
+      setErreur(err.message || "Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="admin-panel">
       <h2 className="admin-panel__title">
@@ -15,7 +143,8 @@ export function CreationFormations({
       </h2>
 
       <p className="admin-panel__text">
-        Remplis le formulaire puis enregistre. Cette page est séparée de l'accueil.
+        Remplis le formulaire puis enregistre. Cette page est séparée de
+        l'accueil.
       </p>
 
       <form className="admin-form" onSubmit={handleSubmit}>
