@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import "./Dashboard.css";
 
+import { StatsFormations } from "../../components/StatsFormations/StatsFormations";
 import { CreationFormations } from "../../components/CreationFormations/CreationFormations";
 import { FormationsCrees } from "../../components/FormationsCrees/FormationsCrees";
 import { FormActif } from "../../components/FormActif/FormActif";
@@ -29,6 +30,8 @@ export default function AdminFormationsDashboard() {
           formateurs et les fiches de présence.
         </p>
       </div>
+
+      <StatsFormations />
 
       <div className="admin-dashboard__layout">
         <CreationFormations
@@ -65,4 +68,4 @@ export default function AdminFormationsDashboard() {
       </div>
     </main>
   );
-} 
+}
