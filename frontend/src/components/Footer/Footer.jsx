@@ -26,6 +26,10 @@ export function Footer() {
                 Accueil
               </Link>
 
+              <Link to="/statistique" className="site_footer_link">
+                Statistiques
+              </Link>
+
               <Link to="/inscription-formations" className="site_footer_link">
                 Inscription
               </Link>
