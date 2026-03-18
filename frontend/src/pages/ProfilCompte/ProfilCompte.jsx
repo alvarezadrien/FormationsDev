@@ -3,6 +3,7 @@ import "./ProfilCompte.css";
 
 import { FormAvis } from "../../components/FormAvis/FormAvis";
 import { MesAvis } from "../../components/MesAvis/MesAvis";
+import { MesDonnees } from "../../components/MesDonnees/MesDonnees";
 
 function ProfilCompte() {
   const [userData, setUserData] = useState({
@@ -218,10 +219,12 @@ function ProfilCompte() {
                 <h2 className="profile_section_title">Espace compte</h2>
 
                 <p className="profile_description">
-                  Votre espace personnel vous permet de consulter vos informations
-                  de compte, gérer votre compte, déposer des avis et suivre votre
-                  activité sur la plateforme.
+                  Votre espace personnel vous permet de consulter vos
+                  informations de compte, gérer votre compte, déposer des avis
+                  et suivre votre activité sur la plateforme.
                 </p>
+
+                <MesDonnees />
               </div>
             )}
 

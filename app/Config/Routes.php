@@ -15,6 +15,7 @@ $routes->post('login', 'Auth::login');
 $routes->post('register', 'Auth::register');
 $routes->post('logout', 'Auth::logout', ['filter' => 'auth']);
 $routes->get('me', 'Auth::me', ['filter' => 'auth']);
+$routes->put('me', 'Auth::updateMe', ['filter' => 'auth']);
 
 // =========================
 // Pages protégées
@@ -47,7 +48,6 @@ $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin
 // =========================
 // Avis
 // =========================
-
 $routes->get('avis', 'AvisController::index');
 $routes->post('avis', 'AvisController::create');
 $routes->get('avis/formation/(:num)', 'AvisController::avisByFormation/$1');

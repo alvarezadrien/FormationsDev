@@ -188,6 +188,114 @@ class Auth extends Controller
         }
     }
 
+    public function updateMe()
+    {
+        try {
+            $session = session();
+            $model = new UserModel();
+
+            if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'error'   => true,
+                    'message' => 'Non authentifié'
+                ]);
+            }
+
+            $userId = $session->get('user_id');
+            $user = $model->find($userId);
+
+            if (!$user) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'error'   => true,
+                    'message' => 'Utilisateur introuvable'
+                ]);
+            }
+
+            $data = $this->request->getJSON(true);
+
+            if (!$data) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'error'   => true,
+                    'message' => 'Données JSON invalides ou absentes'
+                ]);
+            }
+
+            $nom = trim($data['nom'] ?? $user['nom']);
+            $prenom = trim($data['prenom'] ?? $user['prenom']);
+            $email = trim($data['email'] ?? $user['email']);
+            $password = trim($data['password'] ?? '');
+
+            if ($nom === '' || $prenom === '' || $email === '') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error'   => true,
+                    'message' => 'Nom, prénom et email sont obligatoires'
+                ]);
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error'   => true,
+                    'message' => 'Adresse email invalide'
+                ]);
+            }
+
+            $existingUser = $model
+                ->where('email', $email)
+                ->where('id !=', $userId)
+                ->first();
+
+            if ($existingUser) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'error'   => true,
+                    'message' => 'Cet email est déjà utilisé par un autre compte'
+                ]);
+            }
+
+            $updateData = [
+                'nom'        => $nom,
+                'prenom'     => $prenom,
+                'email'      => $email,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ];
+
+            if ($password !== '') {
+                if (strlen($password) < 6) {
+                    return $this->response->setStatusCode(422)->setJSON([
+                        'error'   => true,
+                        'message' => 'Le mot de passe doit contenir au moins 6 caractères'
+                    ]);
+                }
+
+                $updateData['password'] = password_hash($password, PASSWORD_DEFAULT);
+            }
+
+            $model->update($userId, $updateData);
+
+            $session->set([
+                'nom'    => $nom,
+                'prenom' => $prenom,
+                'email'  => $email,
+            ]);
+
+            return $this->response->setJSON([
+                'error'   => false,
+                'message' => 'Vos données ont été mises à jour avec succès',
+                'user'    => [
+                    'id'     => $userId,
+                    'nom'    => $nom,
+                    'prenom' => $prenom,
+                    'email'  => $email,
+                    'role'   => $session->get('role'),
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'error'   => true,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function logout()
     {
         try {
