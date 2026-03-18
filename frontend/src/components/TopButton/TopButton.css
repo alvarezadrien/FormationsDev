@@ -1,0 +1,52 @@
+.top-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+  z-index: 999;
+}
+
+.top-button.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.top-button:hover {
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+  transform: translateY(-2px);
+}
+
+.top-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .top-button {
+    right: 18px;
+    bottom: 18px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+}

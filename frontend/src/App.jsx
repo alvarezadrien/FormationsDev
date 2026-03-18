@@ -15,6 +15,7 @@ import { StatsPage } from "./pages/StatsPage/StatsPage";
 // import components
 import { Navbar } from "./components/Navbar/Navbar";
 import { Footer } from "./components/Footer/Footer";
+import { TopButton } from "./components/TopButton/TopButton";
 
 function ProtectedAdminRoute({ children }) {
   const role = localStorage.getItem("role");
@@ -149,6 +150,7 @@ function App() {
         />
       </Routes>
 
+      <TopButton/>
       <Footer />
     </Router>
   );
