@@ -37,12 +37,19 @@ export function DetailsFormations() {
           throw new Error(data?.message || "Erreur API");
         }
 
+        const nomCompletFormateur =
+          data.formateur_prenom || data.formateur_nom
+            ? `${data.formateur_prenom || ""} ${data.formateur_nom || ""}`.trim()
+            : "Non renseigné";
+
         setFormation({
           id: data.id,
           nom_formation: data.nom ?? "Formation sans nom",
-          formateurs: data.formateur
-            ? data.formateur.split(",").map((n) => n.trim())
-            : [],
+          formateur_id: data.formateur_id ?? null,
+          formateur_nom: data.formateur_nom ?? "",
+          formateur_prenom: data.formateur_prenom ?? "",
+          formateur_email: data.formateur_email ?? "",
+          nom_complet_formateur: nomCompletFormateur,
           lieu: data.lieu ?? "",
           description: data.description ?? "",
           nombre_participants: Number(data.nombre_participants ?? 0),
@@ -131,11 +138,16 @@ export function DetailsFormations() {
 
             <div className="info_grid">
               <div className="info_card">
-                <span className="info_label">Formateur(s)</span>
+                <span className="info_label">Formateur</span>
                 <span className="info_data">
-                  {formation.formateurs.length > 0
-                    ? formation.formateurs.join(", ")
-                    : "Non renseigné"}
+                  {formation.nom_complet_formateur}
+                </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">Email du formateur</span>
+                <span className="info_data">
+                  {formation.formateur_email || "Non renseigné"}
                 </span>
               </div>
 
@@ -171,6 +183,13 @@ export function DetailsFormations() {
                 <span className="info_label">Statut</span>
                 <span className={`info_data status_text ${formation.statut}`}>
                   {formation.statut}
+                </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">ID formateur</span>
+                <span className="info_data">
+                  {formation.formateur_id ?? "Non renseigné"}
                 </span>
               </div>
             </div>
