@@ -9,6 +9,7 @@ export default function LoginRegister() {
   const [userEmail, setUserEmail] = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -24,9 +25,14 @@ export default function LoginRegister() {
     }
   };
 
+  const resetMessages = () => {
+    setAuthError("");
+    setAuthSuccess("");
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    setAuthError("");
+    resetMessages();
     setLoading(true);
 
     try {
@@ -52,12 +58,12 @@ export default function LoginRegister() {
       }
 
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("role", data.user.role || "user");
+      localStorage.setItem("role", data.user?.role || "user");
       localStorage.setItem("isLoggedIn", "true");
 
       window.dispatchEvent(new Event("auth-changed"));
 
-      if (data.user.role === "admin") {
+      if (data.user?.role === "admin") {
         navigate("/dashboard", { replace: true });
       } else {
         navigate("/", { replace: true });
@@ -72,7 +78,7 @@ export default function LoginRegister() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setAuthError("");
+    resetMessages();
     setLoading(true);
 
     try {
@@ -99,15 +105,30 @@ export default function LoginRegister() {
         return;
       }
 
-      setAuthMode("login");
+      setAuthSuccess(
+        data.message || "Compte créé avec succès. Redirection en cours..."
+      );
+
+      // Si le backend renvoie directement l'utilisateur après inscription
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("role", data.user?.role || "user");
+        localStorage.setItem("isLoggedIn", "true");
+        window.dispatchEvent(new Event("auth-changed"));
+      }
+
       setLastName("");
       setFirstName("");
       setUserEmail("");
       setUserPassword("");
-      setAuthError("");
 
-      alert("Compte créé, connectez-vous");
-      navigate("/login", { replace: true });
+      setTimeout(() => {
+        if (data.user?.role === "admin") {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      }, 1500);
     } catch (err) {
       console.error("Erreur register :", err);
       setAuthError("Erreur serveur");
@@ -138,7 +159,7 @@ export default function LoginRegister() {
                 authMode === "login" ? "active" : ""
               }`}
               onClick={() => {
-                setAuthError("");
+                resetMessages();
                 setAuthMode("login");
               }}
             >
@@ -151,7 +172,7 @@ export default function LoginRegister() {
                 authMode === "register" ? "active" : ""
               }`}
               onClick={() => {
-                setAuthError("");
+                resetMessages();
                 setAuthMode("register");
               }}
             >
@@ -159,7 +180,10 @@ export default function LoginRegister() {
             </button>
           </div>
 
-          {authError && <p className="auth_alert">{authError}</p>}
+          {authError && <p className="auth_alert auth_alert_error">{authError}</p>}
+          {authSuccess && (
+            <p className="auth_alert auth_alert_success">{authSuccess}</p>
+          )}
 
           {authMode === "login" && (
             <form className="auth_form" onSubmit={handleLogin}>
@@ -191,7 +215,11 @@ export default function LoginRegister() {
                 />
               </div>
 
-              <button className="auth_submit_button" type="submit" disabled={loading}>
+              <button
+                className="auth_submit_button"
+                type="submit"
+                disabled={loading}
+              >
                 {loading ? "Connexion..." : "Se connecter"}
               </button>
             </form>
@@ -253,7 +281,11 @@ export default function LoginRegister() {
                 />
               </div>
 
-              <button className="auth_submit_button" type="submit" disabled={loading}>
+              <button
+                className="auth_submit_button"
+                type="submit"
+                disabled={loading}
+              >
                 {loading ? "Création..." : "Créer un compte"}
               </button>
             </form>
