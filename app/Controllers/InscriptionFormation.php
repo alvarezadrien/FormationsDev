@@ -114,11 +114,25 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
+            $diplomesAutorises = [
+                'Pas de diplôme',
+                'CEB',
+                'CE1D',
+                'CESS',
+                'CAP',
+                'Bachelier',
+                'Master',
+                'Doctorat',
+                'Formation professionnelle',
+                'Autre',
+            ];
+
             $payload = [
                 'nom' => trim($data['nom'] ?? ''),
                 'prenom' => trim($data['prenom'] ?? ''),
                 'email' => trim($data['email'] ?? ''),
                 'telephone' => trim($data['telephone'] ?? ''),
+                'diplome' => trim($data['diplome'] ?? ''),
                 'formation_id' => isset($data['formation_id']) ? (int) $data['formation_id'] : 0,
                 'message' => trim($data['message'] ?? ''),
             ];
@@ -128,11 +142,12 @@ class InscriptionFormation extends Controller
                 $payload['prenom'] === '' ||
                 $payload['email'] === '' ||
                 $payload['telephone'] === '' ||
+                $payload['diplome'] === '' ||
                 $payload['formation_id'] <= 0
             ) {
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
-                    'message' => 'Les champs nom, prénom, email, téléphone et formation sont obligatoires',
+                    'message' => 'Les champs nom, prénom, email, téléphone, diplôme et formation sont obligatoires',
                 ]);
             }
 
@@ -140,6 +155,13 @@ class InscriptionFormation extends Controller
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
                     'message' => 'Adresse email invalide',
+                ]);
+            }
+
+            if (!in_array($payload['diplome'], $diplomesAutorises, true)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'error' => true,
+                    'message' => 'Le diplôme sélectionné est invalide',
                 ]);
             }
 
@@ -188,6 +210,7 @@ class InscriptionFormation extends Controller
                 'prenom' => $payload['prenom'],
                 'email' => $payload['email'],
                 'telephone' => $payload['telephone'],
+                'diplome' => $payload['diplome'],
                 'formation_id' => $payload['formation_id'],
                 'message' => $payload['message'],
                 'date_inscription' => date('Y-m-d H:i:s'),
@@ -219,7 +242,6 @@ class InscriptionFormation extends Controller
                 ]);
             }
 
-            // Ajouter automatiquement l'inscrit dans toutes les fiches existantes de cette formation
             $fiches = $ficheModel
                 ->where('formation_id', $payload['formation_id'])
                 ->findAll();

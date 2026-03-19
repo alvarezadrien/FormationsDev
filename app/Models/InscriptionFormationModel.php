@@ -16,6 +16,7 @@ class InscriptionFormationModel extends Model
         'prenom',
         'email',
         'telephone',
+        'diplome',
         'formation_id',
         'message',
         'date_inscription'

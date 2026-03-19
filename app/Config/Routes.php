@@ -37,6 +37,7 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index', ['filter' => 'admin']);
 $routes->get('inscriptions-formations/(:num)', 'InscriptionFormation::show/$1', ['filter' => 'admin']);
+$routes->get('inscriptions-formations/formation/(:num)', 'InscriptionFormation::byFormation/$1', ['filter' => 'admin']);
 $routes->post('inscriptions-formations', 'InscriptionFormation::create');
 $routes->delete('inscriptions-formations/(:num)', 'InscriptionFormation::delete/$1', ['filter' => 'admin']);
 

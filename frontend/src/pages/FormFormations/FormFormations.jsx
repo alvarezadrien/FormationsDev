@@ -4,6 +4,19 @@ import "./FormFormations.css";
 
 const API_URL = "http://localhost:8080";
 
+const DIPLOMES_BELGIQUE = [
+  "Pas de diplôme",
+  "CEB",
+  "CE1D",
+  "CESS",
+  "CAP",
+  "Bachelier",
+  "Master",
+  "Doctorat",
+  "Formation professionnelle",
+  "Autre",
+];
+
 export function FormFormations() {
   const location = useLocation();
 
@@ -18,6 +31,7 @@ export function FormFormations() {
     prenom: "",
     email: "",
     telephone: "",
+    diplome: "",
     formation_id: "",
     message: "",
   });
@@ -166,6 +180,7 @@ export function FormFormations() {
       prenom: prev.prenom,
       email: prev.email,
       telephone: "",
+      diplome: "",
       formation_id: formationIdFromUrl ? String(formationIdFromUrl) : "",
       message: "",
     }));
@@ -183,11 +198,16 @@ export function FormFormations() {
         throw new Error("Veuillez sélectionner une formation");
       }
 
+      if (!formData.diplome) {
+        throw new Error("Veuillez sélectionner un diplôme");
+      }
+
       const payload = {
         nom: formData.nom.trim(),
         prenom: formData.prenom.trim(),
         email: formData.email.trim(),
         telephone: formData.telephone.trim(),
+        diplome: formData.diplome.trim(),
         formation_id: Number(formData.formation_id),
         message: formData.message.trim(),
       };
@@ -307,9 +327,29 @@ export function FormFormations() {
                   value={formData.telephone}
                   onChange={handleChange}
                   placeholder="Votre numéro"
+                  required
                   disabled={saving}
                 />
               </div>
+            </div>
+
+            <div className="training-field">
+              <label htmlFor="diplome">Diplôme</label>
+              <select
+                id="diplome"
+                name="diplome"
+                value={formData.diplome}
+                onChange={handleChange}
+                required
+                disabled={saving}
+              >
+                <option value="">Sélectionner un diplôme</option>
+                {DIPLOMES_BELGIQUE.map((diplome) => (
+                  <option key={diplome} value={diplome}>
+                    {diplome}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="training-field">

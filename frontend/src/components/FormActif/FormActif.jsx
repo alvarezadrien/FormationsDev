@@ -73,13 +73,12 @@ export function FormActif() {
     <section className="admin-list admin-list--inscriptions">
       <h2 className="admin-list__title">Inscriptions reçues</h2>
       <p className="admin-list__text">
-        Consulte les coordonnées des personnes inscrites et la formation choisie.
+        Consulte les coordonnées des personnes inscrites, leur diplôme et la
+        formation choisie.
       </p>
 
       {erreur && (
-        <div className="admin-feedback admin-feedback--error">
-          {erreur}
-        </div>
+        <div className="admin-feedback admin-feedback--error">{erreur}</div>
       )}
 
       {messageInscriptions && (
@@ -111,6 +110,10 @@ export function FormActif() {
                 <p>
                   <strong>Téléphone :</strong>{" "}
                   {inscription.telephone || "Non renseigné"}
+                </p>
+                <p>
+                  <strong>Diplôme :</strong>{" "}
+                  {inscription.diplome || "Non renseigné"}
                 </p>
                 <p>
                   <strong>Formation :</strong>{" "}
