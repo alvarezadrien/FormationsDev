@@ -1,52 +1,216 @@
-.top-button {
+.top-btn-wrapper {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
-  width: 52px;
-  height: 52px;
+  right: 26px;
+  bottom: 26px;
+  z-index: 1000;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(18px) scale(0.94);
+
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.45s ease;
+}
+
+.top-btn-wrapper.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.top-btn {
+  position: relative;
+  width: 60px;
+  height: 60px;
   border: none;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #ffffff;
-  font-size: 1.4rem;
-  font-weight: 900;
+  border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+  overflow: hidden;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(14px);
+
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow:
+    0 14px 30px rgba(37, 99, 235, 0.22),
+    0 6px 14px rgba(37, 99, 235, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+
   transition:
-    opacity 0.25s ease,
-    visibility 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-  z-index: 999;
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease;
 }
 
-.top-button.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+.top-btn::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  pointer-events: none;
 }
 
-.top-button:hover {
-  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+.top-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.28), transparent 42%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.top-btn:hover {
+  transform: translateY(-4px) scale(1.035);
+  box-shadow:
+    0 18px 34px rgba(37, 99, 235, 0.28),
+    0 8px 18px rgba(37, 99, 235, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  filter: saturate(1.05);
+}
+
+.top-btn:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow:
+    0 10px 20px rgba(37, 99, 235, 0.22),
+    0 4px 10px rgba(37, 99, 235, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.top-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 5px rgba(59, 130, 246, 0.18),
+    0 16px 30px rgba(37, 99, 235, 0.22);
+}
+
+.top-btn__inner {
+  position: relative;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.08);
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.32s ease;
+}
+
+.top-btn:hover .top-btn__inner {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.top-btn__icon {
+  position: relative;
+  z-index: 3;
+  font-size: 15px;
+  color: #ffffff;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s ease;
+}
+
+.top-btn:hover .top-btn__icon {
   transform: translateY(-2px);
 }
 
-.top-button:active {
+.top-btn__progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  z-index: 1;
+}
+
+.top-btn__progress-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 2.4;
+}
+
+.top-btn__progress-value {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.18s linear;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.18));
+}
+
+.top-btn__tooltip {
+  font-size: 12px;
+  font-weight: 600;
+  color: #eff6ff;
+  background: rgba(15, 23, 42, 0.92);
+  padding: 7px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
+}
+
+.top-btn-wrapper:hover .top-btn__tooltip {
+  opacity: 1;
   transform: translateY(0);
 }
 
 @media (max-width: 768px) {
-  .top-button {
+  .top-btn-wrapper {
     right: 18px;
     bottom: 18px;
-    width: 48px;
-    height: 48px;
-    font-size: 1.2rem;
+  }
+
+  .top-btn {
+    width: 56px;
+    height: 56px;
+  }
+
+  .top-btn__inner {
+    width: 38px;
+    height: 38px;
+  }
+
+  .top-btn__icon {
+    font-size: 14px;
+  }
+
+  .top-btn__tooltip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-btn-wrapper,
+  .top-btn,
+  .top-btn__inner,
+  .top-btn__icon,
+  .top-btn__tooltip,
+  .top-btn__progress-value {
+    transition: none;
   }
 }
