@@ -1,0 +1,195 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import "./BioFormateur.css";
+
+export function BioFormateur() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [formateur, setFormateur] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [erreur, setErreur] = useState("");
+
+  const API_URL = "http://localhost:8080";
+
+  useEffect(() => {
+    const fetchFormateur = async () => {
+      try {
+        setLoading(true);
+        setErreur("");
+
+        const res = await fetch(`${API_URL}/formateurs/${id}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        let responseData = null;
+
+        try {
+          responseData = await res.json();
+        } catch {
+          throw new Error("Réponse JSON invalide du serveur");
+        }
+
+        if (!res.ok) {
+          throw new Error(
+            responseData?.message || "Erreur lors du chargement du formateur"
+          );
+        }
+
+        const data = responseData?.data;
+
+        if (!data) {
+          throw new Error("Aucune donnée formateur reçue");
+        }
+
+        setFormateur({
+          id: data.id,
+          nom: data.nom ?? "",
+          prenom: data.prenom ?? "",
+          nom_complet: data.nom_complet ?? "Nom non renseigné",
+          poste: data.poste ?? "Formateur",
+          specialite: data.specialite ?? "",
+          bio: data.bio ?? "",
+          experience: Array.isArray(data.experience) ? data.experience : [],
+          competences: Array.isArray(data.competences) ? data.competences : [],
+          formations: Array.isArray(data.formations) ? data.formations : [],
+          email: data.email ?? "",
+          telephone: data.telephone ?? "",
+        });
+      } catch (err) {
+        setErreur(err.message || "Une erreur est survenue");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFormateur();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <section className="trainer_page">
+        <p className="state_message">Chargement...</p>
+      </section>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <section className="trainer_page">
+        <p className="state_message error">Erreur : {erreur}</p>
+      </section>
+    );
+  }
+
+  if (!formateur) {
+    return (
+      <section className="trainer_page">
+        <p className="state_message">Formateur introuvable</p>
+      </section>
+    );
+  }
+
+  const initiales = `${formateur.prenom?.[0] || ""}${formateur.nom?.[0] || ""}`.toUpperCase();
+
+  return (
+    <section className="trainer_page">
+      <div className="trainer_wrapper">
+        <button className="back_button" onClick={() => navigate(-1)}>
+          ← Retour
+        </button>
+
+        <div className="trainer_hero">
+          <div className="trainer_hero_overlay"></div>
+
+          <div className="trainer_hero_content">
+            <span className="trainer_badge">Formateur expert</span>
+            <h1 className="trainer_title">{formateur.nom_complet}</h1>
+            <p className="trainer_role">{formateur.poste}</p>
+            <p className="trainer_intro">
+              {formateur.specialite || "Aucune spécialité renseignée."}
+            </p>
+          </div>
+        </div>
+
+        <div className="trainer_layout">
+          <aside className="trainer_sidebar">
+            <div className="trainer_profile_card">
+              <div className="trainer_avatar">{initiales || "FR"}</div>
+
+              <h2 className="trainer_name">{formateur.nom_complet}</h2>
+              <p className="trainer_job">{formateur.poste}</p>
+
+              <div className="trainer_contact_box">
+                <p className="trainer_contact_item">
+                  <strong>Email :</strong> {formateur.email || "Non renseigné"}
+                </p>
+                <p className="trainer_contact_item">
+                  <strong>Téléphone :</strong>{" "}
+                  {formateur.telephone || "Non renseigné"}
+                </p>
+              </div>
+            </div>
+          </aside>
+
+          <div className="trainer_content">
+            <div className="trainer_block">
+              <h2 className="trainer_section_title">Biographie</h2>
+              <p className="trainer_text">
+                {formateur.bio || "Aucune biographie disponible."}
+              </p>
+            </div>
+
+            <div className="trainer_block">
+              <h2 className="trainer_section_title">Expérience</h2>
+              <div className="trainer_list">
+                {formateur.experience.length > 0 ? (
+                  formateur.experience.map((item, index) => (
+                    <div className="trainer_list_item" key={index}>
+                      {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="trainer_text">Aucune expérience renseignée.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="trainer_block">
+              <h2 className="trainer_section_title">Compétences</h2>
+              <div className="trainer_tags">
+                {formateur.competences.length > 0 ? (
+                  formateur.competences.map((item, index) => (
+                    <span className="trainer_tag" key={index}>
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <p className="trainer_text">Aucune compétence renseignée.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="trainer_block">
+              <h2 className="trainer_section_title">Formations enseignées</h2>
+              <div className="trainer_training_list">
+                {formateur.formations.length > 0 ? (
+                  formateur.formations.map((item, index) => (
+                    <div className="trainer_training_card" key={index}>
+                      {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="trainer_text">Aucune formation renseignée.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

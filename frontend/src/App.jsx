@@ -11,6 +11,7 @@ import ProfilCompte from "./pages/ProfilCompte/ProfilCompte";
 import ProfilFormateurPage from "./pages/ProfilFormateurPage/ProfilFormateurPage";
 import { Contact } from "./pages/Contact/Contact";
 import { StatsPage } from "./pages/StatsPage/StatsPage";
+import { BioFormateur } from "./pages/BioFormateur/BioFormateur";
 
 // import components
 import { Navbar } from "./components/Navbar/Navbar";
@@ -112,6 +113,7 @@ function App() {
         <Route path="/details-formations/:id" element={<DetailsFormations />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/statistique" element={<StatsPage />} />
+        <Route path="/bio-formateur/:id" element={<BioFormateur />} />
 
         <Route
           path="/profil-compte"
@@ -150,7 +152,7 @@ function App() {
         />
       </Routes>
 
-      <TopButton/>
+      <TopButton />
       <Footer />
     </Router>
   );

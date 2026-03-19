@@ -39,6 +39,11 @@ $routes->get('formations', 'Formation::index');
 $routes->get('formations/(:num)', 'Formation::show/$1');
 
 // =========================
+// Formateur bio publique
+// =========================
+$routes->get('formateurs/(:num)', 'FormateurController::show/$1');
+
+// =========================
 // Inscriptions formations
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index', ['filter' => 'admin']);

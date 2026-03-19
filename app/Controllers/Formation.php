@@ -16,6 +16,7 @@ class Formation extends Controller
             $formations = $db->table('formations')
                 ->select('
                     formations.*,
+                    users.id AS formateur_id,
                     users.nom AS formateur_nom,
                     users.prenom AS formateur_prenom,
                     users.email AS formateur_email
@@ -42,6 +43,7 @@ class Formation extends Controller
             $formation = $db->table('formations')
                 ->select('
                     formations.*,
+                    users.id AS formateur_id,
                     users.nom AS formateur_nom,
                     users.prenom AS formateur_prenom,
                     users.email AS formateur_email
@@ -136,6 +138,7 @@ class Formation extends Controller
             $formation = $db->table('formations')
                 ->select('
                     formations.*,
+                    users.id AS formateur_id,
                     users.nom AS formateur_nom,
                     users.prenom AS formateur_prenom,
                     users.email AS formateur_email
@@ -240,6 +243,7 @@ class Formation extends Controller
             $formationUpdated = $db->table('formations')
                 ->select('
                     formations.*,
+                    users.id AS formateur_id,
                     users.nom AS formateur_nom,
                     users.prenom AS formateur_prenom,
                     users.email AS formateur_email
@@ -304,6 +308,7 @@ class Formation extends Controller
             $formation = $db->table('formations')
                 ->select('
                     formations.*,
+                    users.id AS formateur_id,
                     users.nom AS formateur_nom,
                     users.prenom AS formateur_prenom,
                     users.email AS formateur_email

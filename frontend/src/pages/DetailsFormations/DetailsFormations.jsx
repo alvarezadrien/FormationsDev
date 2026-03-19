@@ -100,6 +100,11 @@ export function DetailsFormations() {
     navigate(`/inscription-formations?formation=${formation.id}`);
   };
 
+  const handleVoirBioFormateur = () => {
+    if (!formation.formateur_id) return;
+    navigate(`/bio-formateur/${formation.formateur_id}`);
+  };
+
   return (
     <section className="details_page">
       <button className="back_button" onClick={() => navigate(-1)}>
@@ -217,6 +222,14 @@ export function DetailsFormations() {
                   ? "Complet"
                   : "Indisponible"
                 : "S'inscrire maintenant"}
+            </button>
+
+            <button
+              className={`bio_button ${!formation.formateur_id ? "disabled" : ""}`}
+              disabled={!formation.formateur_id}
+              onClick={handleVoirBioFormateur}
+            >
+              Voir la biographie du formateur
             </button>
           </div>
         </aside>
