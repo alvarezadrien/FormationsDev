@@ -264,38 +264,6 @@ export function FichePresenceFormateur() {
     }
   };
 
-  const handlePrint = () => {
-    if (!selectedFiche?.fiche) {
-      setError("Veuillez sélectionner une fiche avant d'imprimer");
-      return;
-    }
-
-    const oldTitle = document.title;
-    document.title = `Fiche de présence - ${selectedFiche.fiche.titre_seance || "Séance"}`;
-
-    window.print();
-
-    setTimeout(() => {
-      document.title = oldTitle;
-    }, 300);
-  };
-
-  const handleDownloadPDF = () => {
-    if (!selectedFiche?.fiche) {
-      setError("Veuillez sélectionner une fiche avant de télécharger le PDF");
-      return;
-    }
-
-    const oldTitle = document.title;
-    document.title = `Fiche de présence - ${selectedFiche.fiche.titre_seance || "Séance"}`;
-
-    window.print();
-
-    setTimeout(() => {
-      document.title = oldTitle;
-    }, 300);
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "Non renseignée";
 
@@ -307,6 +275,19 @@ export function FichePresenceFormateur() {
       month: "2-digit",
       year: "numeric",
     });
+  };
+
+  const formatFullName = (participant) => {
+    return `${participant?.prenom || ""} ${participant?.nom || ""}`.trim();
+  };
+
+  const escapeHtml = (value) => {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   };
 
   const participants = selectedFiche?.participants || [];
@@ -322,6 +303,379 @@ export function FichePresenceFormateur() {
   const absentsCount = useMemo(() => {
     return participantsCount - presentsCount;
   }, [participantsCount, presentsCount]);
+
+  const buildPrintHTML = () => {
+    if (!selectedFiche?.fiche) return "";
+
+    const fiche = selectedFiche.fiche;
+
+    const participantsRows =
+      participants.length > 0
+        ? participants
+            .map(
+              (participant, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${escapeHtml(formatFullName(participant) || "Non renseigné")}</td>
+                  <td>${escapeHtml(participant.email || "Non renseigné")}</td>
+                  <td>${escapeHtml(participant.telephone || "Non renseigné")}</td>
+                  <td>
+                    <span class="print-status ${
+                      participant.present ? "present" : "absent"
+                    }">
+                      ${participant.present ? "Présent" : "Absent"}
+                    </span>
+                  </td>
+                  <td><div class="print-signature-line"></div></td>
+                </tr>
+              `
+            )
+            .join("")
+        : `
+          <tr>
+            <td colspan="6" class="print-empty-row">
+              Aucun participant inscrit pour cette formation.
+            </td>
+          </tr>
+        `;
+
+    return `
+      <!DOCTYPE html>
+      <html lang="fr">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Fiche de présence - ${escapeHtml(
+            fiche.titre_seance || "Séance"
+          )}</title>
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+
+            @page {
+              size: A4 portrait;
+              margin: 14mm;
+            }
+
+            body {
+              margin: 0;
+              background: #f3f4f6;
+              font-family: Arial, Helvetica, sans-serif;
+              color: #111827;
+            }
+
+            .print-page {
+              width: 100%;
+              padding: 0;
+            }
+
+            .print-sheet {
+              background: #ffffff;
+              border-radius: 20px;
+              padding: 24px;
+              border: 1px solid #e5e7eb;
+              box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            }
+
+            .print-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 24px;
+              padding: 18px;
+              border: 1px solid #e5e7eb;
+              border-radius: 16px;
+              background: #f9fafb;
+              margin-bottom: 20px;
+            }
+
+            .print-header h1 {
+              margin: 0 0 10px;
+              font-size: 1.4rem;
+              color: #111827;
+            }
+
+            .print-header p {
+              margin: 0 0 8px;
+              color: #374151;
+              line-height: 1.5;
+              font-size: 0.95rem;
+            }
+
+            .print-badge {
+              min-width: 220px;
+              border-radius: 16px;
+              padding: 16px;
+              background: linear-gradient(135deg, #2563eb, #1d4ed8);
+              color: #ffffff;
+            }
+
+            .print-badge-label {
+              font-size: 0.82rem;
+              opacity: 0.9;
+              margin-bottom: 8px;
+            }
+
+            .print-badge-value {
+              font-size: 1.3rem;
+              font-weight: 800;
+              line-height: 1.2;
+            }
+
+            .print-summary {
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: 14px;
+              margin-bottom: 20px;
+            }
+
+            .print-summary-card {
+              font-weight: 700;
+              color: #111827;
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              padding: 14px 16px;
+              border-radius: 14px;
+              text-align: center;
+            }
+
+            .print-table-wrapper {
+              width: 100%;
+              overflow: hidden;
+              border-radius: 16px;
+              border: 1px solid #e5e7eb;
+              margin-bottom: 20px;
+            }
+
+            .print-table {
+              width: 100%;
+              border-collapse: collapse;
+              background: #fff;
+            }
+
+            .print-table thead {
+              background: #f3f4f6;
+            }
+
+            .print-table th,
+            .print-table td {
+              padding: 13px 14px;
+              text-align: left;
+              border-bottom: 1px solid #e5e7eb;
+              font-size: 0.92rem;
+              vertical-align: middle;
+            }
+
+            .print-table th {
+              color: #111827;
+              font-weight: 800;
+            }
+
+            .print-table td {
+              color: #374151;
+            }
+
+            .print-table th:first-child,
+            .print-table td:first-child {
+              width: 52px;
+              text-align: center;
+            }
+
+            .print-table th:last-child,
+            .print-table td:last-child {
+              min-width: 140px;
+            }
+
+            .print-status {
+              display: inline-block;
+              padding: 6px 10px;
+              border-radius: 999px;
+              font-weight: 700;
+              font-size: 0.84rem;
+            }
+
+            .print-status.present {
+              background: #dcfce7;
+              color: #166534;
+              border: 1px solid #bbf7d0;
+            }
+
+            .print-status.absent {
+              background: #fee2e2;
+              color: #b91c1c;
+              border: 1px solid #fecaca;
+            }
+
+            .print-signature-line {
+              height: 28px;
+              border-bottom: 1px solid #9ca3af;
+              min-width: 110px;
+            }
+
+            .print-footer {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 18px;
+            }
+
+            .print-footer-box {
+              padding: 18px;
+              border: 1px solid #e5e7eb;
+              border-radius: 16px;
+              background: #f9fafb;
+            }
+
+            .print-footer-box p {
+              margin: 0 0 10px;
+              color: #374151;
+              line-height: 1.5;
+              font-size: 0.95rem;
+            }
+
+            .print-footer-signature {
+              margin-top: 26px;
+              height: 36px;
+              border-bottom: 1px solid #6b7280;
+            }
+
+            .print-empty-row {
+              text-align: center;
+              padding: 20px;
+              color: #6b7280;
+            }
+
+            @media print {
+              body {
+                background: #ffffff;
+              }
+
+              .print-sheet {
+                border: 1px solid #e5e7eb;
+                box-shadow: none;
+                border-radius: 20px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-page">
+            <div class="print-sheet">
+              <div class="print-header">
+                <div>
+                  <h1>Fiche de présence</h1>
+                  <p><strong>Séance :</strong> ${escapeHtml(
+                    fiche.titre_seance || "Non renseigné"
+                  )}</p>
+                  <p><strong>Formation :</strong> ${escapeHtml(
+                    fiche.nom_formation || "Non renseigné"
+                  )}</p>
+                  <p><strong>Lieu :</strong> ${escapeHtml(
+                    fiche.lieu || "Non renseigné"
+                  )}</p>
+                  <p><strong>Date :</strong> ${escapeHtml(
+                    formatDate(fiche.date_presence)
+                  )}</p>
+                  <p><strong>Horaires :</strong> ${escapeHtml(
+                    `${fiche.heure_debut || "--:--"} - ${fiche.heure_fin || "--:--"}`
+                  )}</p>
+                  <p><strong>Remarques :</strong> ${escapeHtml(
+                    fiche.remarques || "Aucune remarque"
+                  )}</p>
+                </div>
+
+                <div class="print-badge">
+                  <div class="print-badge-label">Document généré le</div>
+                  <div class="print-badge-value">${escapeHtml(
+                    new Date().toLocaleDateString("fr-FR")
+                  )}</div>
+                </div>
+              </div>
+
+              <div class="print-summary">
+                <div class="print-summary-card">Participants : ${participantsCount}</div>
+                <div class="print-summary-card">Présents : ${presentsCount}</div>
+                <div class="print-summary-card">Absents : ${absentsCount}</div>
+              </div>
+
+              <div class="print-table-wrapper">
+                <table class="print-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nom complet</th>
+                      <th>Email</th>
+                      <th>Téléphone</th>
+                      <th>Présence</th>
+                      <th>Signature</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${participantsRows}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="print-footer">
+                <div class="print-footer-box">
+                  <p><strong>Nom du formateur :</strong> ${escapeHtml(
+                    fiche.formateur_nom ||
+                      fiche.nom_formateur ||
+                      fiche.formateur ||
+                      "Non renseigné"
+                  )}</p>
+                  <p><strong>Signature du formateur :</strong></p>
+                  <div class="print-footer-signature"></div>
+                </div>
+
+                <div class="print-footer-box">
+                  <p><strong>Validation / cachet :</strong></p>
+                  <p>Document de suivi de présence de la séance.</p>
+                  <div class="print-footer-signature"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const openPrintWindow = () => {
+    if (!selectedFiche?.fiche) {
+      setError("Veuillez sélectionner une fiche avant impression");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1100,height=900");
+
+    if (!printWindow) {
+      setError("Impossible d'ouvrir la fenêtre d'impression");
+      return;
+    }
+
+    const html = buildPrintHTML();
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+
+  const handlePrint = () => {
+    setError("");
+    openPrintWindow();
+  };
+
+  const handleDownloadPDF = () => {
+    setError("");
+    openPrintWindow();
+  };
 
   return (
     <div className="fiche-formateur">
@@ -548,20 +902,11 @@ export function FichePresenceFormateur() {
                     {participants.map((participant, index) => (
                       <tr key={participant.id}>
                         <td>{index + 1}</td>
-                        <td>
-                          {participant.prenom} {participant.nom}
-                        </td>
+                        <td>{formatFullName(participant) || "Non renseigné"}</td>
                         <td>{participant.email || "Non renseigné"}</td>
                         <td>{participant.telephone || "Non renseigné"}</td>
                         <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              flexWrap: "wrap",
-                            }}
-                          >
+                          <div className="presence-cell">
                             <input
                               type="checkbox"
                               checked={Boolean(participant.present)}
@@ -572,19 +917,19 @@ export function FichePresenceFormateur() {
                                 )
                               }
                             />
-                            <span>
+                            <span
+                              className={
+                                Boolean(participant.present)
+                                  ? "presence-badge presence-badge--present"
+                                  : "presence-badge presence-badge--absent"
+                              }
+                            >
                               {Boolean(participant.present) ? "Présent" : "Absent"}
                             </span>
                           </div>
                         </td>
                         <td>
-                          <div
-                            style={{
-                              minWidth: "120px",
-                              height: "24px",
-                              borderBottom: "1px solid #9ca3af",
-                            }}
-                          />
+                          <div className="signature-line" />
                         </td>
                       </tr>
                     ))}
@@ -593,33 +938,30 @@ export function FichePresenceFormateur() {
               </div>
             )}
 
-            <div className="fiche-detail__header">
-              <div>
+            <div className="fiche-detail__footer">
+              <div className="fiche-detail__footer-box">
                 <p>
                   <strong>Nom du formateur :</strong>{" "}
                   {selectedFiche.fiche.formateur_nom ||
                     selectedFiche.fiche.nom_formateur ||
+                    selectedFiche.fiche.formateur ||
                     "Non renseigné"}
                 </p>
                 <p>
                   <strong>Signature du formateur :</strong>
                 </p>
-                <p style={{ marginTop: "28px" }}>
-                  ______________________________________
-                </p>
+                <div className="footer-signature-line" />
               </div>
 
-              <div>
+              <div className="fiche-detail__footer-box">
                 <p>
                   <strong>Date d'édition :</strong>{" "}
                   {new Date().toLocaleDateString("fr-FR")}
                 </p>
-                <p style={{ marginTop: "20px" }}>
-                  <strong>Cachet / validation :</strong>
+                <p>
+                  <strong>Validation / cachet :</strong>
                 </p>
-                <p style={{ marginTop: "28px" }}>
-                  ______________________________________
-                </p>
+                <div className="footer-signature-line" />
               </div>
             </div>
           </div>
