@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./FichePresenceFormateur.css";
 
 const API_BASE_URL = "http://localhost:8080";
@@ -14,8 +14,6 @@ export function FichePresenceFormateur() {
 
   const [selectedFiche, setSelectedFiche] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-
-  const printRef = useRef(null);
 
   const [formData, setFormData] = useState({
     formation_id: "",
@@ -79,6 +77,7 @@ export function FichePresenceFormateur() {
     try {
       setLoadingDetails(true);
       setError("");
+      setMessage("");
 
       const response = await fetch(`${API_BASE_URL}/fiches-presence/${id}`, {
         method: "GET",
@@ -174,7 +173,7 @@ export function FichePresenceFormateur() {
       await fetchMesFiches();
 
       if (data?.fiche_id) {
-        fetchFicheDetails(data.fiche_id);
+        await fetchFicheDetails(data.fiche_id);
       }
     } catch (err) {
       setError(err.message || "Une erreur est survenue");
@@ -227,6 +226,9 @@ export function FichePresenceFormateur() {
     if (!selectedFiche?.fiche?.id) return;
 
     try {
+      setError("");
+      setMessage("");
+
       const response = await fetch(
         `${API_BASE_URL}/fiches-presence/${selectedFiche.fiche.id}/participants/${participantId}`,
         {
@@ -255,18 +257,71 @@ export function FichePresenceFormateur() {
             : participant
         ),
       }));
+
+      setMessage(data?.message || "Présence mise à jour avec succès");
     } catch (err) {
       setError(err.message || "Erreur lors de la mise à jour");
     }
   };
 
   const handlePrint = () => {
+    if (!selectedFiche?.fiche) {
+      setError("Veuillez sélectionner une fiche avant d'imprimer");
+      return;
+    }
+
+    const oldTitle = document.title;
+    document.title = `Fiche de présence - ${selectedFiche.fiche.titre_seance || "Séance"}`;
+
     window.print();
+
+    setTimeout(() => {
+      document.title = oldTitle;
+    }, 300);
   };
 
+  const handleDownloadPDF = () => {
+    if (!selectedFiche?.fiche) {
+      setError("Veuillez sélectionner une fiche avant de télécharger le PDF");
+      return;
+    }
+
+    const oldTitle = document.title;
+    document.title = `Fiche de présence - ${selectedFiche.fiche.titre_seance || "Séance"}`;
+
+    window.print();
+
+    setTimeout(() => {
+      document.title = oldTitle;
+    }, 300);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Non renseignée";
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const participants = selectedFiche?.participants || [];
+
   const participantsCount = useMemo(() => {
-    return selectedFiche?.participants?.length || 0;
-  }, [selectedFiche]);
+    return participants.length;
+  }, [participants]);
+
+  const presentsCount = useMemo(() => {
+    return participants.filter((participant) => Boolean(participant.present)).length;
+  }, [participants]);
+
+  const absentsCount = useMemo(() => {
+    return participantsCount - presentsCount;
+  }, [participantsCount, presentsCount]);
 
   return (
     <div className="fiche-formateur">
@@ -374,9 +429,9 @@ export function FichePresenceFormateur() {
                     <p>{fiche.nom_formation}</p>
                   </div>
 
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <div className="fiche-formateur__card-actions">
                     <button
-                    className="btn-voir"
+                      className="btn-action btn-voir"
                       type="button"
                       onClick={() => fetchFicheDetails(fiche.id)}
                     >
@@ -384,7 +439,8 @@ export function FichePresenceFormateur() {
                     </button>
 
                     <button
-                      className="fiche-formateur__delete"
+                      className="btn-action fiche-formateur__delete"
+                      type="button"
                       onClick={() => handleDelete(fiche.id)}
                       disabled={deletingId === fiche.id}
                     >
@@ -394,7 +450,7 @@ export function FichePresenceFormateur() {
                 </div>
 
                 <div className="fiche-formateur__meta">
-                  <span>Date : {fiche.date_presence}</span>
+                  <span>Date : {formatDate(fiche.date_presence)}</span>
                   <span>
                     Horaire : {fiche.heure_debut} - {fiche.heure_fin}
                   </span>
@@ -409,7 +465,7 @@ export function FichePresenceFormateur() {
         )}
       </div>
 
-      <div className="fiche-formateur__block" ref={printRef}>
+      <div className="fiche-formateur__block">
         <h3 className="fiche-formateur__title">Détail de la fiche</h3>
 
         {loadingDetails ? (
@@ -422,63 +478,150 @@ export function FichePresenceFormateur() {
           <div className="fiche-detail">
             <div className="fiche-detail__header">
               <div>
-                <h4>{selectedFiche.fiche.titre_seance}</h4>
-                <p><strong>Formation :</strong> {selectedFiche.fiche.nom_formation}</p>
-                <p><strong>Lieu :</strong> {selectedFiche.fiche.lieu || "Non renseigné"}</p>
-                <p><strong>Date :</strong> {selectedFiche.fiche.date_presence}</p>
+                <h4>Fiche de présence</h4>
                 <p>
-                  <strong>Horaires :</strong> {selectedFiche.fiche.heure_debut} - {selectedFiche.fiche.heure_fin}
+                  <strong>Séance :</strong> {selectedFiche.fiche.titre_seance}
                 </p>
-                <p><strong>Remarques :</strong> {selectedFiche.fiche.remarques || "Aucune remarque"}</p>
+                <p>
+                  <strong>Formation :</strong> {selectedFiche.fiche.nom_formation}
+                </p>
+                <p>
+                  <strong>Lieu :</strong>{" "}
+                  {selectedFiche.fiche.lieu || "Non renseigné"}
+                </p>
+                <p>
+                  <strong>Date :</strong>{" "}
+                  {formatDate(selectedFiche.fiche.date_presence)}
+                </p>
+                <p>
+                  <strong>Horaires :</strong> {selectedFiche.fiche.heure_debut} -{" "}
+                  {selectedFiche.fiche.heure_fin}
+                </p>
+                <p>
+                  <strong>Remarques :</strong>{" "}
+                  {selectedFiche.fiche.remarques || "Aucune remarque"}
+                </p>
               </div>
 
-              <div className="fiche-detail__actions ">
-                <button type="button" onClick={handlePrint}>
-                  Imprimer / Télécharger PDF
+              <div className="fiche-detail__actions">
+                <button
+                  type="button"
+                  className="btn-action btn-print"
+                  onClick={handlePrint}
+                >
+                  Imprimer
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-action btn-download"
+                  onClick={handleDownloadPDF}
+                >
+                  Télécharger PDF
                 </button>
               </div>
             </div>
 
             <div className="fiche-detail__count">
-              Participants inscrits : {participantsCount}
+              Participants inscrits : {participantsCount} | Présents :{" "}
+              {presentsCount} | Absents : {absentsCount}
             </div>
 
-            {selectedFiche.participants?.length === 0 ? (
+            {participants.length === 0 ? (
               <div className="fiche-formateur__empty">
                 Aucun inscrit pour cette formation.
               </div>
             ) : (
-              <table className="fiche-detail__table">
-                <thead>
-                  <tr>
-                    <th>Nom complet</th>
-                    <th>Email</th>
-                    <th>Téléphone</th>
-                    <th>Présent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedFiche.participants.map((participant) => (
-                    <tr key={participant.id}>
-                      <td>
-                        {participant.prenom} {participant.nom}
-                      </td>
-                      <td>{participant.email || "Non renseigné"}</td>
-                      <td>{participant.telephone || "Non renseigné"}</td>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(participant.present)}
-                          onChange={() =>
-                            togglePresence(participant.id, Boolean(participant.present))
-                          }
-                        />
-                      </td>
+              <div className="fiche-detail__table-wrapper">
+                <table className="fiche-detail__table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nom complet</th>
+                      <th>Email</th>
+                      <th>Téléphone</th>
+                      <th>Présence</th>
+                      <th>Signature</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {participants.map((participant, index) => (
+                      <tr key={participant.id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          {participant.prenom} {participant.nom}
+                        </td>
+                        <td>{participant.email || "Non renseigné"}</td>
+                        <td>{participant.telephone || "Non renseigné"}</td>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(participant.present)}
+                              onChange={() =>
+                                togglePresence(
+                                  participant.id,
+                                  Boolean(participant.present)
+                                )
+                              }
+                            />
+                            <span>
+                              {Boolean(participant.present) ? "Présent" : "Absent"}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div
+                            style={{
+                              minWidth: "120px",
+                              height: "24px",
+                              borderBottom: "1px solid #9ca3af",
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
+
+            <div className="fiche-detail__header">
+              <div>
+                <p>
+                  <strong>Nom du formateur :</strong>{" "}
+                  {selectedFiche.fiche.formateur_nom ||
+                    selectedFiche.fiche.nom_formateur ||
+                    "Non renseigné"}
+                </p>
+                <p>
+                  <strong>Signature du formateur :</strong>
+                </p>
+                <p style={{ marginTop: "28px" }}>
+                  ______________________________________
+                </p>
+              </div>
+
+              <div>
+                <p>
+                  <strong>Date d'édition :</strong>{" "}
+                  {new Date().toLocaleDateString("fr-FR")}
+                </p>
+                <p style={{ marginTop: "20px" }}>
+                  <strong>Cachet / validation :</strong>
+                </p>
+                <p style={{ marginTop: "28px" }}>
+                  ______________________________________
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
