@@ -6,7 +6,7 @@ import userImg from "/images/utilisateur.png";
 
 import { FaUserShield } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
-import { HiOutlineLogout, HiOutlineUserCircle } from "react-icons/hi";
+import { HiOutlineLogout, HiOutlineUserCircle, HiOutlineMenuAlt3 } from "react-icons/hi";
 import { IoChevronDown, IoSearch, IoClose } from "react-icons/io5";
 
 export function Navbar() {
@@ -16,9 +16,12 @@ export function Navbar() {
   const [currentUser, setCurrentUser] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,6 +64,11 @@ export function Navbar() {
   }, [location.search]);
 
   useEffect(() => {
+    setDropdownOpen(false);
+    setMobileMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
@@ -74,6 +82,14 @@ export function Navbar() {
         if (!searchTerm.trim()) {
           setSearchOpen(false);
         }
+      }
+
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target) &&
+        !event.target.closest(".navbar_burger")
+      ) {
+        setMobileMenuOpen(false);
       }
     };
 
@@ -101,6 +117,7 @@ export function Navbar() {
       setIsAdmin(false);
       setCurrentUser(null);
       setDropdownOpen(false);
+      setMobileMenuOpen(false);
 
       window.dispatchEvent(new Event("auth-changed"));
       navigate("/login", { replace: true });
@@ -120,6 +137,8 @@ export function Navbar() {
     navigate(`/?search=${encodeURIComponent(keyword)}#formations`, {
       replace: false,
     });
+
+    setMobileMenuOpen(false);
   };
 
   const handleClearSearch = () => {
@@ -132,11 +151,16 @@ export function Navbar() {
     setSearchOpen((prev) => !prev);
   };
 
+  const closeAllMenus = () => {
+    setDropdownOpen(false);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="navbar_shell">
       <nav className="navbar_wrap">
         <div className="navbar_brand_zone">
-          <Link to="/" className="navbar_brand">
+          <Link to="/" className="navbar_brand" onClick={closeAllMenus}>
             <span className="navbar_brand_mark">CF</span>
             <span className="navbar_brand_text">CodingFormations</span>
           </Link>
@@ -296,6 +320,16 @@ export function Navbar() {
               )}
             </div>
           )}
+
+          <button
+            type="button"
+            className={`navbar_burger ${mobileMenuOpen ? "active" : ""}`}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label="Ouvrir le menu"
+            title="Menu"
+          >
+            {mobileMenuOpen ? <IoClose size={24} /> : <HiOutlineMenuAlt3 size={24} />}
+          </button>
         </div>
       </nav>
 
@@ -330,6 +364,117 @@ export function Navbar() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {mobileMenuOpen && (
+        <div className="navbar_mobile_panel" ref={mobileMenuRef}>
+          <div className="navbar_mobile_inner">
+            <div className="navbar_mobile_section">
+              <Link to="/" className="navbar_mobile_item" onClick={closeAllMenus}>
+                Accueil
+              </Link>
+
+              <Link
+                to="/inscription-formations"
+                className="navbar_mobile_item"
+                onClick={closeAllMenus}
+              >
+                Formulaire inscription
+              </Link>
+
+              <Link
+                to="/statistique"
+                className="navbar_mobile_item"
+                onClick={closeAllMenus}
+              >
+                Statistiques
+              </Link>
+            </div>
+
+            <div className="navbar_mobile_divider"></div>
+
+            <div className="navbar_mobile_section">
+              <form className="navbar_mobile_search_form" onSubmit={handleSearchSubmit}>
+                <div className="navbar_mobile_search_box">
+                  <IoSearch className="navbar_search_icon" size={18} />
+                  <input
+                    type="text"
+                    className="navbar_mobile_search_input"
+                    placeholder="Rechercher une formation..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div className="navbar_mobile_search_actions">
+                  {searchTerm.trim() && (
+                    <button
+                      type="button"
+                      className="navbar_mobile_secondary_button"
+                      onClick={handleClearSearch}
+                    >
+                      Effacer
+                    </button>
+                  )}
+
+                  <button type="submit" className="navbar_mobile_search_button">
+                    Rechercher
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="navbar_mobile_divider"></div>
+
+            <div className="navbar_mobile_section">
+              {isConnected && !isAdmin && (
+                <Link
+                  to="/profil-compte"
+                  className="navbar_mobile_action navbar_mobile_action_profile"
+                  onClick={closeAllMenus}
+                >
+                  <HiOutlineUserCircle size={20} />
+                  <span>Profil compte</span>
+                </Link>
+              )}
+
+              {isAdmin && (
+                <Link
+                  to="/dashboard"
+                  className="navbar_mobile_action navbar_mobile_action_admin"
+                  onClick={closeAllMenus}
+                >
+                  <MdDashboard size={20} />
+                  <span>Dashboard admin</span>
+                </Link>
+              )}
+
+              {!isConnected ? (
+                <Link
+                  to="/login"
+                  className="navbar_mobile_action navbar_mobile_action_login"
+                  onClick={closeAllMenus}
+                >
+                  <img
+                    src={userImg}
+                    alt="Utilisateur"
+                    className="navbar_login_avatar"
+                  />
+                  <span>Connexion</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="navbar_mobile_action navbar_mobile_action_logout"
+                  onClick={handleLogout}
+                >
+                  <HiOutlineLogout size={20} />
+                  <span>Déconnexion</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </header>
