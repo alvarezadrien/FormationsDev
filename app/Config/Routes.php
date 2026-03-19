@@ -81,11 +81,20 @@ $routes->get('fiches-presence/(:num)', 'FichePresenceController::show/$1', ['fil
 $routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
 $routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
 $routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
+$routes->put('fiches-presence/(:num)/participants/(:num)', 'FichePresenceController::updateParticipantPresence/$1/$2', ['filter' => 'auth']);
 $routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
 
 // =========================
 // OPTIONS pour préflight CORS
 // =========================
+$routes->options('fiches-presence/(:num)/participants/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('fiches-presence/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
 $routes->options('(:any)', static function () {
     return service('response')->setStatusCode(200);
 });
