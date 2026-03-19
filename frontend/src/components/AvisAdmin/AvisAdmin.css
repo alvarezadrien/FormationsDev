@@ -166,6 +166,127 @@
   cursor: not-allowed;
 }
 
+/* MODAL */
+.avis-admin__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 999;
+}
+
+.avis-admin__modal {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+  padding: 24px;
+  animation: avisAdminModalFadeIn 0.2s ease;
+}
+
+@keyframes avisAdminModalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.avis-admin__modal-header {
+  margin-bottom: 16px;
+}
+
+.avis-admin__modal-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.avis-admin__modal-title {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  color: #111827;
+}
+
+.avis-admin__modal-text {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.avis-admin__modal-details {
+  display: grid;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.avis-admin__modal-details p {
+  margin: 0;
+  color: #374151;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.avis-admin__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.avis-admin__modal-cancel,
+.avis-admin__modal-delete {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.avis-admin__modal-cancel {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.avis-admin__modal-cancel:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.avis-admin__modal-delete {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.avis-admin__modal-delete:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.avis-admin__modal-cancel:disabled,
+.avis-admin__modal-delete:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .avis-admin {
     padding: 18px;
@@ -181,5 +302,24 @@
 
   .avis-admin__stat {
     flex: 1;
+  }
+
+  .avis-admin__modal {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .avis-admin__modal-title {
+    font-size: 1.1rem;
+  }
+
+  .avis-admin__modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .avis-admin__modal-cancel,
+  .avis-admin__modal-delete {
+    width: 100%;
   }
 }
