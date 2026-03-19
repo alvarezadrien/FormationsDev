@@ -46,7 +46,10 @@ $routes->get('formateurs/(:num)', 'FormateurController::show/$1');
 // =========================
 // Inscriptions formations
 // =========================
-$routes->get('inscriptions-formations', 'InscriptionFormation::index', ['filter' => 'admin']);
+// RENDU PUBLIC pour la page statistiques
+$routes->get('inscriptions-formations', 'InscriptionFormation::index');
+
+// routes sensibles gardées en admin
 $routes->get('inscriptions-formations/(:num)', 'InscriptionFormation::show/$1', ['filter' => 'admin']);
 $routes->get('inscriptions-formations/formation/(:num)', 'InscriptionFormation::byFormation/$1', ['filter' => 'admin']);
 $routes->post('inscriptions-formations', 'InscriptionFormation::create');
@@ -74,6 +77,7 @@ $routes->delete('avis/(:num)', 'AvisController::delete/$1');
 // Fiches de présence
 // =========================
 $routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
+$routes->get('fiches-presence/(:num)', 'FichePresenceController::show/$1', ['filter' => 'auth']);
 $routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
 $routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
 $routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
