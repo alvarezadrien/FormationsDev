@@ -20,6 +20,12 @@ $routes->post('formateurs', 'Auth::createFormateur', ['filter' => 'admin']);
 $routes->get('users/formateurs', 'Auth::getFormateurs', ['filter' => 'admin']);
 
 // =========================
+// Gestion utilisateurs admin
+// =========================
+$routes->get('users', 'UserController::index', ['filter' => 'admin']);
+$routes->delete('users/(:num)', 'UserController::delete/$1', ['filter' => 'admin']);
+
+// =========================
 // Pages protégées
 // =========================
 $routes->get('dashboard', 'Dashboard::index', ['filter' => 'admin']);

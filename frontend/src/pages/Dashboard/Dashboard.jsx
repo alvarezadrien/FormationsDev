@@ -9,6 +9,7 @@ import { FormActif } from "../../components/FormActif/FormActif";
 import { AvisAdmin } from "../../components/AvisAdmin/AvisAdmin";
 import { CreationCompteFormateur } from "../../components/CreationCompteFormateur/CreationCompteFormateur";
 import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePresenceAdmin";
+import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
 
 export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
@@ -30,6 +31,11 @@ export default function AdminFormationsDashboard() {
         key: "formateurs",
         label: "Comptes formateurs",
         description: "Créer et gérer les comptes formateurs",
+      },
+      {
+        key: "users",
+        label: "Gestion des utilisateurs",
+        description: "Voir et supprimer les comptes utilisateurs",
       },
       {
         key: "actives",
@@ -144,6 +150,24 @@ export default function AdminFormationsDashboard() {
           </section>
         );
 
+      case "users":
+        return (
+          <section className="admin-section">
+            <div className="admin-list">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">Utilisateurs</span>
+                <h2 className="admin-list__title">Gestion des utilisateurs</h2>
+                <p className="admin-list__text">
+                  Consulte tous les comptes inscrits, distingue facilement les
+                  utilisateurs, formateurs et admins, puis supprime-les si
+                  nécessaire.
+                </p>
+              </div>
+              <DetailUsers />
+            </div>
+          </section>
+        );
+
       case "actives":
         return (
           <section className="admin-section">
@@ -206,11 +230,16 @@ export default function AdminFormationsDashboard() {
       <div className="admin-dashboard__topbar">
         <div className="admin-dashboard__header">
           <div>
-            <span className="admin-dashboard__eyebrow">Espace administration</span>
-            <h1 className="admin-dashboard__title">Dashboard Admin Formations</h1>
+            <span className="admin-dashboard__eyebrow">
+              Espace administration
+            </span>
+            <h1 className="admin-dashboard__title">
+              Dashboard Admin Formations
+            </h1>
             <p className="admin-dashboard__subtitle">
-              Gère les formations, les comptes formateurs, les avis et les fiches
-              de présence depuis un espace structuré et plus lisible.
+              Gère les formations, les comptes formateurs, les utilisateurs, les
+              avis et les fiches de présence depuis un espace structuré et plus
+              lisible.
             </p>
           </div>
 

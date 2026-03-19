@@ -1,0 +1,355 @@
+.detail-users-container {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.detail-users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.detail-users-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.detail-users-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-users-input,
+.detail-users-select,
+.detail-users-password-input {
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detail-users-input {
+  min-width: 260px;
+}
+
+.detail-users-select {
+  min-width: 180px;
+  cursor: pointer;
+}
+
+.detail-users-input:focus,
+.detail-users-select:focus,
+.detail-users-password-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.detail-users-alert {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detail-users-alert.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.detail-users-alert.success {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.detail-users-table-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+.detail-users-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.detail-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.detail-users-table thead tr {
+  background: #f8fafc;
+}
+
+.detail-users-table th {
+  text-align: left;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-users-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.detail-users-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.detail-users-table td.action-cell,
+.detail-users-table th.action-cell {
+  text-align: center;
+}
+
+.detail-users-empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.role-badge.admin {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.role-badge.formateur {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-badge.user {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.detail-users-delete-btn {
+  border: none;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #ffffff;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.detail-users-delete-btn:hover {
+  background: #b91c1c;
+}
+
+.detail-users-delete-btn:active {
+  transform: scale(0.98);
+}
+
+.detail-users-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-users-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 999;
+}
+
+.detail-users-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+  animation: modalFadeIn 0.2s ease;
+}
+
+.detail-users-modal-title {
+  margin: 0 0 14px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.detail-users-modal-text {
+  margin: 0 0 18px 0;
+  color: #334155;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.detail-users-modal-strong {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.detail-users-modal-email {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.detail-users-modal-role {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.detail-users-password-group {
+  margin-bottom: 20px;
+}
+
+.detail-users-password-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.detail-users-password-help {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.detail-users-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-users-cancel-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.detail-users-cancel-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.detail-users-confirm-btn {
+  border: none;
+  background: #dc2626;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.detail-users-confirm-btn:hover {
+  background: #b91c1c;
+}
+
+.detail-users-confirm-btn:active {
+  transform: scale(0.98);
+}
+
+.detail-users-confirm-btn:disabled,
+.detail-users-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detail-users-loading {
+  padding: 24px;
+  font-size: 16px;
+  color: #334155;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .detail-users-container {
+    padding: 16px;
+  }
+
+  .detail-users-title {
+    font-size: 22px;
+  }
+
+  .detail-users-input,
+  .detail-users-select {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .detail-users-filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .detail-users-modal {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .detail-users-modal-actions {
+    flex-direction: column;
+  }
+
+  .detail-users-cancel-btn,
+  .detail-users-confirm-btn {
+    width: 100%;
+  }
+}
