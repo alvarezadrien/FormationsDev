@@ -50,16 +50,38 @@ const FORMATION_COLORS = [
   "#059669",
 ];
 
-function getAuthHeaders() {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("jwt");
-
+function getJsonHeaders() {
   return {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+}
+
+function getFetchOptions(method = "GET", body = null) {
+  const options = {
+    method,
+    headers: getJsonHeaders(),
+    credentials: "include",
+  };
+
+  if (body !== null) {
+    options.body = JSON.stringify(body);
+  }
+
+  return options;
+}
+
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isAdminUser() {
+  const user = getStoredUser();
+  return user?.role === "admin";
 }
 
 function pad(n) {
@@ -70,18 +92,6 @@ function formatDateKey(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate()
   )}`;
-}
-
-function formatDateInput(date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )}`;
-}
-
-function formatDisplayDate(date) {
-  return `${DAYS_FULL[(date.getDay() + 6) % 7]} ${date.getDate()} ${
-    MONTHS[date.getMonth()]
-  } ${date.getFullYear()}`;
 }
 
 function getMonday(date) {
@@ -149,8 +159,10 @@ function parseDateTime(session) {
 
   if (!rawDate) return null;
 
-  const start = new Date(`${rawDate}T${rawStart.length === 5 ? rawStart : "09:00"}`);
-  const end = new Date(`${rawDate}T${rawEnd.length === 5 ? rawEnd : "17:00"}`);
+  const start = new Date(
+    `${rawDate}T${rawStart?.length === 5 ? rawStart : "09:00"}`
+  );
+  const end = new Date(`${rawDate}T${rawEnd?.length === 5 ? rawEnd : "17:00"}`);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return null;
@@ -188,19 +200,23 @@ function normalizeSession(session, formation, formateursMap) {
   const formateur = formateursMap.get(Number(formateurId));
 
   return {
-    id: session.id ?? `${formation.id}-${formatDateKey(parsed.start)}-${parsed.start.getHours()}-${parsed.start.getMinutes()}`,
+    id:
+      session.id ??
+      `${formation.id}-${formatDateKey(parsed.start)}-${parsed.start.getHours()}-${parsed.start.getMinutes()}`,
     formationId: formation.id,
     formationTitre:
       formation.titre ||
       formation.title ||
       formation.nom ||
       `Formation #${formation.id}`,
-    formation: formation,
+    formation,
     rawSession: session,
     date: formatDateKey(parsed.start),
     start: parsed.start,
     end: parsed.end,
-    startTime: `${pad(parsed.start.getHours())}:${pad(parsed.start.getMinutes())}`,
+    startTime: `${pad(parsed.start.getHours())}:${pad(
+      parsed.start.getMinutes()
+    )}`,
     endTime: `${pad(parsed.end.getHours())}:${pad(parsed.end.getMinutes())}`,
     formateurId: formateurId ? Number(formateurId) : null,
     formateurNom: formateur?.nom || "Non attribué",
@@ -248,8 +264,7 @@ function extractSessionsFromFormation(formation, formateursMap) {
           formation.heure_debut || formation.start_time || formation.heureDebut,
         heure_fin:
           formation.heure_fin || formation.end_time || formation.heureFin,
-        formateur_id:
-          formation.formateur_id || formation.id_formateur || null,
+        formateur_id: formation.formateur_id || formation.id_formateur || null,
       },
       formation,
       formateursMap
@@ -294,6 +309,7 @@ function EventModal({
   onDelete,
   formateurs,
   saving,
+  canEdit,
 }) {
   const [formData, setFormData] = useState(null);
 
@@ -325,6 +341,7 @@ function EventModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     onSave(formData);
   };
 
@@ -366,6 +383,7 @@ function EventModal({
               <input
                 type="text"
                 value={formData.formationTitre}
+                disabled={!canEdit}
                 onChange={(e) =>
                   handleChange("formationTitre", e.target.value)
                 }
@@ -377,6 +395,7 @@ function EventModal({
               <input
                 type="date"
                 value={formData.date}
+                disabled={!canEdit}
                 onChange={(e) => handleChange("date", e.target.value)}
               />
             </label>
@@ -386,6 +405,7 @@ function EventModal({
               <input
                 type="time"
                 value={formData.startTime}
+                disabled={!canEdit}
                 onChange={(e) => handleChange("startTime", e.target.value)}
               />
             </label>
@@ -395,6 +415,7 @@ function EventModal({
               <input
                 type="time"
                 value={formData.endTime}
+                disabled={!canEdit}
                 onChange={(e) => handleChange("endTime", e.target.value)}
               />
             </label>
@@ -403,6 +424,7 @@ function EventModal({
               <span>Formateur</span>
               <select
                 value={formData.formateurId}
+                disabled={!canEdit}
                 onChange={(e) => handleChange("formateurId", e.target.value)}
               >
                 <option value="">Non attribué</option>
@@ -419,6 +441,7 @@ function EventModal({
               <input
                 type="text"
                 value={formData.salle}
+                disabled={!canEdit}
                 onChange={(e) => handleChange("salle", e.target.value)}
               />
             </label>
@@ -429,19 +452,24 @@ function EventModal({
             <textarea
               rows={4}
               value={formData.description}
+              disabled={!canEdit}
               onChange={(e) => handleChange("description", e.target.value)}
             />
           </label>
 
           <div className="calendar-modal__actions">
-            <button
-              type="button"
-              className="calendar-btn calendar-btn--danger"
-              onClick={() => onDelete(selectedEvent)}
-              disabled={saving}
-            >
-              Supprimer ce créneau
-            </button>
+            {canEdit ? (
+              <button
+                type="button"
+                className="calendar-btn calendar-btn--danger"
+                onClick={() => onDelete(selectedEvent)}
+                disabled={saving}
+              >
+                Supprimer ce créneau
+              </button>
+            ) : (
+              <div />
+            )}
 
             <div className="calendar-modal__actions-right">
               <button
@@ -450,16 +478,18 @@ function EventModal({
                 onClick={onClose}
                 disabled={saving}
               >
-                Annuler
+                Fermer
               </button>
 
-              <button
-                type="submit"
-                className="calendar-btn calendar-btn--primary"
-                disabled={saving}
-              >
-                {saving ? "Enregistrement..." : "Enregistrer"}
-              </button>
+              {canEdit ? (
+                <button
+                  type="submit"
+                  className="calendar-btn calendar-btn--primary"
+                  disabled={saving}
+                >
+                  {saving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              ) : null}
             </div>
           </div>
         </form>
@@ -480,6 +510,8 @@ export function CalendrierComplet() {
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const canEdit = isAdminUser();
+
   useEffect(() => {
     let isMounted = true;
 
@@ -489,22 +521,29 @@ export function CalendrierComplet() {
         setError("");
 
         const [formationsRes, formateursRes] = await Promise.all([
-          fetch(`${API_URL}/formations`, {
-            headers: getAuthHeaders(),
-          }),
-          fetch(`${API_URL}/users/formateurs`, {
-            headers: getAuthHeaders(),
-          }),
+          fetch(`${API_URL}/formations`, getFetchOptions("GET")),
+          fetch(`${API_URL}/users/formateurs`, getFetchOptions("GET")),
         ]);
 
         if (!formationsRes.ok) {
+          if (formationsRes.status === 401) {
+            throw new Error("Session expirée. Reconnecte-toi.");
+          }
           throw new Error("Impossible de charger les formations.");
         }
 
         let formationsData = await formationsRes.json();
         let formateursData = [];
 
-        if (formateursRes.ok) {
+        if (formateursRes.status === 401) {
+          console.warn(
+            "Accès refusé à /users/formateurs. La session n'est pas transmise ou n'est plus valide."
+          );
+        } else if (formateursRes.status === 403) {
+          console.warn(
+            "Accès interdit à /users/formateurs. Le compte n'est probablement pas admin."
+          );
+        } else if (formateursRes.ok) {
           formateursData = await formateursRes.json();
         }
 
@@ -580,6 +619,7 @@ export function CalendrierComplet() {
   const stats = useMemo(() => {
     const formationsCount = new Set(filteredSessions.map((s) => s.formationId))
       .size;
+
     const formateursCount = new Set(
       filteredSessions
         .map((s) => s.formateurId)
@@ -640,6 +680,11 @@ export function CalendrierComplet() {
   const handleSaveEvent = async (formData) => {
     if (!selectedEvent) return;
 
+    if (!canEdit) {
+      alert("Seul un administrateur peut modifier un créneau.");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -654,12 +699,12 @@ export function CalendrierComplet() {
       const sessionsArrayName = Array.isArray(formation.sessions)
         ? "sessions"
         : Array.isArray(formation.seances)
-        ? "seances"
-        : Array.isArray(formation.cours)
-        ? "cours"
-        : Array.isArray(formation.calendrier)
-        ? "calendrier"
-        : "sessions";
+          ? "seances"
+          : Array.isArray(formation.cours)
+            ? "cours"
+            : Array.isArray(formation.calendrier)
+              ? "calendrier"
+              : "sessions";
 
       const currentSessions = Array.isArray(formation[sessionsArrayName])
         ? formation[sessionsArrayName]
@@ -670,7 +715,10 @@ export function CalendrierComplet() {
           session.id ??
           `${formation.id}-${session.date || session.session_date || ""}`;
 
-        if (String(currentId) !== String(selectedEvent.rawSession.id ?? selectedEvent.id)) {
+        if (
+          String(currentId) !==
+          String(selectedEvent.rawSession.id ?? selectedEvent.id)
+        ) {
           return session;
         }
 
@@ -683,7 +731,9 @@ export function CalendrierComplet() {
           start_time: formData.startTime,
           heure_fin: formData.endTime,
           end_time: formData.endTime,
-          formateur_id: formData.formateurId ? Number(formData.formateurId) : null,
+          formateur_id: formData.formateurId
+            ? Number(formData.formateurId)
+            : null,
           salle: formData.salle,
         };
       });
@@ -693,18 +743,25 @@ export function CalendrierComplet() {
         titre: formData.formationTitre,
         title: formData.formationTitre,
         description: formData.description,
-        formateur_id: formData.formateurId ? Number(formData.formateurId) : null,
+        formateur_id: formData.formateurId
+          ? Number(formData.formateurId)
+          : null,
         salle: formData.salle,
         [sessionsArrayName]: updatedSessions,
       };
 
-      const response = await fetch(`${API_URL}/formations/${formation.id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_URL}/formations/${formation.id}`,
+        getFetchOptions("PUT", payload)
+      );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Session expirée. Reconnecte-toi en admin.");
+        }
+        if (response.status === 403) {
+          throw new Error("Accès interdit. Admin requis.");
+        }
         throw new Error(
           "La sauvegarde a échoué. Vérifie le format attendu côté API."
         );
@@ -720,6 +777,11 @@ export function CalendrierComplet() {
   };
 
   const handleDeleteEvent = async (eventToDelete) => {
+    if (!canEdit) {
+      alert("Seul un administrateur peut supprimer un créneau.");
+      return;
+    }
+
     if (!window.confirm("Supprimer ce créneau du calendrier ?")) return;
 
     try {
@@ -736,12 +798,12 @@ export function CalendrierComplet() {
       const sessionsArrayName = Array.isArray(formation.sessions)
         ? "sessions"
         : Array.isArray(formation.seances)
-        ? "seances"
-        : Array.isArray(formation.cours)
-        ? "cours"
-        : Array.isArray(formation.calendrier)
-        ? "calendrier"
-        : "sessions";
+          ? "seances"
+          : Array.isArray(formation.cours)
+            ? "cours"
+            : Array.isArray(formation.calendrier)
+              ? "calendrier"
+              : "sessions";
 
       const currentSessions = Array.isArray(formation[sessionsArrayName])
         ? formation[sessionsArrayName]
@@ -751,7 +813,11 @@ export function CalendrierComplet() {
         const currentId =
           session.id ??
           `${formation.id}-${session.date || session.session_date || ""}`;
-        return String(currentId) !== String(eventToDelete.rawSession.id ?? eventToDelete.id);
+
+        return (
+          String(currentId) !==
+          String(eventToDelete.rawSession.id ?? eventToDelete.id)
+        );
       });
 
       const payload = {
@@ -759,16 +825,19 @@ export function CalendrierComplet() {
         [sessionsArrayName]: updatedSessions,
       };
 
-      const response = await fetch(`${API_URL}/formations/${formation.id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_URL}/formations/${formation.id}`,
+        getFetchOptions("PUT", payload)
+      );
 
       if (!response.ok) {
-        throw new Error(
-          "La suppression du créneau a échoué côté API."
-        );
+        if (response.status === 401) {
+          throw new Error("Session expirée. Reconnecte-toi en admin.");
+        }
+        if (response.status === 403) {
+          throw new Error("Accès interdit. Admin requis.");
+        }
+        throw new Error("La suppression du créneau a échoué côté API.");
       }
 
       setSelectedEvent(null);
@@ -808,12 +877,21 @@ export function CalendrierComplet() {
         </div>
       </div>
 
+      {!canEdit ? (
+        <div className="calendar-state">
+          Mode consultation : les modifications sont réservées aux administrateurs.
+        </div>
+      ) : null}
+
       <div className="calendar-toolbar">
         <div className="calendar-toolbar__left">
           <button className="calendar-btn calendar-btn--ghost" onClick={goPrev}>
             ←
           </button>
-          <button className="calendar-btn calendar-btn--ghost" onClick={goToToday}>
+          <button
+            className="calendar-btn calendar-btn--ghost"
+            onClick={goToToday}
+          >
             Aujourd’hui
           </button>
           <button className="calendar-btn calendar-btn--ghost" onClick={goNext}>
@@ -885,8 +963,7 @@ export function CalendrierComplet() {
                   const key = formatDateKey(day);
                   const isCurrentMonth =
                     day.getMonth() === currentDate.getMonth();
-                  const isToday =
-                    key === formatDateKey(new Date());
+                  const isToday = key === formatDateKey(new Date());
                   const dayEvents = sessionsByDate.get(key) || [];
 
                   return (
@@ -1015,12 +1092,18 @@ export function CalendrierComplet() {
       <div className="calendar-legend">
         <h4>Légende des couleurs</h4>
         <div className="calendar-legend__items">
-          {[...new Map(
-            filteredSessions.map((item) => [
-              item.formationId,
-              { id: item.formationId, title: item.formationTitre, color: item.color },
-            ])
-          ).values()].map((formation) => (
+          {[
+            ...new Map(
+              filteredSessions.map((item) => [
+                item.formationId,
+                {
+                  id: item.formationId,
+                  title: item.formationTitre,
+                  color: item.color,
+                },
+              ])
+            ).values(),
+          ].map((formation) => (
             <div key={formation.id} className="calendar-legend__item">
               <span
                 className="calendar-legend__dot"
@@ -1039,6 +1122,7 @@ export function CalendrierComplet() {
         onDelete={handleDeleteEvent}
         formateurs={formateurs}
         saving={saving}
+        canEdit={canEdit}
       />
     </section>
   );
