@@ -8,14 +8,19 @@ const JOURS_OPTIONS = [
   { value: "mercredi", label: "Mercredi" },
   { value: "jeudi", label: "Jeudi" },
   { value: "vendredi", label: "Vendredi" },
+  { value: "samedi", label: "Samedi" },
 ];
 
+const ALL_JOURS_VALUES = JOURS_OPTIONS.map((jour) => jour.value);
+
 const TYPE_JOURNEE_OPTIONS = [
-  { value: "", label: "Sélectionner un type de journée" },
   { value: "journee_complete", label: "Journée complète" },
   { value: "demi_journee", label: "Demi-journée" },
-  { value: "soir", label: "Soir" },
+  { value: "demi_journee_matin", label: "Demi-journée matin" },
+  { value: "demi_journee_apres_midi", label: "Demi-journée après-midi" },
+  { value: "soir", label: "Cours du soir" },
   { value: "cours_du_jour", label: "Cours du jour" },
+  { value: "personnalise", label: "Personnalisé" },
 ];
 
 const initialForm = {
@@ -27,9 +32,108 @@ const initialForm = {
   statut: "actif",
   date_debut: "",
   date_fin: "",
-  jours: [],
-  type_journee: "",
+  nombre_seances: "",
+  mode_planification: "intelligent",
+  creneaux: [
+    {
+      jours: ["lundi"],
+      type_journee: "journee_complete",
+      heure_debut: "",
+      heure_fin: "",
+    },
+  ],
 };
+
+function getTypeLabel(value) {
+  return (
+    TYPE_JOURNEE_OPTIONS.find((option) => option.value === value)?.label || value
+  );
+}
+
+function normalizeSessionsFromFormation(formation) {
+  if (!formation?.sessions || !Array.isArray(formation.sessions)) {
+    return [];
+  }
+
+  return formation.sessions;
+}
+
+function buildInitialCreneauxFromFormation(formation) {
+  if (!formation) {
+    return initialForm.creneaux;
+  }
+
+  const sessions = normalizeSessionsFromFormation(formation);
+
+  if (sessions.length > 0) {
+    const bySchedule = new Map();
+
+    sessions.forEach((session) => {
+      const jsDate = new Date(`${session.date}T00:00:00`);
+      const dayIndex = jsDate.getDay();
+      const joursJs = [
+        "dimanche",
+        "lundi",
+        "mardi",
+        "mercredi",
+        "jeudi",
+        "vendredi",
+        "samedi",
+      ];
+      const jour = joursJs[dayIndex];
+      const heureDebut = session.heure_debut?.slice(0, 5) || "";
+      const heureFin = session.heure_fin?.slice(0, 5) || "";
+      const signature = `personnalise-${heureDebut}-${heureFin}`;
+
+      if (!bySchedule.has(signature)) {
+        bySchedule.set(signature, {
+          jours: [],
+          type_journee: "personnalise",
+          heure_debut: heureDebut,
+          heure_fin: heureFin,
+        });
+      }
+
+      const creneau = bySchedule.get(signature);
+      if (!creneau.jours.includes(jour)) {
+        creneau.jours.push(jour);
+      }
+    });
+
+    return Array.from(bySchedule.values()).map((creneau) => ({
+      ...creneau,
+      jours: JOURS_OPTIONS.map((j) => j.value).filter((jour) =>
+        creneau.jours.includes(jour)
+      ),
+    }));
+  }
+
+  let joursArray = [];
+
+  if (Array.isArray(formation.jours)) {
+    joursArray = formation.jours;
+  } else if (typeof formation.jours === "string" && formation.jours.trim() !== "") {
+    joursArray = formation.jours
+      .split(",")
+      .map((jour) => jour.trim())
+      .filter(Boolean);
+  }
+
+  if (joursArray.length === 0) {
+    return initialForm.creneaux;
+  }
+
+  return [
+    {
+      jours: JOURS_OPTIONS.map((j) => j.value).filter((jour) =>
+        joursArray.includes(jour)
+      ),
+      type_journee: formation.type_journee || "journee_complete",
+      heure_debut: formation.heure_debut ? formation.heure_debut.slice(0, 5) : "",
+      heure_fin: formation.heure_fin ? formation.heure_fin.slice(0, 5) : "",
+    },
+  ];
+}
 
 export function CreationFormations({
   formationEnEdition,
@@ -42,6 +146,8 @@ export function CreationFormations({
   const [saving, setSaving] = useState(false);
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   const isEditing = useMemo(
     () => formationEnEdition !== null,
@@ -83,19 +189,7 @@ export function CreationFormations({
 
   useEffect(() => {
     if (formationEnEdition) {
-      let joursArray = [];
-
-      if (Array.isArray(formationEnEdition.jours)) {
-        joursArray = formationEnEdition.jours;
-      } else if (
-        typeof formationEnEdition.jours === "string" &&
-        formationEnEdition.jours.trim() !== ""
-      ) {
-        joursArray = formationEnEdition.jours
-          .split(",")
-          .map((jour) => jour.trim())
-          .filter(Boolean);
-      }
+      const initialCreneaux = buildInitialCreneauxFromFormation(formationEnEdition);
 
       setFormData({
         nom: formationEnEdition.nom || "",
@@ -108,17 +202,44 @@ export function CreationFormations({
         statut: formationEnEdition.statut ?? "actif",
         date_debut: formationEnEdition.date_debut || "",
         date_fin: formationEnEdition.date_fin || "",
-        jours: joursArray,
-        type_journee: formationEnEdition.type_journee || "",
+        nombre_seances:
+          Array.isArray(formationEnEdition.sessions) &&
+          formationEnEdition.sessions.length > 0
+            ? String(formationEnEdition.sessions.length)
+            : "",
+        mode_planification: formationEnEdition.date_fin ? "manuel" : "intelligent",
+        creneaux: initialCreneaux.length > 0 ? initialCreneaux : initialForm.creneaux,
       });
-      setErreur("");
-      setMessage("");
     } else {
       setFormData(initialForm);
-      setErreur("");
-      setMessage("");
     }
+
+    setErreur("");
+    setMessage("");
+    setPreview(null);
   }, [formationEnEdition]);
+
+  useEffect(() => {
+    const canPreview =
+      formData.date_debut &&
+      formData.creneaux.length > 0 &&
+      (
+        (formData.mode_planification === "manuel" && formData.date_fin) ||
+        (formData.mode_planification === "intelligent" &&
+          Number(formData.nombre_seances) > 0)
+      );
+
+    if (!canPreview) {
+      setPreview(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      previewSessions();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -129,27 +250,216 @@ export function CreationFormations({
     }));
   };
 
-  const handleJourChange = (jourValue) => {
-    setFormData((prev) => {
-      const dejaSelectionne = prev.jours.includes(jourValue);
+  const handleCreneauChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux: prev.creneaux.map((creneau, i) =>
+        i === index ? { ...creneau, [field]: value } : creneau
+      ),
+    }));
+  };
 
-      return {
-        ...prev,
-        jours: dejaSelectionne
-          ? prev.jours.filter((jour) => jour !== jourValue)
-          : [...prev.jours, jourValue],
-      };
-    });
+  const handleJourToggle = (creneauIndex, jourValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux: prev.creneaux.map((creneau, index) => {
+        if (index !== creneauIndex) return creneau;
+
+        const jours = Array.isArray(creneau.jours) ? creneau.jours : [];
+        const alreadySelected = jours.includes(jourValue);
+
+        return {
+          ...creneau,
+          jours: alreadySelected
+            ? jours.filter((j) => j !== jourValue)
+            : [...jours, jourValue],
+        };
+      }),
+    }));
+  };
+
+  const selectAllJours = (creneauIndex) => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux: prev.creneaux.map((creneau, index) =>
+        index === creneauIndex
+          ? { ...creneau, jours: [...ALL_JOURS_VALUES] }
+          : creneau
+      ),
+    }));
+  };
+
+  const clearAllJours = (creneauIndex) => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux: prev.creneaux.map((creneau, index) =>
+        index === creneauIndex
+          ? { ...creneau, jours: [] }
+          : creneau
+      ),
+    }));
+  };
+
+  const ajouterCreneau = () => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux: [
+        ...prev.creneaux,
+        {
+          jours: ["lundi"],
+          type_journee: "journee_complete",
+          heure_debut: "",
+          heure_fin: "",
+        },
+      ],
+    }));
+  };
+
+  const supprimerCreneau = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      creneaux:
+        prev.creneaux.length === 1
+          ? prev.creneaux
+          : prev.creneaux.filter((_, i) => i !== index),
+    }));
   };
 
   const resetForm = () => {
     setFormData(initialForm);
     setErreur("");
     setMessage("");
+    setPreview(null);
 
     if (onCancelEdit) {
       onCancelEdit();
     }
+  };
+
+  const buildPayload = () => {
+    const flattenedCreneaux = formData.creneaux.flatMap((creneau) => {
+      const jours = Array.isArray(creneau.jours) ? creneau.jours : [];
+
+      return jours.map((jour) => ({
+        jour,
+        type_journee: creneau.type_journee,
+        heure_debut: creneau.heure_debut,
+        heure_fin: creneau.heure_fin,
+      }));
+    });
+
+    const payload = {
+      nom: formData.nom.trim(),
+      formateur_id: Number(formData.formateur_id),
+      lieu: formData.lieu.trim(),
+      description: formData.description.trim(),
+      nombre_participants: Number(formData.nombre_participants),
+      statut: formData.statut,
+      date_debut: formData.date_debut,
+      creneaux: flattenedCreneaux,
+    };
+
+    if (formData.mode_planification === "manuel") {
+      payload.date_fin = formData.date_fin;
+    } else {
+      payload.nombre_seances = Number(formData.nombre_seances);
+    }
+
+    return payload;
+  };
+
+  const previewSessions = async () => {
+    try {
+      setLoadingPreview(true);
+
+      const res = await fetch(`${API_URL}/formations/preview-sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(buildPayload()),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setPreview(null);
+        return;
+      }
+
+      setPreview(data?.data || null);
+    } catch {
+      setPreview(null);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.nom.trim()) {
+      return "Le nom de la formation est requis.";
+    }
+
+    if (!formData.formateur_id) {
+      return "Veuillez sélectionner un formateur.";
+    }
+
+    if (!formData.lieu.trim()) {
+      return "Le lieu est requis.";
+    }
+
+    if (!formData.description.trim()) {
+      return "La description est requise.";
+    }
+
+    if (!formData.date_debut) {
+      return "La date de début est requise.";
+    }
+
+    if (!formData.creneaux || formData.creneaux.length === 0) {
+      return "Veuillez ajouter au moins un créneau.";
+    }
+
+    for (const creneau of formData.creneaux) {
+      if (!Array.isArray(creneau.jours) || creneau.jours.length === 0) {
+        return "Chaque créneau doit avoir au moins un jour sélectionné.";
+      }
+
+      if (!creneau.type_journee) {
+        return "Chaque créneau doit avoir un type.";
+      }
+
+      if (
+        creneau.type_journee === "personnalise" &&
+        (!creneau.heure_debut || !creneau.heure_fin)
+      ) {
+        return "Pour un créneau personnalisé, il faut une heure de début et une heure de fin.";
+      }
+
+      if (
+        creneau.type_journee === "personnalise" &&
+        creneau.heure_fin <= creneau.heure_debut
+      ) {
+        return "L'heure de fin doit être après l'heure de début.";
+      }
+    }
+
+    if (formData.mode_planification === "manuel") {
+      if (!formData.date_fin) {
+        return "Veuillez renseigner une date de fin.";
+      }
+
+      if (formData.date_fin < formData.date_debut) {
+        return "La date de fin ne peut pas être avant la date de début.";
+      }
+    } else {
+      if (!Number(formData.nombre_seances) || Number(formData.nombre_seances) <= 0) {
+        return "Veuillez renseigner un nombre de séances valide.";
+      }
+    }
+
+    return "";
   };
 
   const handleSubmit = async (e) => {
@@ -158,27 +468,10 @@ export function CreationFormations({
     setErreur("");
     setMessage("");
 
-    if (
-      formData.date_debut &&
-      formData.date_fin &&
-      formData.date_fin < formData.date_debut
-    ) {
-      setErreur("La date de fin ne peut pas être avant la date de début.");
-      return;
-    }
+    const validationError = validateForm();
 
-    if (!formData.formateur_id) {
-      setErreur("Veuillez sélectionner un formateur.");
-      return;
-    }
-
-    if (!formData.jours || formData.jours.length === 0) {
-      setErreur("Veuillez sélectionner au moins un jour.");
-      return;
-    }
-
-    if (!formData.type_journee) {
-      setErreur("Veuillez sélectionner un type de journée.");
+    if (validationError) {
+      setErreur(validationError);
       return;
     }
 
@@ -191,26 +484,13 @@ export function CreationFormations({
 
       const method = isEditing ? "PUT" : "POST";
 
-      const payload = {
-        nom: formData.nom.trim(),
-        formateur_id: Number(formData.formateur_id),
-        lieu: formData.lieu.trim(),
-        description: formData.description.trim(),
-        nombre_participants: Number(formData.nombre_participants),
-        statut: formData.statut,
-        date_debut: formData.date_debut,
-        date_fin: formData.date_fin,
-        jours: formData.jours,
-        type_journee: formData.type_journee,
-      };
-
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(buildPayload()),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -228,6 +508,7 @@ export function CreationFormations({
       );
 
       setFormData(initialForm);
+      setPreview(null);
 
       if (onSaved) {
         onSaved();
@@ -246,8 +527,8 @@ export function CreationFormations({
       </h2>
 
       <p className="admin-panel__text">
-        Remplis le formulaire puis enregistre. Le champ formateur récupère
-        automatiquement les utilisateurs ayant le rôle formateur.
+        Tu peux soit fixer une date de fin manuellement, soit laisser le système
+        calculer automatiquement les sessions à partir des créneaux récurrents.
       </p>
 
       <form className="admin-form" onSubmit={handleSubmit}>
@@ -331,7 +612,7 @@ export function CreationFormations({
         <div className="admin-form__row">
           <div className="admin-form__group">
             <label className="admin-form__label" htmlFor="date_debut">
-              Date de début
+              Date de début souhaitée
             </label>
             <input
               id="date_debut"
@@ -344,6 +625,24 @@ export function CreationFormations({
             />
           </div>
 
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="mode_planification">
+              Mode de planification
+            </label>
+            <select
+              id="mode_planification"
+              className="admin-form__select"
+              name="mode_planification"
+              value={formData.mode_planification}
+              onChange={handleChange}
+            >
+              <option value="intelligent">Calcul intelligent</option>
+              <option value="manuel">Date de fin manuelle</option>
+            </select>
+          </div>
+        </div>
+
+        {formData.mode_planification === "manuel" ? (
           <div className="admin-form__group">
             <label className="admin-form__label" htmlFor="date_fin">
               Date de fin
@@ -358,61 +657,192 @@ export function CreationFormations({
               required
             />
           </div>
-        </div>
+        ) : (
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="nombre_seances">
+              Nombre de séances à générer
+            </label>
+            <input
+              id="nombre_seances"
+              className="admin-form__input"
+              type="number"
+              name="nombre_seances"
+              value={formData.nombre_seances}
+              onChange={handleChange}
+              min="1"
+              placeholder="Ex: 12"
+              required
+            />
+          </div>
+        )}
 
         <div className="admin-form__group">
-          <label className="admin-form__label">Jours de la formation</label>
+          <label className="admin-form__label">Créneaux récurrents</label>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-              gap: "10px",
-              marginTop: "8px",
-            }}
-          >
-            {JOURS_OPTIONS.map((jour) => (
-              <label
-                key={jour.value}
+          <div style={{ display: "grid", gap: "12px", marginTop: "10px" }}>
+            {formData.creneaux.map((creneau, index) => (
+              <div
+                key={index}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px",
                   border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  cursor: "pointer",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  display: "grid",
+                  gap: "12px",
+                  background: "#fff",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={formData.jours.includes(jour.value)}
-                  onChange={() => handleJourChange(jour.value)}
-                />
-                <span>{jour.label}</span>
-              </label>
+                <div>
+                  <label className="admin-form__label">Jours de la semaine</label>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      marginTop: "8px",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--secondary"
+                      onClick={() => selectAllJours(index)}
+                    >
+                      Tout sélectionner
+                    </button>
+
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--secondary"
+                      onClick={() => clearAllJours(index)}
+                    >
+                      Tout désélectionner
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                      gap: "8px",
+                      marginTop: "8px",
+                    }}
+                  >
+                    {JOURS_OPTIONS.map((jour) => (
+                      <label
+                        key={jour.value}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "8px 10px",
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          background: creneau.jours?.includes(jour.value)
+                            ? "#f5f5f5"
+                            : "#fff",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={creneau.jours?.includes(jour.value) || false}
+                          onChange={() => handleJourToggle(index, jour.value)}
+                        />
+                        <span>{jour.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                    gap: "10px",
+                    alignItems: "end",
+                  }}
+                >
+                  <div>
+                    <label className="admin-form__label">Format</label>
+                    <select
+                      className="admin-form__select"
+                      value={creneau.type_journee}
+                      onChange={(e) =>
+                        handleCreneauChange(index, "type_journee", e.target.value)
+                      }
+                    >
+                      {TYPE_JOURNEE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="admin-form__label">Heure début</label>
+                    <input
+                      className="admin-form__input"
+                      type="time"
+                      value={creneau.heure_debut}
+                      onChange={(e) =>
+                        handleCreneauChange(index, "heure_debut", e.target.value)
+                      }
+                      disabled={creneau.type_journee !== "personnalise"}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="admin-form__label">Heure fin</label>
+                    <input
+                      className="admin-form__input"
+                      type="time"
+                      value={creneau.heure_fin}
+                      onChange={(e) =>
+                        handleCreneauChange(index, "heure_fin", e.target.value)
+                      }
+                      disabled={creneau.type_journee !== "personnalise"}
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--secondary"
+                      onClick={() => supprimerCreneau(index)}
+                      disabled={formData.creneaux.length === 1}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: "14px", color: "#555" }}>
+                  <strong>Jours sélectionnés :</strong>{" "}
+                  {creneau.jours && creneau.jours.length > 0
+                    ? creneau.jours
+                        .map(
+                          (jour) =>
+                            JOURS_OPTIONS.find((j) => j.value === jour)?.label || jour
+                        )
+                        .join(", ")
+                    : "Aucun"}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
 
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="type_journee">
-            Type de journée
-          </label>
-          <select
-            id="type_journee"
-            className="admin-form__select"
-            name="type_journee"
-            value={formData.type_journee}
-            onChange={handleChange}
-            required
-          >
-            {TYPE_JOURNEE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div style={{ marginTop: "12px" }}>
+            <button
+              type="button"
+              className="admin-btn admin-btn--secondary"
+              onClick={ajouterCreneau}
+            >
+              Ajouter un créneau
+            </button>
+          </div>
         </div>
 
         <div className="admin-form__group">
@@ -445,6 +875,123 @@ export function CreationFormations({
             placeholder="Décris la formation..."
             required
           />
+        </div>
+
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "16px",
+            border: "1px solid #ddd",
+            borderRadius: "10px",
+            background: "#fafafa",
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>Prévisualisation intelligente</h3>
+
+          {loadingPreview && <p>Calcul des sessions...</p>}
+
+          {!loadingPreview && preview && (
+            <>
+              <p>
+                <strong>Premier jour réel :</strong> {preview.date_debut_reelle}
+              </p>
+              <p>
+                <strong>Dernier jour calculé :</strong> {preview.date_fin_calculee}
+              </p>
+              <p>
+                <strong>Jours retenus :</strong> {preview.jours?.join(", ")}
+              </p>
+              <p>
+                <strong>Type global :</strong>{" "}
+                {getTypeLabel(preview.type_journee)}
+              </p>
+              <p>
+                <strong>Nombre de sessions :</strong>{" "}
+                {Array.isArray(preview.sessions) ? preview.sessions.length : 0}
+              </p>
+
+              {Array.isArray(preview.sessions) && preview.sessions.length > 0 && (
+                <div style={{ overflowX: "auto", marginTop: "12px" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      background: "#fff",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th
+                          style={{
+                            textAlign: "left",
+                            borderBottom: "1px solid #ddd",
+                            padding: "8px",
+                          }}
+                        >
+                          Date
+                        </th>
+                        <th
+                          style={{
+                            textAlign: "left",
+                            borderBottom: "1px solid #ddd",
+                            padding: "8px",
+                          }}
+                        >
+                          Heure début
+                        </th>
+                        <th
+                          style={{
+                            textAlign: "left",
+                            borderBottom: "1px solid #ddd",
+                            padding: "8px",
+                          }}
+                        >
+                          Heure fin
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.sessions.map((session, index) => (
+                        <tr key={`${session.date}-${session.heure_debut}-${index}`}>
+                          <td
+                            style={{
+                              borderBottom: "1px solid #eee",
+                              padding: "8px",
+                            }}
+                          >
+                            {session.date}
+                          </td>
+                          <td
+                            style={{
+                              borderBottom: "1px solid #eee",
+                              padding: "8px",
+                            }}
+                          >
+                            {session.heure_debut}
+                          </td>
+                          <td
+                            style={{
+                              borderBottom: "1px solid #eee",
+                              padding: "8px",
+                            }}
+                          >
+                            {session.heure_fin}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {!loadingPreview && !preview && (
+            <p>
+              Renseigne la date de début, les créneaux et soit une date de fin,
+              soit un nombre de séances pour voir la planification.
+            </p>
+          )}
         </div>
 
         {message && (

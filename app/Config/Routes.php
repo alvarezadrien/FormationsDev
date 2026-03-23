@@ -59,6 +59,7 @@ $routes->delete('inscriptions-formations/(:num)', 'InscriptionFormation::delete/
 // Formations admin
 // =========================
 $routes->post('formations', 'Formation::create', ['filter' => 'admin']);
+$routes->post('formations/preview-sessions', 'Formation::previewSessions', ['filter' => 'admin']);
 $routes->put('formations/(:num)', 'Formation::update/$1', ['filter' => 'admin']);
 $routes->delete('formations/(:num)', 'Formation::delete/$1', ['filter' => 'admin']);
 $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin']);
@@ -92,6 +93,22 @@ $routes->options('fiches-presence/(:num)/participants/(:num)', static function (
 });
 
 $routes->options('fiches-presence/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formations/preview-sessions', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formations', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formations/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formations/(:num)/edit', static function () {
     return service('response')->setStatusCode(200);
 });
 

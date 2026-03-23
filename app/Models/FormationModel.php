@@ -32,11 +32,16 @@ class FormationModel extends Model
 
     public function getJoursArray($jours)
     {
-        return explode(',', $jours);
+        if (empty($jours)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $jours))));
     }
 
-    public function setJoursArray($joursArray)
+    public function setJoursArray(array $joursArray)
     {
+        $joursArray = array_values(array_unique(array_filter(array_map('trim', $joursArray))));
         return implode(',', $joursArray);
     }
 }
