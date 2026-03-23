@@ -54,8 +54,10 @@ export function DetailsFormations() {
           description: data.description ?? "",
           nombre_participants: Number(data.nombre_participants ?? 0),
           statut: String(data.statut ?? "actif").toLowerCase(),
-          date_debut: data.date_debut || "",
-          date_fin: data.date_fin || "",
+          date_debut: data.date_debut ?? "",
+          date_fin: data.date_fin ?? "",
+          jours: data.jours ?? "",
+          type_journee: data.type_journee ?? "",
         });
       } catch (err) {
         setErreur(err.message || "Une erreur est survenue");
@@ -66,6 +68,54 @@ export function DetailsFormations() {
 
     fetchFormation();
   }, [id]);
+
+  const formatJours = (jours) => {
+    if (!jours) return "N/A";
+
+    if (Array.isArray(jours)) {
+      return jours.length ? jours.join(", ") : "N/A";
+    }
+
+    if (typeof jours === "string") {
+      const joursArray = jours
+        .split(",")
+        .map((jour) => jour.trim())
+        .filter(Boolean);
+
+      return joursArray.length ? joursArray.join(", ") : "N/A";
+    }
+
+    return "N/A";
+  };
+
+  const formatTypeJournee = (type) => {
+    if (!type) return "N/A";
+
+    const map = {
+      journee_complete: "Journée complète",
+      demi_journee: "Demi-journée",
+      soir: "Soir",
+      cours_du_jour: "Cours du jour",
+    };
+
+    return map[type] || type;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "Non renseignée";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return date;
+    }
+
+    return parsedDate.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   if (loading) {
     return (
@@ -96,7 +146,6 @@ export function DetailsFormations() {
 
   const handleInscription = () => {
     if (!inscriptionActive) return;
-
     navigate(`/inscription-formations?formation=${formation.id}`);
   };
 
@@ -173,14 +222,28 @@ export function DetailsFormations() {
               <div className="info_card">
                 <span className="info_label">Date de début</span>
                 <span className="info_data">
-                  {formation.date_debut || "Non renseignée"}
+                  {formatDate(formation.date_debut)}
                 </span>
               </div>
 
               <div className="info_card">
                 <span className="info_label">Date de fin</span>
                 <span className="info_data">
-                  {formation.date_fin || "Non renseignée"}
+                  {formatDate(formation.date_fin)}
+                </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">Jours choisis</span>
+                <span className="info_data">
+                  {formatJours(formation.jours)}
+                </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">Type de journée</span>
+                <span className="info_data">
+                  {formatTypeJournee(formation.type_journee)}
                 </span>
               </div>
 
@@ -188,13 +251,6 @@ export function DetailsFormations() {
                 <span className="info_label">Statut</span>
                 <span className={`info_data status_text ${formation.statut}`}>
                   {formation.statut}
-                </span>
-              </div>
-
-              <div className="info_card">
-                <span className="info_label">ID formateur</span>
-                <span className="info_data">
-                  {formation.formateur_id ?? "Non renseigné"}
                 </span>
               </div>
             </div>

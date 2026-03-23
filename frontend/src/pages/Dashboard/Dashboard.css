@@ -707,3 +707,49 @@
     display: grid;
   }
 }
+
+.admin-form__checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.admin-form__checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #dcdfe4;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.admin-form__checkbox-card:hover {
+  border-color: #7c3aed;
+  background: #f8f5ff;
+}
+
+.admin-form__checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #7c3aed;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.admin-form__checkbox-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.admin-form__checkbox-card:has(.admin-form__checkbox:checked) {
+  border-color: #7c3aed;
+  background: #f3e8ff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}

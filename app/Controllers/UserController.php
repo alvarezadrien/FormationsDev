@@ -11,17 +11,34 @@ class UserController extends ResourceController
 
     public function index()
     {
-        $userModel = new UserModel();
+        try {
+            $db = \Config\Database::connect();
 
-        $users = $userModel
-            ->select('id, nom, prenom, email, role, created_at, updated_at')
-            ->orderBy('id', 'DESC')
-            ->findAll();
+            $users = $db->table('users')
+                ->select("
+                    users.id,
+                    users.nom,
+                    users.prenom,
+                    users.email,
+                    users.role,
+                    users.created_at,
+                    users.updated_at,
+                    GROUP_CONCAT(DISTINCT formations.jours SEPARATOR ' | ') AS jours,
+                    GROUP_CONCAT(DISTINCT formations.type_journee SEPARATOR ' | ') AS type_journee
+                ")
+                ->join('formations', 'formations.formateur_id = users.id', 'left')
+                ->groupBy('users.id, users.nom, users.prenom, users.email, users.role, users.created_at, users.updated_at')
+                ->orderBy('users.id', 'DESC')
+                ->get()
+                ->getResultArray();
 
-        return $this->respond([
-            'status' => 'success',
-            'users'  => $users
-        ]);
+            return $this->respond([
+                'status' => 'success',
+                'users'  => $users
+            ]);
+        } catch (\Throwable $e) {
+            return $this->failServerError($e->getMessage());
+        }
     }
 
     public function delete($id = null)
@@ -53,7 +70,7 @@ class UserController extends ResourceController
             return $this->failForbidden('Accès refusé.');
         }
 
-        if ((int)$currentAdminId === (int)$targetUser['id']) {
+        if ((int) $currentAdminId === (int) $targetUser['id']) {
             return $this->failValidationErrors('Vous ne pouvez pas supprimer votre propre compte admin.');
         }
 

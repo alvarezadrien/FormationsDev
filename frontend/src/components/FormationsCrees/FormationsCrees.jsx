@@ -65,6 +65,24 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
     setFormationToDelete(null);
   };
 
+  const formatJours = (jours) => {
+    if (!jours) return "Non renseigné";
+
+    if (Array.isArray(jours)) {
+      return jours.join(", ");
+    }
+
+    if (typeof jours === "string") {
+      return jours
+        .split(",")
+        .map((jour) => jour.trim())
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    return "Non renseigné";
+  };
+
   const handleDelete = async () => {
     if (!formationToDelete?.id) return;
 
@@ -167,6 +185,13 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                       {formation.date_fin || "Non renseignée"}
                     </p>
                     <p>
+                      <strong>Jours :</strong> {formatJours(formation.jours)}
+                    </p>
+                    <p>
+                      <strong>Type de journée :</strong>{" "}
+                      {formation.type_journee || "Non renseigné"}
+                    </p>
+                    <p>
                       <strong>Statut :</strong>{" "}
                       <span className={badgeClass}>
                         {formation.statut || "actif"}
@@ -191,7 +216,9 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                       className="admin-btn admin-btn--delete"
                       type="button"
                       onClick={() => openDeleteModal(formation)}
-                      disabled={isDeleting && formationToDelete?.id === formation.id}
+                      disabled={
+                        isDeleting && formationToDelete?.id === formation.id
+                      }
                     >
                       {isDeleting && formationToDelete?.id === formation.id
                         ? "Suppression..."
@@ -241,7 +268,8 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
 
             <div className="admin-modal__details">
               <p>
-                <strong>Nom :</strong> {formationToDelete?.nom || "Non renseigné"}
+                <strong>Nom :</strong>{" "}
+                {formationToDelete?.nom || "Non renseigné"}
               </p>
               <p>
                 <strong>Formateur :</strong>{" "}
@@ -271,6 +299,14 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
               <p>
                 <strong>Date fin :</strong>{" "}
                 {formationToDelete?.date_fin || "Non renseignée"}
+              </p>
+              <p>
+                <strong>Jours :</strong>{" "}
+                {formatJours(formationToDelete?.jours)}
+              </p>
+              <p>
+                <strong>Type de journée :</strong>{" "}
+                {formationToDelete?.type_journee || "Non renseigné"}
               </p>
               <p>
                 <strong>Statut :</strong>{" "}

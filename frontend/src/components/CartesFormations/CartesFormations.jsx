@@ -61,6 +61,8 @@ export function CartesFormations() {
           statut: String(f.statut ?? "actif").toLowerCase(),
           date_debut: f.date_debut ?? "",
           date_fin: f.date_fin ?? "",
+          jours: f.jours ?? "",
+          type_journee: f.type_journee ?? "",
         }));
 
         setFormations(formattedData);
@@ -95,6 +97,38 @@ export function CartesFormations() {
     });
   };
 
+  const formatJours = (jours) => {
+    if (!jours) return "N/A";
+
+    if (Array.isArray(jours)) {
+      return jours.length > 0 ? jours.join(", ") : "N/A";
+    }
+
+    if (typeof jours === "string") {
+      const joursArray = jours
+        .split(",")
+        .map((jour) => jour.trim())
+        .filter(Boolean);
+
+      return joursArray.length > 0 ? joursArray.join(", ") : "N/A";
+    }
+
+    return "N/A";
+  };
+
+  const formatTypeJournee = (type) => {
+    if (!type) return "N/A";
+
+    const map = {
+      journee_complete: "Journée complète",
+      demi_journee: "Demi-journée",
+      soir: "Soir",
+      cours_du_jour: "Cours du jour",
+    };
+
+    return map[type] || type;
+  };
+
   const formationsFiltrees = useMemo(() => {
     if (!searchTerm) {
       return formations;
@@ -108,8 +142,12 @@ export function CartesFormations() {
         formation.date_debut,
         formation.date_fin,
         formation.statut,
+        formation.jours,
+        formation.type_journee,
         formatDate(formation.date_debut),
         formatDate(formation.date_fin),
+        formatJours(formation.jours),
+        formatTypeJournee(formation.type_journee),
       ]
         .join(" ")
         .toLowerCase();
@@ -193,6 +231,7 @@ export function CartesFormations() {
                       {formation.lieu || "Non renseigné"}
                     </span>
                   </div>
+
                   <div className="meta_row">
                     <div className="meta_item small">
                       <span className="meta_label">Début</span>
@@ -207,6 +246,13 @@ export function CartesFormations() {
                         {formatDate(formation.date_fin)}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="meta_item">
+                    <span className="meta_label">Jours</span>
+                    <span className="meta_value">
+                      {formatJours(formation.jours)}
+                    </span>
                   </div>
                 </div>
 
@@ -251,4 +297,4 @@ export function CartesFormations() {
       </div>
     </section>
   );
-}
+} 

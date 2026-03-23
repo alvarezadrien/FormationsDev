@@ -20,9 +20,23 @@ class FormationModel extends Model
         'statut',
         'date_debut',
         'date_fin',
+        'jours',
+        'type_journee',
+        'heure_debut',
+        'heure_fin',
         'created_at',
         'updated_at',
     ];
 
     protected $useTimestamps = false;
+
+    public function getJoursArray($jours)
+    {
+        return explode(',', $jours);
+    }
+
+    public function setJoursArray($joursArray)
+    {
+        return implode(',', $joursArray);
+    }
 }

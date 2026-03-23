@@ -57,6 +57,37 @@ export function DetailUsers() {
     });
   }, [users, selectedRole, search]);
 
+  const formatJours = (jours) => {
+    if (!jours) return "N/A";
+
+    if (Array.isArray(jours)) {
+      return jours.join(", ");
+    }
+
+    if (typeof jours === "string") {
+      return jours
+        .split(",")
+        .map((j) => j.trim())
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    return "N/A";
+  };
+
+  const formatTypeJournee = (type) => {
+    if (!type) return "N/A";
+
+    const map = {
+      journee_complete: "Journée complète",
+      demi_journee: "Demi-journée",
+      soir: "Soir",
+      cours_du_jour: "Cours du jour",
+    };
+
+    return map[type] || type;
+  };
+
   const handleOpenDeleteModal = (user) => {
     setUserToDelete(user);
     setAdminPassword("");
@@ -156,6 +187,8 @@ export function DetailUsers() {
                 <th>Prénom</th>
                 <th>Email</th>
                 <th>Rôle</th>
+                <th>Jours</th>
+                <th>Type journée</th>
                 <th className="action-cell">Action</th>
               </tr>
             </thead>
@@ -167,6 +200,7 @@ export function DetailUsers() {
                     <td>{user.nom}</td>
                     <td>{user.prenom}</td>
                     <td>{user.email}</td>
+
                     <td>
                       <span className={`role-badge ${user.role}`}>
                         {user.role === "admin"
@@ -176,6 +210,10 @@ export function DetailUsers() {
                           : "Utilisateur"}
                       </span>
                     </td>
+
+                    <td>{formatJours(user.jours)}</td>
+                    <td>{formatTypeJournee(user.type_journee)}</td>
+
                     <td className="action-cell">
                       <button
                         type="button"
@@ -189,7 +227,7 @@ export function DetailUsers() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="detail-users-empty">
+                  <td colSpan="8" className="detail-users-empty">
                     Aucun utilisateur trouvé.
                   </td>
                 </tr>

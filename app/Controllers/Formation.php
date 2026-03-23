@@ -83,6 +83,14 @@ class Formation extends Controller
                 ]);
             }
 
+            $jours = $data['jours'] ?? null;
+
+            if (is_array($jours)) {
+                $jours = implode(',', array_map('trim', $jours));
+            } else {
+                $jours = !empty($jours) ? trim($jours) : '';
+            }
+
             $payload = [
                 'nom' => trim($data['nom'] ?? ''),
                 'formateur_id' => isset($data['formateur_id']) ? (int) $data['formateur_id'] : 0,
@@ -92,6 +100,8 @@ class Formation extends Controller
                 'statut' => trim($data['statut'] ?? 'actif'),
                 'date_debut' => trim($data['date_debut'] ?? ''),
                 'date_fin' => trim($data['date_fin'] ?? ''),
+                'jours' => $jours,
+                'type_journee' => trim($data['type_journee'] ?? ''),
             ];
 
             if (
@@ -100,7 +110,9 @@ class Formation extends Controller
                 $payload['lieu'] === '' ||
                 $payload['description'] === '' ||
                 $payload['date_debut'] === '' ||
-                $payload['date_fin'] === ''
+                $payload['date_fin'] === '' ||
+                $payload['jours'] === '' ||
+                $payload['type_journee'] === ''
             ) {
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,
@@ -184,6 +196,14 @@ class Formation extends Controller
                 ]);
             }
 
+            $jours = $data['jours'] ?? ($formation['jours'] ?? '');
+
+            if (is_array($jours)) {
+                $jours = implode(',', array_map('trim', $jours));
+            } else {
+                $jours = trim($jours);
+            }
+
             $payload = [
                 'nom' => trim($data['nom'] ?? $formation['nom']),
                 'formateur_id' => isset($data['formateur_id'])
@@ -197,6 +217,8 @@ class Formation extends Controller
                 'statut' => trim($data['statut'] ?? $formation['statut']),
                 'date_debut' => trim($data['date_debut'] ?? ($formation['date_debut'] ?? '')),
                 'date_fin' => trim($data['date_fin'] ?? ($formation['date_fin'] ?? '')),
+                'jours' => $jours,
+                'type_journee' => trim($data['type_journee'] ?? ($formation['type_journee'] ?? '')),
             ];
 
             if (
@@ -205,7 +227,9 @@ class Formation extends Controller
                 $payload['lieu'] === '' ||
                 $payload['description'] === '' ||
                 $payload['date_debut'] === '' ||
-                $payload['date_fin'] === ''
+                $payload['date_fin'] === '' ||
+                $payload['jours'] === '' ||
+                $payload['type_journee'] === ''
             ) {
                 return $this->response->setStatusCode(422)->setJSON([
                     'error' => true,

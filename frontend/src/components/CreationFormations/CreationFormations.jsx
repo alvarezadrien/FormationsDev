@@ -2,6 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 
 const API_URL = "http://localhost:8080";
 
+const JOURS_OPTIONS = [
+  { value: "lundi", label: "Lundi" },
+  { value: "mardi", label: "Mardi" },
+  { value: "mercredi", label: "Mercredi" },
+  { value: "jeudi", label: "Jeudi" },
+  { value: "vendredi", label: "Vendredi" },
+];
+
+const TYPE_JOURNEE_OPTIONS = [
+  { value: "", label: "Sélectionner un type de journée" },
+  { value: "journee_complete", label: "Journée complète" },
+  { value: "demi_journee", label: "Demi-journée" },
+  { value: "soir", label: "Soir" },
+  { value: "cours_du_jour", label: "Cours du jour" },
+];
+
 const initialForm = {
   nom: "",
   formateur_id: "",
@@ -11,6 +27,8 @@ const initialForm = {
   statut: "actif",
   date_debut: "",
   date_fin: "",
+  jours: [],
+  type_journee: "",
 };
 
 export function CreationFormations({
@@ -65,6 +83,20 @@ export function CreationFormations({
 
   useEffect(() => {
     if (formationEnEdition) {
+      let joursArray = [];
+
+      if (Array.isArray(formationEnEdition.jours)) {
+        joursArray = formationEnEdition.jours;
+      } else if (
+        typeof formationEnEdition.jours === "string" &&
+        formationEnEdition.jours.trim() !== ""
+      ) {
+        joursArray = formationEnEdition.jours
+          .split(",")
+          .map((jour) => jour.trim())
+          .filter(Boolean);
+      }
+
       setFormData({
         nom: formationEnEdition.nom || "",
         formateur_id: formationEnEdition.formateur_id
@@ -76,6 +108,8 @@ export function CreationFormations({
         statut: formationEnEdition.statut ?? "actif",
         date_debut: formationEnEdition.date_debut || "",
         date_fin: formationEnEdition.date_fin || "",
+        jours: joursArray,
+        type_journee: formationEnEdition.type_journee || "",
       });
       setErreur("");
       setMessage("");
@@ -93,6 +127,19 @@ export function CreationFormations({
       ...prev,
       [name]: name === "nombre_participants" ? Number(value) : value,
     }));
+  };
+
+  const handleJourChange = (jourValue) => {
+    setFormData((prev) => {
+      const dejaSelectionne = prev.jours.includes(jourValue);
+
+      return {
+        ...prev,
+        jours: dejaSelectionne
+          ? prev.jours.filter((jour) => jour !== jourValue)
+          : [...prev.jours, jourValue],
+      };
+    });
   };
 
   const resetForm = () => {
@@ -125,6 +172,16 @@ export function CreationFormations({
       return;
     }
 
+    if (!formData.jours || formData.jours.length === 0) {
+      setErreur("Veuillez sélectionner au moins un jour.");
+      return;
+    }
+
+    if (!formData.type_journee) {
+      setErreur("Veuillez sélectionner un type de journée.");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -143,6 +200,8 @@ export function CreationFormations({
         statut: formData.statut,
         date_debut: formData.date_debut,
         date_fin: formData.date_fin,
+        jours: formData.jours,
+        type_journee: formData.type_journee,
       };
 
       const res = await fetch(url, {
@@ -299,6 +358,61 @@ export function CreationFormations({
               required
             />
           </div>
+        </div>
+
+        <div className="admin-form__group">
+          <label className="admin-form__label">Jours de la formation</label>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gap: "10px",
+              marginTop: "8px",
+            }}
+          >
+            {JOURS_OPTIONS.map((jour) => (
+              <label
+                key={jour.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.jours.includes(jour.value)}
+                  onChange={() => handleJourChange(jour.value)}
+                />
+                <span>{jour.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="admin-form__group">
+          <label className="admin-form__label" htmlFor="type_journee">
+            Type de journée
+          </label>
+          <select
+            id="type_journee"
+            className="admin-form__select"
+            name="type_journee"
+            value={formData.type_journee}
+            onChange={handleChange}
+            required
+          >
+            {TYPE_JOURNEE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="admin-form__group">
