@@ -10,6 +10,7 @@ import { AvisAdmin } from "../../components/AvisAdmin/AvisAdmin";
 import { CreationCompteFormateur } from "../../components/CreationCompteFormateur/CreationCompteFormateur";
 import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePresenceAdmin";
 import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
+import { CalendrierComplet } from "../../components/CalendrierComplet/CalendrierComplet";
 
 export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
@@ -26,6 +27,11 @@ export default function AdminFormationsDashboard() {
         key: "formations",
         label: "Gestion des formations",
         description: "Créer, modifier et supprimer les formations",
+      },
+      {
+        key: "calendrier",
+        label: "Calendrier complet",
+        description: "Voir tous les cours, créneaux et formateurs",
       },
       {
         key: "formateurs",
@@ -133,6 +139,25 @@ export default function AdminFormationsDashboard() {
           </div>
         );
 
+      case "calendrier":
+        return (
+          <section className="admin-section">
+            <div className="admin-list">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">Planning</span>
+                <h2 className="admin-list__title">Calendrier complet</h2>
+                <p className="admin-list__text">
+                  Consulte toutes les formations, leurs dates, leurs horaires et
+                  les formateurs associés. Clique sur un créneau pour l’ouvrir
+                  dans une popup et le gérer.
+                </p>
+              </div>
+
+              <CalendrierComplet />
+            </div>
+          </section>
+        );
+
       case "formateurs":
         return (
           <section className="admin-section">
@@ -238,8 +263,8 @@ export default function AdminFormationsDashboard() {
             </h1>
             <p className="admin-dashboard__subtitle">
               Gère les formations, les comptes formateurs, les utilisateurs, les
-              avis et les fiches de présence depuis un espace structuré et plus
-              lisible.
+              avis, les fiches de présence et désormais tout le planning depuis
+              un espace structuré et plus lisible.
             </p>
           </div>
 
