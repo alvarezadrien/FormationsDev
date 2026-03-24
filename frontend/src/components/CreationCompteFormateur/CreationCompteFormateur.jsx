@@ -3,15 +3,18 @@ import "./CreationCompteFormateur.css";
 
 const API_BASE_URL = "http://localhost:8080";
 
-export function CreationCompteFormateur() {
-  const [formData, setFormData] = useState({
-    nom: "",
-    prenom: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+const initialForm = {
+  nom: "",
+  prenom: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  travaille_samedi: false,
+  est_remplacant: false,
+};
 
+export function CreationCompteFormateur() {
+  const [formData, setFormData] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -25,14 +28,54 @@ export function CreationCompteFormateur() {
     }));
   };
 
+  const toggleField = (field) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
   const resetForm = () => {
-    setFormData({
-      nom: "",
-      prenom: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
+    setFormData(initialForm);
+    setMessage("");
+    setError("");
+  };
+
+  const validateForm = () => {
+    const nom = formData.nom.trim();
+    const prenom = formData.prenom.trim();
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (!nom || !prenom || !email || !password) {
+      return "Tous les champs sont obligatoires";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Adresse email invalide";
+    }
+
+    if (password.length < 6) {
+      return "Le mot de passe doit contenir au moins 6 caractères";
+    }
+
+    if (password !== formData.confirmPassword) {
+      return "Les mots de passe ne correspondent pas";
+    }
+
+    return "";
+  };
+
+  const buildPayload = () => {
+    return {
+      nom: formData.nom.trim(),
+      prenom: formData.prenom.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      travaille_samedi: formData.travaille_samedi ? 1 : 0,
+      est_remplacant: formData.est_remplacant ? 1 : 0,
+    };
   };
 
   const handleSubmit = async (e) => {
@@ -41,23 +84,9 @@ export function CreationCompteFormateur() {
     setError("");
     setMessage("");
 
-    if (
-      !formData.nom.trim() ||
-      !formData.prenom.trim() ||
-      !formData.email.trim() ||
-      !formData.password.trim()
-    ) {
-      setError("Tous les champs sont obligatoires");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caractères");
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -70,22 +99,37 @@ export function CreationCompteFormateur() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          nom: formData.nom.trim(),
-          prenom: formData.prenom.trim(),
-          email: formData.email.trim(),
-          password: formData.password.trim(),
-        }),
+        body: JSON.stringify(buildPayload()),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data?.message || "Impossible de créer le compte formateur");
+        if (response.status === 409) {
+          throw new Error(data?.message || "Cet email est déjà utilisé");
+        }
+
+        if (response.status === 422) {
+          throw new Error(data?.message || "Certaines données sont invalides");
+        }
+
+        if (response.status === 401) {
+          throw new Error(data?.message || "Vous devez être connecté");
+        }
+
+        if (response.status === 403) {
+          throw new Error(data?.message || "Accès interdit");
+        }
+
+        throw new Error(
+          data?.message ||
+            (data?.details ? JSON.stringify(data.details) : "") ||
+            "Impossible de créer le compte formateur"
+        );
       }
 
       setMessage(data?.message || "Compte formateur créé avec succès");
-      resetForm();
+      setFormData(initialForm);
     } catch (err) {
       setError(err.message || "Une erreur est survenue");
     } finally {
@@ -116,6 +160,8 @@ export function CreationCompteFormateur() {
               value={formData.nom}
               onChange={handleChange}
               placeholder="Nom"
+              disabled={saving}
+              required
             />
           </div>
 
@@ -128,6 +174,8 @@ export function CreationCompteFormateur() {
               value={formData.prenom}
               onChange={handleChange}
               placeholder="Prénom"
+              disabled={saving}
+              required
             />
           </div>
 
@@ -140,6 +188,8 @@ export function CreationCompteFormateur() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email"
+              disabled={saving}
+              required
             />
           </div>
 
@@ -152,6 +202,8 @@ export function CreationCompteFormateur() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Mot de passe"
+              disabled={saving}
+              required
             />
           </div>
 
@@ -164,13 +216,80 @@ export function CreationCompteFormateur() {
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Confirmer le mot de passe"
+              disabled={saving}
+              required
             />
+          </div>
+        </div>
+
+        <div className="creation-formateur__field creation-formateur__field--full">
+          <label>Options du formateur</label>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => toggleField("travaille_samedi")}
+              className={`creation-formateur__toggle ${
+                formData.travaille_samedi ? "is-active" : ""
+              }`}
+              disabled={saving}
+            >
+              {formData.travaille_samedi ? "✓ " : ""}
+              Disponible le samedi
+            </button>
+
+            <button
+              type="button"
+              onClick={() => toggleField("est_remplacant")}
+              className={`creation-formateur__toggle ${
+                formData.est_remplacant ? "is-active" : ""
+              }`}
+              disabled={saving}
+            >
+              {formData.est_remplacant ? "✓ " : ""}
+              Peut être remplaçant
+            </button>
+          </div>
+
+          <div
+            style={{
+              marginTop: "12px",
+              fontSize: "14px",
+              color: "#555",
+              display: "grid",
+              gap: "6px",
+            }}
+          >
+            <div>
+              <strong>Disponible le samedi :</strong>{" "}
+              {formData.travaille_samedi ? "Oui" : "Non"}
+            </div>
+            <div>
+              <strong>Peut être remplaçant :</strong>{" "}
+              {formData.est_remplacant ? "Oui" : "Non"}
+            </div>
           </div>
         </div>
 
         <div className="creation-formateur__actions">
           <button type="submit" disabled={saving}>
             {saving ? "Création..." : "Créer le compte formateur"}
+          </button>
+
+          <button
+            type="button"
+            onClick={resetForm}
+            disabled={saving}
+            className="creation-formateur__reset"
+          >
+            Réinitialiser
           </button>
         </div>
       </form>

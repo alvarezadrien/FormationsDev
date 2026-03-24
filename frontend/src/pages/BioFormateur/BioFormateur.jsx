@@ -2,6 +2,27 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./BioFormateur.css";
 
+const API_URL = "http://localhost:8080";
+
+function toArray(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function toBoolean(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
 export function BioFormateur() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -9,8 +30,6 @@ export function BioFormateur() {
   const [formateur, setFormateur] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erreur, setErreur] = useState("");
-
-  const API_URL = "http://localhost:8080";
 
   useEffect(() => {
     const fetchFormateur = async () => {
@@ -45,19 +64,26 @@ export function BioFormateur() {
           throw new Error("Aucune donnée formateur reçue");
         }
 
+        const nom = data.nom ?? "";
+        const prenom = data.prenom ?? "";
+        const nomComplet =
+          data.nom_complet?.trim() || `${prenom} ${nom}`.trim() || "Nom non renseigné";
+
         setFormateur({
           id: data.id,
-          nom: data.nom ?? "",
-          prenom: data.prenom ?? "",
-          nom_complet: data.nom_complet ?? "Nom non renseigné",
-          poste: data.poste ?? "Formateur",
-          specialite: data.specialite ?? "",
-          bio: data.bio ?? "",
-          experience: Array.isArray(data.experience) ? data.experience : [],
-          competences: Array.isArray(data.competences) ? data.competences : [],
-          formations: Array.isArray(data.formations) ? data.formations : [],
-          email: data.email ?? "",
-          telephone: data.telephone ?? "",
+          nom,
+          prenom,
+          nom_complet: nomComplet,
+          poste: data.poste?.trim() || "Formateur",
+          specialite: data.specialite?.trim() || "",
+          bio: data.bio?.trim() || "",
+          experience: toArray(data.experience),
+          competences: toArray(data.competences),
+          formations: toArray(data.formations),
+          email: data.email?.trim() || "",
+          telephone: data.telephone?.trim() || "",
+          travaille_samedi: toBoolean(data.travaille_samedi),
+          est_remplacant: toBoolean(data.est_remplacant),
         });
       } catch (err) {
         setErreur(err.message || "Une erreur est survenue");
@@ -112,6 +138,23 @@ export function BioFormateur() {
             <p className="trainer_intro">
               {formateur.specialite || "Aucune spécialité renseignée."}
             </p>
+
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "10px",
+                marginTop: "14px",
+              }}
+            >
+              {formateur.est_remplacant && (
+                <span className="trainer_tag">Remplaçant</span>
+              )}
+
+              {formateur.travaille_samedi && (
+                <span className="trainer_tag">Disponible le samedi</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -130,6 +173,14 @@ export function BioFormateur() {
                 <p className="trainer_contact_item">
                   <strong>Téléphone :</strong>{" "}
                   {formateur.telephone || "Non renseigné"}
+                </p>
+                <p className="trainer_contact_item">
+                  <strong>Remplaçant :</strong>{" "}
+                  {formateur.est_remplacant ? "Oui" : "Non"}
+                </p>
+                <p className="trainer_contact_item">
+                  <strong>Disponible le samedi :</strong>{" "}
+                  {formateur.travaille_samedi ? "Oui" : "Non"}
                 </p>
               </div>
             </div>

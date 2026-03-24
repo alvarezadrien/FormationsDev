@@ -53,7 +53,6 @@ $routes->put('formateur/ma-bio', 'FormateurController::updateMyBio', ['filter' =
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index');
 
-// routes sensibles gardées en admin
 $routes->get(
     'inscriptions-formations/(:num)',
     'InscriptionFormation::show/$1',
@@ -121,11 +120,15 @@ $routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', 
 // =========================
 // OPTIONS pour préflight CORS
 // =========================
-$routes->options('fiches-presence/(:num)/participants/(:num)', static function () {
+$routes->options('formateurs', static function () {
     return service('response')->setStatusCode(200);
 });
 
-$routes->options('fiches-presence/(:num)', static function () {
+$routes->options('users/formateurs', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formateur/ma-bio', static function () {
     return service('response')->setStatusCode(200);
 });
 
@@ -145,7 +148,39 @@ $routes->options('formations/(:num)/edit', static function () {
     return service('response')->setStatusCode(200);
 });
 
-$routes->options('formateur/ma-bio', static function () {
+$routes->options('fiches-presence', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('fiches-presence/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('fiches-presence/(:num)/participants/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('lieux', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('lieux/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('me', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('login', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('register', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('logout', static function () {
     return service('response')->setStatusCode(200);
 });
 

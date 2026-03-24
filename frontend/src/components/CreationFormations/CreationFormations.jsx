@@ -26,6 +26,7 @@ const TYPE_JOURNEE_OPTIONS = [
 const initialForm = {
   nom: "",
   formateur_id: "",
+  remplacant_id: "",
   lieu: "",
   description: "",
   nombre_participants: 0,
@@ -48,6 +49,21 @@ function getTypeLabel(value) {
   return (
     TYPE_JOURNEE_OPTIONS.find((option) => option.value === value)?.label || value
   );
+}
+
+function normalizeBoolean(value) {
+  return value === true || value === 1 || value === "1";
+}
+
+function normalizeFormateur(formateur) {
+  return {
+    id: Number(formateur.id),
+    nom: formateur.nom || "",
+    prenom: formateur.prenom || "",
+    email: formateur.email || "",
+    est_remplacant: normalizeBoolean(formateur.est_remplacant),
+    travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
+  };
 }
 
 function normalizeSessionsFromFormation(formation) {
@@ -170,7 +186,7 @@ export function CreationFormations({
           credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
           throw new Error(
@@ -178,7 +194,16 @@ export function CreationFormations({
           );
         }
 
-        setFormateurs(Array.isArray(data?.formateurs) ? data.formateurs : []);
+        const rawFormateurs = Array.isArray(data?.formateurs)
+          ? data.formateurs
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
+              : [];
+
+        const normalized = rawFormateurs.map(normalizeFormateur);
+        setFormateurs(normalized);
       } catch (err) {
         setErreur(err.message || "Erreur lors du chargement des formateurs");
       } finally {
@@ -203,7 +228,7 @@ export function CreationFormations({
           credentials: "include",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
           throw new Error(data?.message || "Impossible de charger les lieux");
@@ -228,6 +253,9 @@ export function CreationFormations({
         nom: formationEnEdition.nom || "",
         formateur_id: formationEnEdition.formateur_id
           ? String(formationEnEdition.formateur_id)
+          : "",
+        remplacant_id: formationEnEdition.remplacant_id
+          ? String(formationEnEdition.remplacant_id)
           : "",
         lieu: formationEnEdition.lieu || "",
         description: formationEnEdition.description || "",
@@ -273,6 +301,67 @@ export function CreationFormations({
 
     return () => clearTimeout(timer);
   }, [formData]);
+
+  const hasSaturdaySelected = useMemo(() => {
+    return formData.creneaux.some(
+      (creneau) =>
+        Array.isArray(creneau.jours) && creneau.jours.includes("samedi")
+    );
+  }, [formData.creneaux]);
+
+  const availableFormateurs = useMemo(() => {
+    let result = [...formateurs];
+
+    if (hasSaturdaySelected) {
+      result = result.filter((formateur) => formateur.travaille_samedi);
+    }
+
+    return result;
+  }, [formateurs, hasSaturdaySelected]);
+
+  const availableRemplacants = useMemo(() => {
+    let result = formateurs.filter((formateur) => formateur.est_remplacant === true);
+
+    if (hasSaturdaySelected) {
+      result = result.filter((formateur) => formateur.travaille_samedi === true);
+    }
+
+    if (formData.formateur_id) {
+      result = result.filter(
+        (formateur) => String(formateur.id) !== String(formData.formateur_id)
+      );
+    }
+
+    return result;
+  }, [formateurs, hasSaturdaySelected, formData.formateur_id]);
+
+  useEffect(() => {
+    if (
+      formData.formateur_id &&
+      !availableFormateurs.some(
+        (formateur) => String(formateur.id) === String(formData.formateur_id)
+      )
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        formateur_id: "",
+      }));
+    }
+  }, [availableFormateurs, formData.formateur_id]);
+
+  useEffect(() => {
+    if (
+      formData.remplacant_id &&
+      !availableRemplacants.some(
+        (formateur) => String(formateur.id) === String(formData.remplacant_id)
+      )
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        remplacant_id: "",
+      }));
+    }
+  }, [availableRemplacants, formData.remplacant_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -384,6 +473,9 @@ export function CreationFormations({
     const payload = {
       nom: formData.nom.trim(),
       formateur_id: Number(formData.formateur_id),
+      remplacant_id: formData.remplacant_id
+        ? Number(formData.remplacant_id)
+        : null,
       lieu: formData.lieu.trim(),
       description: formData.description.trim(),
       nombre_participants: Number(formData.nombre_participants),
@@ -476,6 +568,13 @@ export function CreationFormations({
       ) {
         return "L'heure de fin doit être après l'heure de début.";
       }
+    }
+
+    if (
+      formData.remplacant_id &&
+      String(formData.remplacant_id) === String(formData.formateur_id)
+    ) {
+      return "Le remplaçant doit être différent du formateur principal.";
     }
 
     if (formData.mode_planification === "manuel") {
@@ -597,16 +696,76 @@ export function CreationFormations({
             <option value="">
               {loadingFormateurs
                 ? "Chargement des formateurs..."
-                : "Sélectionner un formateur"}
+                : hasSaturdaySelected
+                  ? "Sélectionner un formateur dispo le samedi"
+                  : "Sélectionner un formateur"}
             </option>
 
-            {formateurs.map((formateur) => (
+            {availableFormateurs.map((formateur) => (
               <option key={formateur.id} value={formateur.id}>
                 {formateur.prenom} {formateur.nom} - {formateur.email}
               </option>
             ))}
           </select>
         </div>
+
+        <div className="admin-form__group">
+          <label className="admin-form__label" htmlFor="remplacant_id">
+            Remplaçant
+          </label>
+          <select
+            id="remplacant_id"
+            className="admin-form__select"
+            name="remplacant_id"
+            value={formData.remplacant_id}
+            onChange={handleChange}
+            disabled={loadingFormateurs}
+          >
+            <option value="">
+              {loadingFormateurs
+                ? "Chargement des remplaçants..."
+                : hasSaturdaySelected
+                  ? "Sélectionner un remplaçant dispo le samedi"
+                  : "Sélectionner un remplaçant"}
+            </option>
+
+            {availableRemplacants.map((formateur) => (
+              <option key={formateur.id} value={formateur.id}>
+                {formateur.prenom} {formateur.nom} - {formateur.email}
+              </option>
+            ))}
+          </select>
+
+          {!loadingFormateurs && availableRemplacants.length === 0 && (
+            <div
+              style={{
+                marginTop: "8px",
+                fontSize: "14px",
+                color: "#b42318",
+              }}
+            >
+              Aucun remplaçant disponible pour les critères sélectionnés.
+            </div>
+          )}
+        </div>
+
+        {hasSaturdaySelected ? (
+          <div
+            style={{
+              marginTop: "10px",
+              marginBottom: "18px",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              background: "#fff8e1",
+              border: "1px solid #f0d98a",
+              color: "#7a5a00",
+              fontSize: "14px",
+            }}
+          >
+            Samedi est sélectionné : seuls les formateurs et remplaçants
+            disponibles le samedi sont affichés.
+          </div>
+        ) : null}
 
         <div className="admin-form__row">
           <div className="admin-form__group">
@@ -944,8 +1103,7 @@ export function CreationFormations({
                 <strong>Jours retenus :</strong> {preview.jours?.join(", ")}
               </p>
               <p>
-                <strong>Type global :</strong>{" "}
-                {getTypeLabel(preview.type_journee)}
+                <strong>Type global :</strong> {getTypeLabel(preview.type_journee)}
               </p>
               <p>
                 <strong>Nombre de sessions :</strong>{" "}
@@ -1053,8 +1211,8 @@ export function CreationFormations({
             {saving
               ? "Enregistrement..."
               : isEditing
-              ? "Mettre à jour"
-              : "Créer la formation"}
+                ? "Mettre à jour"
+                : "Créer la formation"}
           </button>
 
           {isEditing && (

@@ -4,9 +4,33 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use App\Models\UserModel;
+use App\Models\FormateurBioModel;
+use Config\Database;
 
 class Auth extends Controller
 {
+    private function normalizeArrayField($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_filter(array_map(
+                static fn($item) => trim((string) $item),
+                $value
+            ), static fn($item) => $item !== ''));
+        }
+
+        if ($value === null) {
+            return [];
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
+    }
+
     public function register()
     {
         try {
@@ -60,12 +84,13 @@ class Auth extends Controller
                 'updated_at' => $now,
             ];
 
-            $inserted = $model->insert($payload);
+            $inserted = $model->insert($payload, true);
 
             if (!$inserted) {
                 return $this->response->setStatusCode(500)->setJSON([
                     'error'   => true,
-                    'message' => 'Impossible de créer le compte'
+                    'message' => 'Impossible de créer le compte',
+                    'details' => $model->errors(),
                 ]);
             }
 
@@ -116,14 +141,7 @@ class Auth extends Controller
 
             $user = $model->where('email', $email)->first();
 
-            if (!$user) {
-                return $this->response->setStatusCode(401)->setJSON([
-                    'error'   => true,
-                    'message' => 'Identifiants invalides'
-                ]);
-            }
-
-            if (empty($user['password']) || !password_verify($password, $user['password'])) {
+            if (!$user || empty($user['password']) || !password_verify($password, $user['password'])) {
                 return $this->response->setStatusCode(401)->setJSON([
                     'error'   => true,
                     'message' => 'Identifiants invalides'
@@ -269,7 +287,13 @@ class Auth extends Controller
                 $updateData['password'] = password_hash($password, PASSWORD_DEFAULT);
             }
 
-            $model->update($userId, $updateData);
+            if (!$model->update($userId, $updateData)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error'   => true,
+                    'message' => 'Impossible de mettre à jour le profil',
+                    'details' => $model->errors(),
+                ]);
+            }
 
             $session->set([
                 'nom'    => $nom,
@@ -300,18 +324,20 @@ class Auth extends Controller
     {
         try {
             $session = session();
-            $model = new UserModel();
+            $userModel = new UserModel();
+            $bioModel = new FormateurBioModel();
+            $db = Database::connect();
 
             if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
                 return $this->response->setStatusCode(401)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Non authentifié'
                 ]);
             }
 
             if ($session->get('role') !== 'admin') {
                 return $this->response->setStatusCode(403)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Accès interdit'
                 ]);
             }
@@ -320,7 +346,7 @@ class Auth extends Controller
 
             if (!$data) {
                 return $this->response->setStatusCode(400)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Données JSON invalides ou absentes'
                 ]);
             }
@@ -332,37 +358,37 @@ class Auth extends Controller
 
             if ($nom === '' || $prenom === '' || $email === '' || $password === '') {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Tous les champs sont obligatoires'
                 ]);
             }
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Adresse email invalide'
                 ]);
             }
 
             if (strlen($password) < 6) {
                 return $this->response->setStatusCode(422)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Le mot de passe doit contenir au moins 6 caractères'
                 ]);
             }
 
-            $existingUser = $model->where('email', $email)->first();
+            $existingUser = $userModel->where('email', $email)->first();
 
             if ($existingUser) {
                 return $this->response->setStatusCode(409)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Cet email est déjà utilisé'
                 ]);
             }
 
             $now = date('Y-m-d H:i:s');
 
-            $payload = [
+            $userPayload = [
                 'nom'        => $nom,
                 'prenom'     => $prenom,
                 'email'      => $email,
@@ -372,31 +398,84 @@ class Auth extends Controller
                 'updated_at' => $now,
             ];
 
-            $inserted = $model->insert($payload);
+            $bioPayload = [
+                'poste'             => trim($data['poste'] ?? ''),
+                'specialite'        => trim($data['specialite'] ?? ''),
+                'bio'               => trim($data['bio'] ?? ''),
+                'telephone'         => trim($data['telephone'] ?? ''),
+                'travaille_samedi'  => !empty($data['travaille_samedi']) ? 1 : 0,
+                'est_remplacant'    => !empty($data['est_remplacant']) ? 1 : 0,
+                'experience'        => json_encode(
+                    $this->normalizeArrayField($data['experience'] ?? []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'competences'       => json_encode(
+                    $this->normalizeArrayField($data['competences'] ?? []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'formations'        => json_encode(
+                    $this->normalizeArrayField($data['formations'] ?? []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'created_at'        => $now,
+                'updated_at'        => $now,
+            ];
 
-            if (!$inserted) {
+            $db->transBegin();
+
+            $userId = $userModel->insert($userPayload, true);
+
+            if (!$userId) {
+                $db->transRollback();
                 return $this->response->setStatusCode(500)->setJSON([
-                    'error' => true,
-                    'message' => 'Impossible de créer le compte formateur'
+                    'error'   => true,
+                    'message' => 'Impossible de créer le compte formateur',
+                    'details' => $userModel->errors(),
                 ]);
             }
 
-            $user = $model->find($inserted);
+            $bioPayload['user_id'] = $userId;
+
+            $bioInserted = $bioModel->insert($bioPayload, true);
+
+            if (!$bioInserted) {
+                $db->transRollback();
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error'   => true,
+                    'message' => 'Le compte utilisateur a été créé mais la fiche bio a échoué',
+                    'details' => $bioModel->errors(),
+                    'payload' => $bioPayload,
+                ]);
+            }
+
+            if ($db->transStatus() === false) {
+                $db->transRollback();
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error'   => true,
+                    'message' => 'Transaction échouée lors de la création du formateur'
+                ]);
+            }
+
+            $db->transCommit();
+
+            $user = $userModel->find($userId);
 
             return $this->response->setStatusCode(201)->setJSON([
                 'error'   => false,
                 'message' => 'Compte formateur créé avec succès',
                 'user'    => [
-                    'id'     => $user['id'],
-                    'nom'    => $user['nom'],
-                    'prenom' => $user['prenom'],
-                    'email'  => $user['email'],
-                    'role'   => $user['role'],
+                    'id'                => $user['id'],
+                    'nom'               => $user['nom'],
+                    'prenom'            => $user['prenom'],
+                    'email'             => $user['email'],
+                    'role'              => $user['role'],
+                    'est_remplacant'    => (int) $bioPayload['est_remplacant'],
+                    'travaille_samedi'  => (int) $bioPayload['travaille_samedi'],
                 ]
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }
@@ -406,36 +485,57 @@ class Auth extends Controller
     {
         try {
             $session = session();
-            $model = new UserModel();
+            $db = Database::connect();
 
             if (!$session->get('user_id') || !$session->get('isLoggedIn')) {
                 return $this->response->setStatusCode(401)->setJSON([
-                    'error' => true,
+                    'error'   => true,
                     'message' => 'Non authentifié'
                 ]);
             }
 
-            if ($session->get('role') !== 'admin') {
-                return $this->response->setStatusCode(403)->setJSON([
-                    'error' => true,
-                    'message' => 'Accès interdit'
-                ]);
-            }
+            $builder = $db->table('users u');
+            $builder->select("
+                u.id,
+                u.nom,
+                u.prenom,
+                u.email,
+                u.role,
+                COALESCE(fb.est_remplacant, 0) AS est_remplacant,
+                COALESCE(fb.travaille_samedi, 0) AS travaille_samedi,
+                fb.poste,
+                fb.specialite,
+                fb.telephone
+            ");
+            $builder->join('formateur_bios fb', 'fb.user_id = u.id', 'left');
+            $builder->where('u.role', 'formateur');
+            $builder->orderBy('u.prenom', 'ASC');
+            $builder->orderBy('u.nom', 'ASC');
 
-            $formateurs = $model
-                ->select('id, nom, prenom, email, role')
-                ->where('role', 'formateur')
-                ->orderBy('prenom', 'ASC')
-                ->orderBy('nom', 'ASC')
-                ->findAll();
+            $formateurs = $builder->get()->getResultArray();
+
+            $formateurs = array_map(static function ($row) {
+                return [
+                    'id'                => (int) ($row['id'] ?? 0),
+                    'nom'               => $row['nom'] ?? '',
+                    'prenom'            => $row['prenom'] ?? '',
+                    'email'             => $row['email'] ?? '',
+                    'role'              => $row['role'] ?? 'formateur',
+                    'poste'             => $row['poste'] ?? '',
+                    'specialite'        => $row['specialite'] ?? '',
+                    'telephone'         => $row['telephone'] ?? '',
+                    'est_remplacant'    => (int) ($row['est_remplacant'] ?? 0),
+                    'travaille_samedi'  => (int) ($row['travaille_samedi'] ?? 0),
+                ];
+            }, $formateurs);
 
             return $this->response->setJSON([
-                'error' => false,
+                'error'      => false,
                 'formateurs' => $formateurs
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON([
-                'error' => true,
+                'error'   => true,
                 'message' => $e->getMessage()
             ]);
         }

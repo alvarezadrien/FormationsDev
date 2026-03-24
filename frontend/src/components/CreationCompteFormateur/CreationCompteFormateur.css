@@ -121,3 +121,28 @@
     width: 100%;
   }
 }
+
+.creation-formateur__toggle {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #344054;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-weight: 500;
+}
+
+.creation-formateur__toggle:hover {
+  background: #f9fafb;
+}
+
+.creation-formateur__toggle.is-active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.creation-formateur__reset {
+  margin-left: 10px;
+}

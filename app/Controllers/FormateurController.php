@@ -8,6 +8,28 @@ use App\Models\FormateurBioModel;
 
 class FormateurController extends Controller
 {
+    private function parseStoredArray($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_filter(array_map('trim', $value), fn($v) => $v !== ''));
+        }
+
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return array_values(array_filter(array_map(
+                static fn($item) => is_string($item) ? trim($item) : $item,
+                $decoded
+            ), fn($v) => $v !== '' && $v !== null));
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', (string) $value))));
+    }
+
     public function show($id = null)
     {
         try {
@@ -32,24 +54,6 @@ class FormateurController extends Controller
 
             $bio = $bioModel->where('user_id', $id)->first();
 
-            $experience = [];
-            $competences = [];
-            $formations = [];
-
-            if ($bio) {
-                $experience = !empty($bio['experience'])
-                    ? json_decode($bio['experience'], true)
-                    : [];
-
-                $competences = !empty($bio['competences'])
-                    ? json_decode($bio['competences'], true)
-                    : [];
-
-                $formations = !empty($bio['formations'])
-                    ? json_decode($bio['formations'], true)
-                    : [];
-            }
-
             return $this->response->setJSON([
                 'error' => false,
                 'data'  => [
@@ -65,9 +69,9 @@ class FormateurController extends Controller
                     'telephone'         => $bio['telephone'] ?? '',
                     'travaille_samedi'  => isset($bio['travaille_samedi']) ? (bool) $bio['travaille_samedi'] : false,
                     'est_remplacant'    => isset($bio['est_remplacant']) ? (bool) $bio['est_remplacant'] : false,
-                    'experience'        => is_array($experience) ? $experience : [],
-                    'competences'       => is_array($competences) ? $competences : [],
-                    'formations'        => is_array($formations) ? $formations : [],
+                    'experience'        => $this->parseStoredArray($bio['experience'] ?? null),
+                    'competences'       => $this->parseStoredArray($bio['competences'] ?? null),
+                    'formations'        => $this->parseStoredArray($bio['formations'] ?? null),
                 ]
             ]);
         } catch (\Throwable $e) {
@@ -123,9 +127,25 @@ class FormateurController extends Controller
                 'telephone'        => $input['telephone'] ?? null,
                 'travaille_samedi' => !empty($input['travaille_samedi']) ? 1 : 0,
                 'est_remplacant'   => !empty($input['est_remplacant']) ? 1 : 0,
-                'experience'       => isset($input['experience']) ? json_encode($input['experience'], JSON_UNESCAPED_UNICODE) : json_encode([]),
-                'competences'      => isset($input['competences']) ? json_encode($input['competences'], JSON_UNESCAPED_UNICODE) : json_encode([]),
-                'formations'       => isset($input['formations']) ? json_encode($input['formations'], JSON_UNESCAPED_UNICODE) : json_encode([]),
+                'experience'       => json_encode(
+                    is_array($input['experience'] ?? null)
+                        ? $input['experience']
+                        : (trim($input['experience'] ?? '') !== '' ? [trim($input['experience'])] : []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'competences'      => json_encode(
+                    is_array($input['competences'] ?? null)
+                        ? $input['competences']
+                        : (trim($input['competences'] ?? '') !== '' ? array_map('trim', explode(',', $input['competences'])) : []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'formations'       => json_encode(
+                    is_array($input['formations'] ?? null)
+                        ? $input['formations']
+                        : (trim($input['formations'] ?? '') !== '' ? array_map('trim', explode(',', $input['formations'])) : []),
+                    JSON_UNESCAPED_UNICODE
+                ),
+                'updated_at'       => date('Y-m-d H:i:s'),
             ];
 
             $existingBio = $bioModel->where('user_id', $userId)->first();
@@ -134,6 +154,7 @@ class FormateurController extends Controller
                 $bioModel->update($existingBio['id'], $data);
             } else {
                 $data['user_id'] = $userId;
+                $data['created_at'] = date('Y-m-d H:i:s');
                 $bioModel->insert($data);
             }
 
@@ -150,9 +171,9 @@ class FormateurController extends Controller
                     'telephone'          => $updatedBio['telephone'] ?? '',
                     'travaille_samedi'   => isset($updatedBio['travaille_samedi']) ? (bool) $updatedBio['travaille_samedi'] : false,
                     'est_remplacant'     => isset($updatedBio['est_remplacant']) ? (bool) $updatedBio['est_remplacant'] : false,
-                    'experience'         => !empty($updatedBio['experience']) ? json_decode($updatedBio['experience'], true) : [],
-                    'competences'        => !empty($updatedBio['competences']) ? json_decode($updatedBio['competences'], true) : [],
-                    'formations'         => !empty($updatedBio['formations']) ? json_decode($updatedBio['formations'], true) : [],
+                    'experience'         => $this->parseStoredArray($updatedBio['experience'] ?? null),
+                    'competences'        => $this->parseStoredArray($updatedBio['competences'] ?? null),
+                    'formations'         => $this->parseStoredArray($updatedBio['formations'] ?? null),
                 ]
             ]);
         } catch (\Throwable $e) {
