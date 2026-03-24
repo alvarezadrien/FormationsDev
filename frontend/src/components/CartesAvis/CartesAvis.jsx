@@ -59,8 +59,17 @@ export function CartesAvis() {
   if (loading) {
     return (
       <section className="cartes-avis">
-        <h2 className="cartes-avis__title">Avis clients</h2>
-        <p className="cartes-avis__state">Chargement des avis...</p>
+        <div className="cartes-avis__bg" />
+        <div className="cartes-avis__container">
+          <div className="cartes-avis__header">
+            <span className="cartes-avis__badge">Témoignages</span>
+            <h2 className="cartes-avis__title">Ce que disent nos apprenants</h2>
+            <p className="cartes-avis__subtitle">
+              Des retours authentiques sur leur expérience de formation.
+            </p>
+          </div>
+          <p className="cartes-avis__state">Chargement des avis...</p>
+        </div>
       </section>
     );
   }
@@ -68,10 +77,17 @@ export function CartesAvis() {
   if (erreur) {
     return (
       <section className="cartes-avis">
-        <h2 className="cartes-avis__title">Avis clients</h2>
-        <p className="cartes-avis__state cartes-avis__state--error">
-          {erreur}
-        </p>
+        <div className="cartes-avis__bg" />
+        <div className="cartes-avis__container">
+          <div className="cartes-avis__header">
+            <span className="cartes-avis__badge">Témoignages</span>
+            <h2 className="cartes-avis__title">Ce que disent nos apprenants</h2>
+            <p className="cartes-avis__subtitle">
+              Des retours authentiques sur leur expérience de formation.
+            </p>
+          </div>
+          <p className="cartes-avis__state cartes-avis__state--error">{erreur}</p>
+        </div>
       </section>
     );
   }
@@ -79,40 +95,80 @@ export function CartesAvis() {
   if (avis.length === 0) {
     return (
       <section className="cartes-avis">
-        <h2 className="cartes-avis__title">Avis clients</h2>
-        <p className="cartes-avis__state">Aucun avis disponible pour le moment.</p>
+        <div className="cartes-avis__bg" />
+        <div className="cartes-avis__container">
+          <div className="cartes-avis__header">
+            <span className="cartes-avis__badge">Témoignages</span>
+            <h2 className="cartes-avis__title">Ce que disent nos apprenants</h2>
+            <p className="cartes-avis__subtitle">
+              Des retours authentiques sur leur expérience de formation.
+            </p>
+          </div>
+          <p className="cartes-avis__state">Aucun avis disponible pour le moment.</p>
+        </div>
       </section>
     );
   }
 
   return (
     <section className="cartes-avis">
-      <h2 className="cartes-avis__title">Avis clients</h2>
+      <div className="cartes-avis__bg" />
 
-      <div className="cartes-avis__grid">
-        {avis.map((item) => (
-          <article className="avis-card" key={item.id}>
-            <div className="avis-card__top">
-              <h3 className="avis-card__nom">
-                {item.prenom || item.nom
-                  ? `${item.prenom ?? ""} ${item.nom ?? ""}`.trim()
-                  : "Utilisateur"}
-              </h3>
+      <div className="cartes-avis__container">
+        <div className="cartes-avis__header">
+          <span className="cartes-avis__badge">Témoignages</span>
+          <h2 className="cartes-avis__title">Ce que disent nos apprenants</h2>
+          <p className="cartes-avis__subtitle">
+            Une sélection d’avis laissés par nos élèves après leur formation.
+          </p>
+        </div>
 
-              {item.nom_formation && (
-                <p className="avis-card__formation">{item.nom_formation}</p>
-              )}
-            </div>
+        <div className="cartes-avis__grid">
+          {avis.map((item, index) => {
+            const nomComplet =
+              item.prenom || item.nom
+                ? `${item.prenom ?? ""} ${item.nom ?? ""}`.trim()
+                : "Utilisateur";
 
-            <div className="avis-card__stars">
-              {Array.from({ length: Number(item.note) || 0 }).map((_, index) => (
-                <FontAwesomeIcon icon={faStar} key={index} />
-              ))}
-            </div>
+            const note = Math.max(0, Math.min(5, Number(item.note) || 0));
 
-            <p className="avis-card__commentaire">“{item.commentaire}”</p>
-          </article>
-        ))}
+            return (
+              <article
+                className="avis-card"
+                key={item.id}
+                style={{ animationDelay: `${index * 0.08}s` }}
+              >
+                <div className="avis-card__glow" />
+
+                <div className="avis-card__top">
+                  <div className="avis-card__identity">
+                    <div className="avis-card__avatar">
+                      {nomComplet.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div>
+                      <h3 className="avis-card__nom">{nomComplet}</h3>
+                      {item.nom_formation && (
+                        <p className="avis-card__formation">{item.nom_formation}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="avis-card__rating">
+                    <span className="avis-card__rating-value">{note}.0</span>
+                    <div className="avis-card__stars">
+                      {Array.from({ length: note }).map((_, starIndex) => (
+                        <FontAwesomeIcon icon={faStar} key={starIndex} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="avis-card__commentaire">“{item.commentaire}”</p>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
