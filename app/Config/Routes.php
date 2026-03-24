@@ -45,6 +45,9 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // =========================
 $routes->get('formateurs/(:num)', 'FormateurController::show/$1');
 
+// fiche du formateur connecté
+$routes->put('formateur/ma-bio', 'FormateurController::updateMyBio', ['filter' => 'formateur']);
+
 // =========================
 // Inscriptions formations
 // =========================
@@ -139,6 +142,10 @@ $routes->options('formations/(:num)', static function () {
 });
 
 $routes->options('formations/(:num)/edit', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('formateur/ma-bio', static function () {
     return service('response')->setStatusCode(200);
 });
 
