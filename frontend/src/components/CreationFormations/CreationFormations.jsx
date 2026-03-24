@@ -142,7 +142,9 @@ export function CreationFormations({
 }) {
   const [formData, setFormData] = useState(initialForm);
   const [formateurs, setFormateurs] = useState([]);
+  const [lieux, setLieux] = useState([]);
   const [loadingFormateurs, setLoadingFormateurs] = useState(true);
+  const [loadingLieux, setLoadingLieux] = useState(true);
   const [saving, setSaving] = useState(false);
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
@@ -185,6 +187,37 @@ export function CreationFormations({
     };
 
     fetchFormateurs();
+  }, []);
+
+  useEffect(() => {
+    const fetchLieux = async () => {
+      try {
+        setLoadingLieux(true);
+        setErreur("");
+
+        const res = await fetch(`${API_URL}/lieux`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.message || "Impossible de charger les lieux");
+        }
+
+        setLieux(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setErreur(err.message || "Erreur lors du chargement des lieux");
+      } finally {
+        setLoadingLieux(false);
+      }
+    };
+
+    fetchLieux();
   }, []);
 
   useEffect(() => {
@@ -406,7 +439,7 @@ export function CreationFormations({
     }
 
     if (!formData.lieu.trim()) {
-      return "Le lieu est requis.";
+      return "Veuillez sélectionner un lieu.";
     }
 
     if (!formData.description.trim()) {
@@ -580,16 +613,25 @@ export function CreationFormations({
             <label className="admin-form__label" htmlFor="lieu">
               Lieu
             </label>
-            <input
+            <select
               id="lieu"
-              className="admin-form__input"
-              type="text"
+              className="admin-form__select"
               name="lieu"
               value={formData.lieu}
               onChange={handleChange}
-              placeholder="Ex: Bruxelles"
               required
-            />
+              disabled={loadingLieux}
+            >
+              <option value="">
+                {loadingLieux ? "Chargement des lieux..." : "Sélectionner un lieu"}
+              </option>
+
+              {lieux.map((lieu) => (
+                <option key={lieu.id} value={lieu.nom}>
+                  {lieu.nom}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="admin-form__group">
@@ -1006,7 +1048,7 @@ export function CreationFormations({
           <button
             className="admin-btn admin-btn--primary"
             type="submit"
-            disabled={saving || loadingFormateurs}
+            disabled={saving || loadingFormateurs || loadingLieux}
           >
             {saving
               ? "Enregistrement..."

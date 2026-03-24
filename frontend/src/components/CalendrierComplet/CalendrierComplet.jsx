@@ -186,6 +186,15 @@ function normalizeFormateur(formateur) {
   };
 }
 
+function normalizeLieu(lieu) {
+  return {
+    id: lieu.id,
+    nom: lieu.nom || "",
+    slug: lieu.slug || "",
+    created_at: lieu.created_at || "",
+  };
+}
+
 function normalizeSession(session, formation, formateursMap) {
   const parsed = parseDateTime(session);
   if (!parsed) return null;
@@ -222,6 +231,7 @@ function normalizeSession(session, formation, formateursMap) {
     formateurNom: formateur?.nom || "Non attribué",
     salle:
       session.salle ||
+      session.lieu ||
       formation.salle ||
       formation.lieu ||
       formation.location ||
@@ -308,6 +318,7 @@ function EventModal({
   onSave,
   onDelete,
   formateurs,
+  lieux,
   saving,
   canEdit,
 }) {
@@ -437,13 +448,19 @@ function EventModal({
             </label>
 
             <label className="calendar-form__field">
-              <span>Salle / lieu</span>
-              <input
-                type="text"
+              <span>Lieu</span>
+              <select
                 value={formData.salle}
                 disabled={!canEdit}
                 onChange={(e) => handleChange("salle", e.target.value)}
-              />
+              >
+                <option value="">Sélectionner un lieu</option>
+                {lieux.map((lieu) => (
+                  <option key={lieu.id} value={lieu.nom}>
+                    {lieu.nom}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -501,6 +518,7 @@ function EventModal({
 export function CalendrierComplet() {
   const [formations, setFormations] = useState([]);
   const [formateurs, setFormateurs] = useState([]);
+  const [lieux, setLieux] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -520,9 +538,10 @@ export function CalendrierComplet() {
         setLoading(true);
         setError("");
 
-        const [formationsRes, formateursRes] = await Promise.all([
+        const [formationsRes, formateursRes, lieuxRes] = await Promise.all([
           fetch(`${API_URL}/formations`, getFetchOptions("GET")),
           fetch(`${API_URL}/users/formateurs`, getFetchOptions("GET")),
+          fetch(`${API_URL}/lieux`, getFetchOptions("GET")),
         ]);
 
         if (!formationsRes.ok) {
@@ -534,6 +553,7 @@ export function CalendrierComplet() {
 
         let formationsData = await formationsRes.json();
         let formateursData = [];
+        let lieuxData = [];
 
         if (formateursRes.status === 401) {
           console.warn(
@@ -545,6 +565,12 @@ export function CalendrierComplet() {
           );
         } else if (formateursRes.ok) {
           formateursData = await formateursRes.json();
+        }
+
+        if (!lieuxRes.ok) {
+          console.warn("Impossible de charger les lieux.");
+        } else {
+          lieuxData = await lieuxRes.json();
         }
 
         if (!Array.isArray(formationsData)) {
@@ -563,9 +589,18 @@ export function CalendrierComplet() {
             [];
         }
 
+        if (!Array.isArray(lieuxData)) {
+          lieuxData =
+            lieuxData?.data ||
+            lieuxData?.lieux ||
+            lieuxData?.results ||
+            [];
+        }
+
         if (isMounted) {
           setFormations(formationsData);
           setFormateurs(formateursData.map(normalizeFormateur));
+          setLieux(lieuxData.map(normalizeLieu));
         }
       } catch (err) {
         if (isMounted) {
@@ -735,6 +770,7 @@ export function CalendrierComplet() {
             ? Number(formData.formateurId)
             : null,
           salle: formData.salle,
+          lieu: formData.salle,
         };
       });
 
@@ -747,6 +783,7 @@ export function CalendrierComplet() {
           ? Number(formData.formateurId)
           : null,
         salle: formData.salle,
+        lieu: formData.salle,
         [sessionsArrayName]: updatedSessions,
       };
 
@@ -1121,6 +1158,7 @@ export function CalendrierComplet() {
         onSave={handleSaveEvent}
         onDelete={handleDeleteEvent}
         formateurs={formateurs}
+        lieux={lieux}
         saving={saving}
         canEdit={canEdit}
       />

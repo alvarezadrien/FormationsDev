@@ -92,6 +92,15 @@ $routes->get('avis/moyenne/formation/(:num)', 'AvisController::moyenneByFormatio
 $routes->delete('avis/(:num)', 'AvisController::delete/$1');
 
 // =========================
+// Lieux
+// =========================
+$routes->get('lieux', 'LieuController::index');
+$routes->get('lieux/(:num)', 'LieuController::show/$1');
+$routes->post('lieux', 'LieuController::create', ['filter' => 'admin']);
+$routes->put('lieux/(:num)', 'LieuController::update/$1', ['filter' => 'admin']);
+$routes->delete('lieux/(:num)', 'LieuController::delete/$1', ['filter' => 'admin']);
+
+// =========================
 // Fiches de présence
 // =========================
 $routes->get('fiches-presence', 'FichePresenceController::index', ['filter' => 'admin']);
