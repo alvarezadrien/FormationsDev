@@ -36,9 +36,13 @@ function ProfilFormateurPage() {
   // LOAD USER
   // =============================
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const loadFormateurProfile = async () => {
+      const storedUser = localStorage.getItem("user");
 
-    if (storedUser) {
+      if (!storedUser) {
+        return;
+      }
+
       const parsedUser = JSON.parse(storedUser);
 
       const normalizedUser = {
@@ -56,7 +60,45 @@ function ProfilFormateurPage() {
         travaille_samedi: normalizedUser.travaille_samedi,
         est_remplacant: normalizedUser.est_remplacant,
       });
-    }
+
+      if (!parsedUser.id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/formateurs/${parsedUser.id}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data?.data) {
+          return;
+        }
+
+        const updatedUser = {
+          ...normalizedUser,
+          travaille_samedi: normalizeBoolean(data.data.travaille_samedi),
+          est_remplacant: normalizeBoolean(data.data.est_remplacant),
+        };
+
+        setUserData(updatedUser);
+        setPreferencesForm({
+          travaille_samedi: updatedUser.travaille_samedi,
+          est_remplacant: updatedUser.est_remplacant,
+        });
+
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } catch {
+        // On conserve les valeurs locales en cas d'échec réseau.
+      }
+    };
+
+    loadFormateurProfile();
   }, []);
 
   const handleSectionChange = (section) => {
@@ -92,7 +134,7 @@ function ProfilFormateurPage() {
 
       const payload = buildPreferencesPayload();
 
-      const response = await fetch(`${API_URL}/me`, {
+      const response = await fetch(`${API_URL}/formateur/ma-bio`, {
         method: "PUT",
         credentials: "include",
         headers: {
@@ -112,8 +154,12 @@ function ProfilFormateurPage() {
       // 🔥 mise à jour propre
       const updatedUser = {
         ...userData,
-        travaille_samedi: !!payload.travaille_samedi,
-        est_remplacant: !!payload.est_remplacant,
+        travaille_samedi: normalizeBoolean(
+          data?.data?.travaille_samedi ?? payload.travaille_samedi
+        ),
+        est_remplacant: normalizeBoolean(
+          data?.data?.est_remplacant ?? payload.est_remplacant
+        ),
       };
 
       setUserData(updatedUser);
@@ -124,6 +170,7 @@ function ProfilFormateurPage() {
 
       // 🔥 IMPORTANT
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("auth-changed"));
 
       setPreferencesSuccess(
         data?.message || "Vos préférences ont bien été enregistrées."

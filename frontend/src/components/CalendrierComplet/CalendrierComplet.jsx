@@ -715,6 +715,7 @@ export function CalendrierComplet() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("month");
   const [selectedFormateur, setSelectedFormateur] = useState("all");
+  const [selectedFormation, setSelectedFormation] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -813,12 +814,32 @@ export function CalendrierComplet() {
     );
   }, [formations, formateursMap]);
 
+  const formationOptions = useMemo(() => {
+    return [...formations]
+      .map((formation) => ({
+        id: Number(formation.id),
+        title:
+          formation.nom ||
+          formation.titre ||
+          formation.title ||
+          `Formation #${formation.id}`,
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+  }, [formations]);
+
   const filteredSessions = useMemo(() => {
-    if (selectedFormateur === "all") return sessions;
-    return sessions.filter(
-      (session) => Number(session.formateurId) === Number(selectedFormateur)
-    );
-  }, [sessions, selectedFormateur]);
+    return sessions.filter((session) => {
+      const matchesFormateur =
+        selectedFormateur === "all" ||
+        Number(session.formateurId) === Number(selectedFormateur);
+
+      const matchesFormation =
+        selectedFormation === "all" ||
+        Number(session.formationId) === Number(selectedFormation);
+
+      return matchesFormateur && matchesFormation;
+    });
+  }, [sessions, selectedFormateur, selectedFormation]);
 
   const sessionsByDate = useMemo(() => {
     const map = new Map();
@@ -1186,6 +1207,19 @@ export function CalendrierComplet() {
         </div>
 
         <div className="calendar-toolbar__right">
+          <select
+            className="calendar-select"
+            value={selectedFormation}
+            onChange={(e) => setSelectedFormation(e.target.value)}
+          >
+            <option value="all">Toutes les formations</option>
+            {formationOptions.map((formation) => (
+              <option key={formation.id} value={formation.id}>
+                {formation.title}
+              </option>
+            ))}
+          </select>
+
           <select
             className="calendar-select"
             value={selectedFormateur}
