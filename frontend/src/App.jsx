@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { flushSync } from "react-dom";
 import "./App.css";
 
 // import pages
@@ -103,9 +105,49 @@ function GuestRoute({ children }) {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    const storedTheme = localStorage.getItem("theme");
+
+    if (storedTheme === "dark" || storedTheme === "light") {
+      return storedTheme;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    const startViewTransition = document.startViewTransition?.bind(document);
+
+    if (!startViewTransition) {
+      setTheme(nextTheme);
+      return;
+    }
+
+    document.documentElement.classList.add("theme-transitioning");
+
+    const transition = startViewTransition(() => {
+      flushSync(() => {
+        setTheme(nextTheme);
+      });
+    });
+
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove("theme-transitioning");
+    });
+  };
+
   return (
     <Router>
-      <Navbar />
+      <Navbar theme={theme} onToggleTheme={toggleTheme} />
 
       <Routes>
         <Route path="/" element={<Home />} />

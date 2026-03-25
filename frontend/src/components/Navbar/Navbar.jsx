@@ -7,9 +7,9 @@ import userImg from "/images/utilisateur.png";
 import { FaUserShield } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import { HiOutlineLogout, HiOutlineUserCircle, HiOutlineMenuAlt3 } from "react-icons/hi";
-import { IoChevronDown, IoSearch, IoClose } from "react-icons/io5";
+import { IoChevronDown, IoSearch, IoClose, IoMoon, IoSunny } from "react-icons/io5";
 
-export function Navbar() {
+export function Navbar({ theme = "light", onToggleTheme }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -181,6 +181,31 @@ export function Navbar() {
         </div>
 
         <div className="navbar_actions">
+          <button
+            type="button"
+            className={`navbar_theme_toggle ${
+              theme === "dark" ? "is-dark" : "is-light"
+            }`}
+            onClick={onToggleTheme}
+            title={
+              theme === "dark"
+                ? "Passer en mode clair"
+                : "Passer en mode sombre"
+            }
+            aria-label={
+              theme === "dark"
+                ? "Passer en mode clair"
+                : "Passer en mode sombre"
+            }
+          >
+            <span className="navbar_theme_toggle_icon">
+              {theme === "dark" ? <IoSunny size={18} /> : <IoMoon size={18} />}
+            </span>
+            <span className="navbar_theme_toggle_label">
+              {theme === "dark" ? "Clair" : "Sombre"}
+            </span>
+          </button>
+
           <button
             type="button"
             className={`navbar_search_toggle ${searchOpen ? "active" : ""}`}
@@ -428,6 +453,19 @@ export function Navbar() {
             <div className="navbar_mobile_divider"></div>
 
             <div className="navbar_mobile_section">
+              <button
+                type="button"
+                className="navbar_mobile_action navbar_mobile_action_theme"
+                onClick={onToggleTheme}
+              >
+                {theme === "dark" ? <IoSunny size={20} /> : <IoMoon size={20} />}
+                <span>
+                  {theme === "dark"
+                    ? "Passer en mode clair"
+                    : "Passer en mode sombre"}
+                </span>
+              </button>
+
               {isConnected && !isAdmin && (
                 <Link
                   to="/profil-compte"

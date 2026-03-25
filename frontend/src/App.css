@@ -1,3 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  color-scheme: light;
+  --app-bg: #f5f8fc;
+  --app-bg-elevated: rgba(255, 255, 255, 0.92);
+  --app-surface: #ffffff;
+  --app-surface-soft: #f8fbff;
+  --app-border: rgba(226, 232, 240, 0.9);
+  --app-text: #0f172a;
+  --app-text-soft: #475569;
+  --app-accent: #2563eb;
+  --app-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --app-bg: #07111f;
+  --app-bg-elevated: rgba(10, 20, 35, 0.88);
+  --app-surface: #0f172a;
+  --app-surface-soft: #111c31;
+  --app-border: rgba(51, 65, 85, 0.95);
+  --app-text: #e5eefb;
+  --app-text-soft: #94a3b8;
+  --app-accent: #38bdf8;
+  --app-shadow: 0 24px 60px rgba(2, 6, 23, 0.45);
+}
+
 /* Reset général */
 *,
 *::before,
@@ -10,8 +38,21 @@
 /* Base du document */
 html, body {
   height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Manrope", Arial, Helvetica, sans-serif;
   line-height: 1.5;
+  background: var(--app-bg);
+  color: var(--app-text);
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
+}
+
+html {
+  background: var(--app-bg);
+}
+
+body {
+  min-height: 100vh;
 }
 
 /* Images */
@@ -46,10 +87,289 @@ input, textarea, select {
   border: none;
 }
 
+#root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 28%),
+    radial-gradient(circle at bottom, rgba(249, 115, 22, 0.06), transparent 32%),
+    var(--app-bg);
+  color: var(--app-text);
+  transition:
+    background 0.45s ease,
+    color 0.35s ease;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 720ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: theme-old-fade;
+}
+
+::view-transition-new(root) {
+  transform-origin: top center;
+  animation-name: theme-new-reveal;
+}
+
+@keyframes theme-old-fade {
+  from {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  to {
+    opacity: 0.92;
+    filter: brightness(0.94);
+  }
+}
+
+@keyframes theme-new-reveal {
+  0% {
+    clip-path: inset(0 0 100% 0 round 0 0 30px 30px);
+    filter: saturate(0.9) brightness(0.9);
+  }
+
+  55% {
+    clip-path: inset(0 0 0 0 round 0 0 18px 18px);
+    filter: saturate(1) brightness(1);
+  }
+
+  100% {
+    clip-path: inset(0 0 0 0 round 0 0 0 0);
+    filter: saturate(1) brightness(1);
+  }
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] #root {
+  color: var(--app-text);
+}
+
+[data-theme="dark"] .navbar_shell,
+[data-theme="dark"] .navbar_wrap,
+[data-theme="dark"] .navbar_dropdown_panel,
+[data-theme="dark"] .navbar_search_box,
+[data-theme="dark"] .navbar_mobile_inner,
+[data-theme="dark"] .faq_item,
+[data-theme="dark"] .stats-box,
+[data-theme="dark"] .stats-right,
+[data-theme="dark"] .summary-card,
+[data-theme="dark"] .stats-panel,
+[data-theme="dark"] .popular-card,
+[data-theme="dark"] .formation-stat-card,
+[data-theme="dark"] .popular-mini-stat,
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .admin-list,
+[data-theme="dark"] .content_block,
+[data-theme="dark"] .cta_box,
+[data-theme="dark"] .mes-donnees,
+[data-theme="dark"] .review_form,
+[data-theme="dark"] .user-reviews,
+[data-theme="dark"] .avis-admin,
+[data-theme="dark"] .calendar-admin,
+[data-theme="dark"] .details-users,
+[data-theme="dark"] .fiche-presence-admin,
+[data-theme="dark"] .profile_preferences_box,
+[data-theme="dark"] .profile_toggle_card,
+[data-theme="dark"] .auth_panel,
+[data-theme="dark"] .admin-main,
+[data-theme="dark"] .admin-sidebar,
+[data-theme="dark"] .calendar-modal {
+  background: var(--app-bg-elevated) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+  box-shadow: var(--app-shadow) !important;
+}
+
+[data-theme="dark"] .details_page,
+[data-theme="dark"] .profile_page,
+[data-theme="dark"] .section_formations,
+[data-theme="dark"] .formations_section,
+[data-theme="dark"] .cartes-avis,
+[data-theme="dark"] .faq_page,
+[data-theme="dark"] .auth_page,
+[data-theme="dark"] .admin-dashboard,
+[data-theme="dark"] .dashboard_page,
+[data-theme="dark"] .stats-formations,
+[data-theme="dark"] .stats-page,
+[data-theme="dark"] .formations-page,
+[data-theme="dark"] .calendar-admin,
+[data-theme="dark"] .mes-donnees,
+[data-theme="dark"] .details-users,
+[data-theme="dark"] .avis-admin {
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 22%),
+    linear-gradient(180deg, #07111f 0%, #0b1325 100%) !important;
+}
+
+[data-theme="dark"] .navbar_brand_text,
+[data-theme="dark"] .navbar_item,
+[data-theme="dark"] .navbar_profile_label,
+[data-theme="dark"] .navbar_dropdown_texts strong,
+[data-theme="dark"] .navbar_dropdown_item,
+[data-theme="dark"] .navbar_search_input,
+[data-theme="dark"] .navbar_mobile_search_input,
+[data-theme="dark"] .titre_formations,
+[data-theme="dark"] .details_title,
+[data-theme="dark"] .section_title,
+[data-theme="dark"] .profile_section_title,
+[data-theme="dark"] .mes-donnees__title,
+[data-theme="dark"] .avis-card__nom,
+[data-theme="dark"] .info_data,
+[data-theme="dark"] .info_label,
+[data-theme="dark"] .meta_value,
+[data-theme="dark"] .calendar-admin__title,
+[data-theme="dark"] .calendar-admin__subtitle,
+[data-theme="dark"] .faq_title,
+[data-theme="dark"] .faq_question,
+[data-theme="dark"] .stats-page__title,
+[data-theme="dark"] .summary-card__value,
+[data-theme="dark"] .stats-panel__title,
+[data-theme="dark"] .popular-card__title,
+[data-theme="dark"] .formation-stat-card__title,
+[data-theme="dark"] .stats-box h2,
+[data-theme="dark"] .header_content h1,
+[data-theme="dark"] .calendar-state,
+[data-theme="dark"] .admin-list__title,
+[data-theme="dark"] .admin-panel__title,
+[data-theme="dark"] .review_form_title,
+[data-theme="dark"] .user-reviews-title,
+[data-theme="dark"] .auth_heading,
+[data-theme="dark"] .auth_form_title,
+[data-theme="dark"] .details_title,
+[data-theme="dark"] .nom_formation,
+[data-theme="dark"] .description_formation,
+[data-theme="dark"] .meta_label,
+[data-theme="dark"] .meta_value {
+  color: var(--app-text) !important;
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] label,
+[data-theme="dark"] .texte_formations,
+[data-theme="dark"] .details_subtitle,
+[data-theme="dark"] .description_text,
+[data-theme="dark"] .cta_text,
+[data-theme="dark"] .profile_main_text,
+[data-theme="dark"] .profile_email,
+[data-theme="dark"] .mes-donnees__subtitle,
+[data-theme="dark"] .auth_description,
+[data-theme="dark"] .cartes-avis__subtitle,
+[data-theme="dark"] .faq_subtitle,
+[data-theme="dark"] .faq_answer p,
+[data-theme="dark"] .summary-card__label,
+[data-theme="dark"] .stats-page__subtitle,
+[data-theme="dark"] .stats-panel__subtitle,
+[data-theme="dark"] .popular-card__description,
+[data-theme="dark"] .popular-mini-stat__label,
+[data-theme="dark"] .formation-stat-card__meta,
+[data-theme="dark"] .stats-message,
+[data-theme="dark"] .stats-empty,
+[data-theme="dark"] .header_content p,
+[data-theme="dark"] .avis-card__commentaire,
+[data-theme="dark"] .calendar-event__trainer,
+[data-theme="dark"] .calendar-event__room,
+[data-theme="dark"] .calendar-day__empty,
+[data-theme="dark"] .calendar-week__empty,
+[data-theme="dark"] .admin-list__text,
+[data-theme="dark"] .admin-panel__text {
+  color: var(--app-text-soft) !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] .navbar_search_toggle,
+[data-theme="dark"] .navbar_burger,
+[data-theme="dark"] .navbar_profile_button,
+[data-theme="dark"] .navbar_login_link,
+[data-theme="dark"] .navbar_mobile_item,
+[data-theme="dark"] .navbar_clear_button,
+[data-theme="dark"] .calendar-select,
+[data-theme="dark"] .admin-form__input,
+[data-theme="dark"] .admin-form__select,
+[data-theme="dark"] .mes-donnees__field input,
+[data-theme="dark"] .review_form select,
+[data-theme="dark"] .review_form textarea,
+[data-theme="dark"] .review_form input,
+[data-theme="dark"] .calendar-form__field input,
+[data-theme="dark"] .calendar-form__field select,
+[data-theme="dark"] .calendar-form__field textarea {
+  background: var(--app-surface-soft) !important;
+  color: var(--app-text) !important;
+  border: 1px solid var(--app-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #7c8aa5 !important;
+}
+
+[data-theme="dark"] .navbar_item:hover,
+[data-theme="dark"] .navbar_dropdown_item:hover,
+[data-theme="dark"] .navbar_mobile_item:hover,
+[data-theme="dark"] .navbar_clear_button:hover {
+  background: rgba(30, 41, 59, 0.92) !important;
+  color: #f8fbff !important;
+}
+
+[data-theme="dark"] .status_badge.actif,
+[data-theme="dark"] .badge_statut.actif {
+  color: #86efac !important;
+}
+
+[data-theme="dark"] .badge_places,
+[data-theme="dark"] .formations_badge,
+[data-theme="dark"] .cartes-avis__badge {
+  background: rgba(15, 23, 42, 0.68) !important;
+  color: #7dd3fc !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+[data-theme="dark"] .carte_formation,
+[data-theme="dark"] .avis-card,
+[data-theme="dark"] .info_card,
+[data-theme="dark"] .meta_item,
+[data-theme="dark"] .faq_question,
+[data-theme="dark"] .calendar-day,
+[data-theme="dark"] .calendar-week__column,
+[data-theme="dark"] .calendar-stat {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.92)) !important;
+  border-color: rgba(51, 65, 85, 0.9) !important;
+  color: var(--app-text) !important;
+  box-shadow: var(--app-shadow) !important;
+}
+
+[data-theme="dark"] .details_hero,
+[data-theme="dark"] .profile_banner,
+[data-theme="dark"] .header_home,
+[data-theme="dark"] .stats-page__hero {
+  background: linear-gradient(135deg, #020617, #0f172a, #0ea5e9) !important;
+}
+
+[data-theme="dark"] .faq_badge,
+[data-theme="dark"] .stats-page__hero-badge,
+[data-theme="dark"] .mini-status {
+  background: rgba(14, 165, 233, 0.14) !important;
+  color: #7dd3fc !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+[data-theme="dark"] .faq_icon,
+[data-theme="dark"] .popular-mini-stat__value,
+[data-theme="dark"] .stats-page strong,
+[data-theme="dark"] .stats-box p,
+[data-theme="dark"] .calendar-stat strong {
+  color: var(--app-text) !important;
+}
+
 /* Containers utiles */
 .container {
   width: 90%;
   max-width: 1200px;
   margin: 0 auto;
 }
-

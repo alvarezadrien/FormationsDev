@@ -88,6 +88,53 @@
   justify-content: flex-end;
 }
 
+.navbar_theme_toggle {
+  min-height: 46px;
+  padding: 0.72rem 0.9rem;
+  border: 1px solid #dbe3ee;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+}
+
+.navbar_theme_toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.navbar_theme_toggle_icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  color: #1d4ed8;
+}
+
+.navbar_theme_toggle_label {
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.navbar_theme_toggle.is-dark {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: rgba(51, 65, 85, 0.95);
+}
+
+.navbar_theme_toggle.is-dark .navbar_theme_toggle_icon {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(255, 255, 255, 0.08));
+  color: #facc15;
+}
+
 .navbar_search_toggle {
   width: 46px;
   height: 46px;
@@ -610,6 +657,12 @@
   color: #dc2626;
 }
 
+.navbar_mobile_action_theme {
+  background: linear-gradient(135deg, #f8fbff, #eef4ff);
+  border: 1px solid #dbeafe;
+  color: #0f172a;
+}
+
 .navbar_mobile_action:hover,
 .navbar_mobile_search_button:hover,
 .navbar_mobile_secondary_button:hover {
@@ -642,6 +695,10 @@
   .navbar_admin_link,
   .navbar_login_link,
   .navbar_profile_menu {
+    display: none;
+  }
+
+  .navbar_theme_toggle {
     display: none;
   }
 
