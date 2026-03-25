@@ -42,6 +42,11 @@ export function DetailsFormations() {
             ? `${data.formateur_prenom || ""} ${data.formateur_nom || ""}`.trim()
             : "Non renseigné";
 
+        const nomCompletRemplacant =
+          data.remplacant_prenom || data.remplacant_nom
+            ? `${data.remplacant_prenom || ""} ${data.remplacant_nom || ""}`.trim()
+            : "";
+
         setFormation({
           id: data.id,
           nom_formation: data.nom ?? "Formation sans nom",
@@ -50,6 +55,11 @@ export function DetailsFormations() {
           formateur_prenom: data.formateur_prenom ?? "",
           formateur_email: data.formateur_email ?? "",
           nom_complet_formateur: nomCompletFormateur,
+          remplacant_id: data.remplacant_id ?? null,
+          remplacant_nom: data.remplacant_nom ?? "",
+          remplacant_prenom: data.remplacant_prenom ?? "",
+          remplacant_email: data.remplacant_email ?? "",
+          nom_complet_remplacant: nomCompletRemplacant,
           lieu: data.lieu ?? "",
           description: data.description ?? "",
           nombre_participants: Number(data.nombre_participants ?? 0),
@@ -202,6 +212,13 @@ export function DetailsFormations() {
                 <span className="info_label">Email du formateur</span>
                 <span className="info_data">
                   {formation.formateur_email || "Non renseigné"}
+                </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">Remplaçant</span>
+                <span className="info_data">
+                  {formation.nom_complet_remplacant || "Aucun remplaçant attribué"}
                 </span>
               </div>
 

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import "./Dashboard.css";
 
+const API_URL = "http://localhost:8080";
+
 import { StatsFormations } from "../../components/StatsFormations/StatsFormations";
 import { CreationFormations } from "../../components/CreationFormations/CreationFormations";
 import { FormationsCrees } from "../../components/FormationsCrees/FormationsCrees";
@@ -17,6 +19,8 @@ export default function AdminFormationsDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("formations");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authValid, setAuthValid] = useState(false);
 
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const isAdmin = localStorage.getItem("role") === "admin";
@@ -67,6 +71,61 @@ export default function AdminFormationsDashboard() {
       setActiveSection("formations");
     }
   }, [formationEnEdition]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const verifySession = async () => {
+      if (!isLoggedIn || !isAdmin) {
+        if (isMounted) {
+          setAuthValid(false);
+          setAuthChecked(true);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data?.user?.role !== "admin") {
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+          localStorage.removeItem("isLoggedIn");
+          window.dispatchEvent(new Event("auth-changed"));
+
+          if (isMounted) {
+            setAuthValid(false);
+            setAuthChecked(true);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setAuthValid(true);
+          setAuthChecked(true);
+        }
+      } catch {
+        if (isMounted) {
+          setAuthValid(false);
+          setAuthChecked(true);
+        }
+      }
+    };
+
+    verifySession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn, isAdmin]);
 
   const handleSectionChange = (sectionKey) => {
     setActiveSection(sectionKey);
@@ -246,7 +305,11 @@ export default function AdminFormationsDashboard() {
     }
   };
 
-  if (!isLoggedIn || !isAdmin) {
+  if (!authChecked) {
+    return null;
+  }
+
+  if (!authValid) {
     return <Navigate to="/login" replace />;
   }
 

@@ -17,6 +17,10 @@ export function DetailUsers() {
 
   const API_URL = "http://localhost:8080";
 
+  const normalizeBoolean = (value) => {
+    return value === true || value === 1 || value === "1";
+  };
+
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -36,7 +40,20 @@ export function DetailUsers() {
         throw new Error(data.message || "Erreur lors du chargement des utilisateurs.");
       }
 
-      setUsers(data.users || []);
+      const rawUsers = Array.isArray(data.users)
+        ? data.users
+        : Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+
+      const normalizedUsers = rawUsers.map((user) => ({
+        ...user,
+        est_remplacant: normalizeBoolean(user.est_remplacant),
+      }));
+
+      setUsers(normalizedUsers);
     } catch (err) {
       setError(err.message || "Impossible de charger les utilisateurs.");
     } finally {
@@ -51,8 +68,14 @@ export function DetailUsers() {
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchRole = selectedRole === "all" || user.role === selectedRole;
-      const texte = `${user.nom} ${user.prenom} ${user.email} ${user.role}`.toLowerCase();
+
+      const texte =
+        `${user.nom || ""} ${user.prenom || ""} ${user.email || ""} ${user.role || ""} ${
+          user.est_remplacant ? "remplacant oui" : "remplacant non"
+        }`.toLowerCase();
+
       const matchSearch = texte.includes(search.toLowerCase());
+
       return matchRole && matchSearch;
     });
   }, [users, selectedRole, search]);
@@ -81,11 +104,18 @@ export function DetailUsers() {
     const map = {
       journee_complete: "Journée complète",
       demi_journee: "Demi-journée",
+      demi_journee_matin: "Demi-journée matin",
+      demi_journee_apres_midi: "Demi-journée après-midi",
       soir: "Soir",
       cours_du_jour: "Cours du jour",
+      personnalise: "Personnalisé",
     };
 
     return map[type] || type;
+  };
+
+  const formatRemplacement = (value) => {
+    return normalizeBoolean(value) ? "Oui" : "Non";
   };
 
   const handleOpenDeleteModal = (user) => {
@@ -189,6 +219,7 @@ export function DetailUsers() {
                 <th>Rôle</th>
                 <th>Jours</th>
                 <th>Type journée</th>
+                <th>Remplacement</th>
                 <th className="action-cell">Action</th>
               </tr>
             </thead>
@@ -206,13 +237,23 @@ export function DetailUsers() {
                         {user.role === "admin"
                           ? "Admin"
                           : user.role === "formateur"
-                          ? "Formateur"
-                          : "Utilisateur"}
+                            ? "Formateur"
+                            : "Utilisateur"}
                       </span>
                     </td>
 
                     <td>{formatJours(user.jours)}</td>
                     <td>{formatTypeJournee(user.type_journee)}</td>
+
+                    <td>
+                      <span
+                        className={`replacement-badge ${
+                          normalizeBoolean(user.est_remplacant) ? "yes" : "no"
+                        }`}
+                      >
+                        {formatRemplacement(user.est_remplacant)}
+                      </span>
+                    </td>
 
                     <td className="action-cell">
                       <button
@@ -227,7 +268,7 @@ export function DetailUsers() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="detail-users-empty">
+                  <td colSpan="9" className="detail-users-empty">
                     Aucun utilisateur trouvé.
                   </td>
                 </tr>
@@ -252,6 +293,10 @@ export function DetailUsers() {
               <span className="detail-users-modal-email">{userToDelete.email}</span>
               <br />
               <span className="detail-users-modal-role">Rôle : {userToDelete.role}</span>
+              <br />
+              <span className="detail-users-modal-role">
+                Remplaçant : {formatRemplacement(userToDelete.est_remplacant)}
+              </span>
             </p>
 
             {userToDelete.role === "admin" && (

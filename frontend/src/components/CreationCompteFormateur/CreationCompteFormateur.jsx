@@ -19,6 +19,13 @@ export function CreationCompteFormateur() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const normalizeBoolean = (value) => {
+    return value === true || value === 1 || value === "1";
+  };
+
+  // =============================
+  // INPUT
+  // =============================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -28,19 +35,32 @@ export function CreationCompteFormateur() {
     }));
   };
 
+  // =============================
+  // TOGGLE
+  // =============================
   const toggleField = (field) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setFormData((prev) => {
+      const nextValue = !normalizeBoolean(prev[field]);
+
+      return {
+        ...prev,
+        [field]: nextValue,
+      };
+    });
   };
 
+  // =============================
+  // RESET
+  // =============================
   const resetForm = () => {
     setFormData(initialForm);
     setMessage("");
     setError("");
   };
 
+  // =============================
+  // VALIDATION
+  // =============================
   const validateForm = () => {
     const nom = formData.nom.trim();
     const prenom = formData.prenom.trim();
@@ -67,6 +87,9 @@ export function CreationCompteFormateur() {
     return "";
   };
 
+  // =============================
+  // PAYLOAD
+  // =============================
   const buildPayload = () => {
     return {
       nom: formData.nom.trim(),
@@ -78,6 +101,9 @@ export function CreationCompteFormateur() {
     };
   };
 
+  // =============================
+  // SUBMIT
+  // =============================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -93,13 +119,15 @@ export function CreationCompteFormateur() {
     try {
       setSaving(true);
 
+      const payload = buildPayload();
+
       const response = await fetch(`${API_BASE_URL}/formateurs`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -140,99 +168,85 @@ export function CreationCompteFormateur() {
   return (
     <section className="creation-formateur">
       <div className="creation-formateur__header">
-        <h2 className="creation-formateur__title">Créer un compte formateur</h2>
+        <h2 className="creation-formateur__title">
+          Créer un compte formateur
+        </h2>
         <p className="creation-formateur__subtitle">
-          Ajoute un nouveau formateur qui pourra se connecter à son espace.
+          Ajoute un nouveau formateur.
         </p>
       </div>
 
       <form className="creation-formateur__form" onSubmit={handleSubmit}>
-        {message && <div className="creation-formateur__message">{message}</div>}
+        {message && (
+          <div className="creation-formateur__message">{message}</div>
+        )}
         {error && <div className="creation-formateur__error">{error}</div>}
 
         <div className="creation-formateur__grid">
           <div className="creation-formateur__field">
-            <label htmlFor="nom">Nom</label>
+            <label>Nom</label>
             <input
-              id="nom"
               name="nom"
-              type="text"
               value={formData.nom}
               onChange={handleChange}
-              placeholder="Nom"
               disabled={saving}
               required
             />
           </div>
 
           <div className="creation-formateur__field">
-            <label htmlFor="prenom">Prénom</label>
+            <label>Prénom</label>
             <input
-              id="prenom"
               name="prenom"
-              type="text"
               value={formData.prenom}
               onChange={handleChange}
-              placeholder="Prénom"
               disabled={saving}
               required
             />
           </div>
 
           <div className="creation-formateur__field creation-formateur__field--full">
-            <label htmlFor="email">Email</label>
+            <label>Email</label>
             <input
-              id="email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Email"
               disabled={saving}
               required
             />
           </div>
 
           <div className="creation-formateur__field">
-            <label htmlFor="password">Mot de passe</label>
+            <label>Mot de passe</label>
             <input
-              id="password"
               name="password"
               type="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Mot de passe"
               disabled={saving}
               required
             />
           </div>
 
           <div className="creation-formateur__field">
-            <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
+            <label>Confirmer</label>
             <input
-              id="confirmPassword"
               name="confirmPassword"
               type="password"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirmer le mot de passe"
               disabled={saving}
               required
             />
           </div>
         </div>
 
+        {/* OPTIONS */}
         <div className="creation-formateur__field creation-formateur__field--full">
-          <label>Options du formateur</label>
+          <label>Options</label>
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "12px",
-              marginTop: "10px",
-            }}
-          >
+          <div className="creation-formateur__toggles">
             <button
               type="button"
               onClick={() => toggleField("travaille_samedi")}
@@ -242,7 +256,7 @@ export function CreationCompteFormateur() {
               disabled={saving}
             >
               {formData.travaille_samedi ? "✓ " : ""}
-              Disponible le samedi
+              Disponible samedi
             </button>
 
             <button
@@ -254,25 +268,17 @@ export function CreationCompteFormateur() {
               disabled={saving}
             >
               {formData.est_remplacant ? "✓ " : ""}
-              Peut être remplaçant
+              Remplaçant
             </button>
           </div>
 
-          <div
-            style={{
-              marginTop: "12px",
-              fontSize: "14px",
-              color: "#555",
-              display: "grid",
-              gap: "6px",
-            }}
-          >
+          <div className="creation-formateur__summary">
             <div>
-              <strong>Disponible le samedi :</strong>{" "}
+              <strong>Samedi :</strong>{" "}
               {formData.travaille_samedi ? "Oui" : "Non"}
             </div>
             <div>
-              <strong>Peut être remplaçant :</strong>{" "}
+              <strong>Remplaçant :</strong>{" "}
               {formData.est_remplacant ? "Oui" : "Non"}
             </div>
           </div>
@@ -280,7 +286,7 @@ export function CreationCompteFormateur() {
 
         <div className="creation-formateur__actions">
           <button type="submit" disabled={saving}>
-            {saving ? "Création..." : "Créer le compte formateur"}
+            {saving ? "Création..." : "Créer"}
           </button>
 
           <button
@@ -289,7 +295,7 @@ export function CreationCompteFormateur() {
             disabled={saving}
             className="creation-formateur__reset"
           >
-            Réinitialiser
+            Reset
           </button>
         </div>
       </form>

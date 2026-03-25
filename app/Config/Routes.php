@@ -18,7 +18,6 @@ $routes->get('me', 'Auth::me', ['filter' => 'auth']);
 $routes->put('me', 'Auth::updateMe', ['filter' => 'auth']);
 $routes->post('formateurs', 'Auth::createFormateur', ['filter' => 'admin']);
 
-// IMPORTANT : lecture de la liste des formateurs accessible à tout utilisateur connecté
 $routes->get('users/formateurs', 'Auth::getFormateurs', ['filter' => 'auth']);
 
 // =========================
@@ -44,41 +43,22 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // Formateur bio publique
 // =========================
 $routes->get('formateurs/(:num)', 'FormateurController::show/$1');
-
-// fiche du formateur connecté
 $routes->put('formateur/ma-bio', 'FormateurController::updateMyBio', ['filter' => 'formateur']);
 
 // =========================
 // Inscriptions formations
 // =========================
 $routes->get('inscriptions-formations', 'InscriptionFormation::index');
-
-$routes->get(
-    'inscriptions-formations/(:num)',
-    'InscriptionFormation::show/$1',
-    ['filter' => 'admin']
-);
-$routes->get(
-    'inscriptions-formations/formation/(:num)',
-    'InscriptionFormation::byFormation/$1',
-    ['filter' => 'admin']
-);
+$routes->get('inscriptions-formations/(:num)', 'InscriptionFormation::show/$1', ['filter' => 'admin']);
+$routes->get('inscriptions-formations/formation/(:num)', 'InscriptionFormation::byFormation/$1', ['filter' => 'admin']);
 $routes->post('inscriptions-formations', 'InscriptionFormation::create');
-$routes->delete(
-    'inscriptions-formations/(:num)',
-    'InscriptionFormation::delete/$1',
-    ['filter' => 'admin']
-);
+$routes->delete('inscriptions-formations/(:num)', 'InscriptionFormation::delete/$1', ['filter' => 'admin']);
 
 // =========================
 // Formations admin
 // =========================
 $routes->post('formations', 'Formation::create', ['filter' => 'admin']);
-$routes->post(
-    'formations/preview-sessions',
-    'Formation::previewSessions',
-    ['filter' => 'admin']
-);
+$routes->post('formations/preview-sessions', 'Formation::previewSessions', ['filter' => 'admin']);
 $routes->put('formations/(:num)', 'Formation::update/$1', ['filter' => 'admin']);
 $routes->delete('formations/(:num)', 'Formation::delete/$1', ['filter' => 'admin']);
 $routes->get('formations/(:num)/edit', 'Formation::edit/$1', ['filter' => 'admin']);
@@ -110,17 +90,21 @@ $routes->get('fiches-presence/(:num)', 'FichePresenceController::show/$1', ['fil
 $routes->get('mes-fiches-presence', 'FichePresenceController::myFiches', ['filter' => 'formateur']);
 $routes->post('fiches-presence', 'FichePresenceController::create', ['filter' => 'auth']);
 $routes->put('fiches-presence/(:num)', 'FichePresenceController::update/$1', ['filter' => 'auth']);
-$routes->put(
-    'fiches-presence/(:num)/participants/(:num)',
-    'FichePresenceController::updateParticipantPresence/$1/$2',
-    ['filter' => 'auth']
-);
+$routes->put('fiches-presence/(:num)/participants/(:num)', 'FichePresenceController::updateParticipantPresence/$1/$2', ['filter' => 'auth']);
 $routes->delete('fiches-presence/(:num)', 'FichePresenceController::delete/$1', ['filter' => 'auth']);
 
 // =========================
 // OPTIONS pour préflight CORS
 // =========================
 $routes->options('formateurs', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('users', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('users/(:num)', static function () {
     return service('response')->setStatusCode(200);
 });
 

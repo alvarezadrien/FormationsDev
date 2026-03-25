@@ -50,6 +50,16 @@ const FORMATION_COLORS = [
   "#059669",
 ];
 
+const JOURS_BY_DAY_NUMBER = {
+  0: "dimanche",
+  1: "lundi",
+  2: "mardi",
+  3: "mercredi",
+  4: "jeudi",
+  5: "vendredi",
+  6: "samedi",
+};
+
 function getJsonHeaders() {
   return {
     "Content-Type": "application/json",
@@ -82,6 +92,10 @@ function getStoredUser() {
 function isAdminUser() {
   const user = getStoredUser();
   return user?.role === "admin";
+}
+
+function normalizeBoolean(value) {
+  return value === true || value === 1 || value === "1";
 }
 
 function pad(n) {
@@ -128,9 +142,14 @@ function hashString(str = "") {
 
 function getFormationColor(formation) {
   const key =
-    `${formation?.id ?? ""}-${formation?.titre ?? formation?.title ?? ""}` ||
+    `${formation?.id ?? ""}-${formation?.titre ?? formation?.title ?? formation?.nom ?? ""}` ||
     "default";
   return FORMATION_COLORS[hashString(key) % FORMATION_COLORS.length];
+}
+
+function normalizeToHHMM(value) {
+  if (!value) return "";
+  return String(value).slice(0, 5);
 }
 
 function parseDateTime(session) {
@@ -160,9 +179,11 @@ function parseDateTime(session) {
   if (!rawDate) return null;
 
   const start = new Date(
-    `${rawDate}T${rawStart?.length === 5 ? rawStart : "09:00"}`
+    `${rawDate}T${rawStart?.length >= 5 ? rawStart.slice(0, 5) : "09:00"}`
   );
-  const end = new Date(`${rawDate}T${rawEnd?.length === 5 ? rawEnd : "17:00"}`);
+  const end = new Date(
+    `${rawDate}T${rawEnd?.length >= 5 ? rawEnd.slice(0, 5) : "17:00"}`
+  );
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return null;
@@ -173,7 +194,7 @@ function parseDateTime(session) {
 
 function normalizeFormateur(formateur) {
   return {
-    id: formateur.id,
+    id: Number(formateur.id),
     nom:
       formateur.nom ||
       formateur.name ||
@@ -183,6 +204,8 @@ function normalizeFormateur(formateur) {
       `Formateur #${formateur.id}`,
     prenom: formateur.prenom || "",
     email: formateur.email || "",
+    est_remplacant: normalizeBoolean(formateur.est_remplacant),
+    travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
   };
 }
 
@@ -193,6 +216,50 @@ function normalizeLieu(lieu) {
     slug: lieu.slug || "",
     created_at: lieu.created_at || "",
   };
+}
+
+function getSessionDateValue(session) {
+  return (
+    session.date ||
+    session.session_date ||
+    session.date_session ||
+    session.jour ||
+    ""
+  );
+}
+
+function getSessionStartValue(session) {
+  return normalizeToHHMM(
+    session.heure_debut ||
+      session.start_time ||
+      session.heureDebut ||
+      session.debut ||
+      session.start ||
+      ""
+  );
+}
+
+function getSessionEndValue(session) {
+  return normalizeToHHMM(
+    session.heure_fin ||
+      session.end_time ||
+      session.heureFin ||
+      session.fin ||
+      session.end ||
+      ""
+  );
+}
+
+function getRemplacantId(source) {
+  if (!source) return null;
+
+  return (
+    source.remplacant_id ??
+    source.id_remplacant ??
+    source.remplacant?.id ??
+    source.remplacant?.user_id ??
+    null
+  );
 }
 
 function normalizeSession(session, formation, formateursMap) {
@@ -206,12 +273,17 @@ function normalizeSession(session, formation, formateursMap) {
     formation.id_formateur ??
     null;
 
+  const remplacantId = getRemplacantId(session) ?? getRemplacantId(formation) ?? null;
+
   const formateur = formateursMap.get(Number(formateurId));
+  const remplacant = formateursMap.get(Number(remplacantId));
 
   return {
     id:
       session.id ??
-      `${formation.id}-${formatDateKey(parsed.start)}-${parsed.start.getHours()}-${parsed.start.getMinutes()}`,
+      `${formation.id}-${formatDateKey(parsed.start)}-${pad(
+        parsed.start.getHours()
+      )}:${pad(parsed.start.getMinutes())}`,
     formationId: formation.id,
     formationTitre:
       formation.titre ||
@@ -229,6 +301,8 @@ function normalizeSession(session, formation, formateursMap) {
     endTime: `${pad(parsed.end.getHours())}:${pad(parsed.end.getMinutes())}`,
     formateurId: formateurId ? Number(formateurId) : null,
     formateurNom: formateur?.nom || "Non attribué",
+    remplacantId: remplacantId ? Number(remplacantId) : null,
+    remplacantNom: remplacant?.nom || "",
     salle:
       session.salle ||
       session.lieu ||
@@ -275,6 +349,7 @@ function extractSessionsFromFormation(formation, formateursMap) {
         heure_fin:
           formation.heure_fin || formation.end_time || formation.heureFin,
         formateur_id: formation.formateur_id || formation.id_formateur || null,
+        remplacant_id: getRemplacantId(formation),
       },
       formation,
       formateursMap
@@ -312,6 +387,72 @@ function buildWeeksForMonth(currentDate) {
   return weeks;
 }
 
+function getTypeJourneeFromHours(startTime, endTime) {
+  const start = normalizeToHHMM(startTime);
+  const end = normalizeToHHMM(endTime);
+
+  if (start === "09:00" && end === "17:00") return "journee_complete";
+  if (start === "09:00" && end === "12:30") return "demi_journee_matin";
+  if (start === "13:30" && end === "17:00") return "demi_journee_apres_midi";
+  if (start === "18:00" && end === "21:00") return "soir";
+  if (start === "09:00" && end === "16:00") return "cours_du_jour";
+  return "personnalise";
+}
+
+function buildCreneauxFromSessions(sessions) {
+  const grouped = new Map();
+
+  sessions.forEach((session) => {
+    const dateValue = getSessionDateValue(session);
+    if (!dateValue) return;
+
+    const jsDate = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(jsDate.getTime())) return;
+
+    const jour = JOURS_BY_DAY_NUMBER[jsDate.getDay()];
+    const heureDebut = getSessionStartValue(session);
+    const heureFin = getSessionEndValue(session);
+    const typeJournee = getTypeJourneeFromHours(heureDebut, heureFin);
+    const signature = `${typeJournee}|${heureDebut}|${heureFin}`;
+
+    if (!grouped.has(signature)) {
+      grouped.set(signature, {
+        jours: [],
+        type_journee: typeJournee,
+        heure_debut: typeJournee === "personnalise" ? heureDebut : "",
+        heure_fin: typeJournee === "personnalise" ? heureFin : "",
+      });
+    }
+
+    const entry = grouped.get(signature);
+    if (!entry.jours.includes(jour)) {
+      entry.jours.push(jour);
+    }
+  });
+
+  return Array.from(grouped.values()).filter(
+    (creneau) => Array.isArray(creneau.jours) && creneau.jours.length > 0
+  );
+}
+
+function getMinDateFromSessions(sessions) {
+  const dates = sessions
+    .map((s) => getSessionDateValue(s))
+    .filter(Boolean)
+    .sort();
+
+  return dates.length > 0 ? dates[0] : "";
+}
+
+function getMaxDateFromSessions(sessions) {
+  const dates = sessions
+    .map((s) => getSessionDateValue(s))
+    .filter(Boolean)
+    .sort();
+
+  return dates.length > 0 ? dates[dates.length - 1] : "";
+}
+
 function EventModal({
   selectedEvent,
   onClose,
@@ -336,18 +477,52 @@ function EventModal({
       startTime: selectedEvent.startTime || "09:00",
       endTime: selectedEvent.endTime || "17:00",
       formateurId: selectedEvent.formateurId || "",
+      remplacantId: selectedEvent.remplacantId || "",
       salle: selectedEvent.salle || "",
       description: selectedEvent.description || "",
     });
   }, [selectedEvent]);
 
+  const availableRemplacants = useMemo(() => {
+    return formateurs.filter((f) => {
+      if (!f.est_remplacant) return false;
+      if (!formData?.formateurId) return true;
+      return String(f.id) !== String(formData.formateurId);
+    });
+  }, [formateurs, formData?.formateurId]);
+
+  const displayedRemplacants = useMemo(() => {
+    const fallbackRemplacants = formateurs.filter((f) => {
+      if (!formData?.formateurId) return true;
+      return String(f.id) !== String(formData.formateurId);
+    });
+
+    if (availableRemplacants.length > 0) {
+      return availableRemplacants;
+    }
+
+    return fallbackRemplacants;
+  }, [availableRemplacants, formateurs, formData?.formateurId]);
+
   if (!selectedEvent || !formData) return null;
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+
+      if (
+        field === "formateurId" &&
+        value &&
+        String(prev.remplacantId) === String(value)
+      ) {
+        next.remplacantId = "";
+      }
+
+      return next;
+    });
   };
 
   const handleSubmit = (e) => {
@@ -440,6 +615,22 @@ function EventModal({
               >
                 <option value="">Non attribué</option>
                 {formateurs.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.nom}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="calendar-form__field">
+              <span>Remplaçant</span>
+              <select
+                value={formData.remplacantId}
+                disabled={!canEdit}
+                onChange={(e) => handleChange("remplacantId", e.target.value)}
+              >
+                <option value="">Aucun remplaçant</option>
+                {displayedRemplacants.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.nom}
                   </option>
@@ -556,20 +747,14 @@ export function CalendrierComplet() {
         let lieuxData = [];
 
         if (formateursRes.status === 401) {
-          console.warn(
-            "Accès refusé à /users/formateurs. La session n'est pas transmise ou n'est plus valide."
-          );
+          // silence volontaire
         } else if (formateursRes.status === 403) {
-          console.warn(
-            "Accès interdit à /users/formateurs. Le compte n'est probablement pas admin."
-          );
+          // silence volontaire
         } else if (formateursRes.ok) {
           formateursData = await formateursRes.json();
         }
 
-        if (!lieuxRes.ok) {
-          console.warn("Impossible de charger les lieux.");
-        } else {
+        if (lieuxRes.ok) {
           lieuxData = await lieuxRes.json();
         }
 
@@ -720,6 +905,14 @@ export function CalendrierComplet() {
       return;
     }
 
+    if (
+      formData.remplacantId &&
+      String(formData.remplacantId) === String(formData.formateurId)
+    ) {
+      alert("Le remplaçant doit être différent du formateur principal.");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -731,29 +924,22 @@ export function CalendrierComplet() {
         throw new Error("Formation introuvable.");
       }
 
-      const sessionsArrayName = Array.isArray(formation.sessions)
-        ? "sessions"
-        : Array.isArray(formation.seances)
-          ? "seances"
-          : Array.isArray(formation.cours)
-            ? "cours"
-            : Array.isArray(formation.calendrier)
-              ? "calendrier"
-              : "sessions";
-
-      const currentSessions = Array.isArray(formation[sessionsArrayName])
-        ? formation[sessionsArrayName]
+      const currentSessions = Array.isArray(formation.sessions)
+        ? formation.sessions
         : [];
 
       const updatedSessions = currentSessions.map((session) => {
-        const currentId =
-          session.id ??
-          `${formation.id}-${session.date || session.session_date || ""}`;
+        const sameId =
+          selectedEvent.rawSession?.id != null &&
+          session.id != null &&
+          String(session.id) === String(selectedEvent.rawSession.id);
 
-        if (
-          String(currentId) !==
-          String(selectedEvent.rawSession.id ?? selectedEvent.id)
-        ) {
+        const sameFallbackIdentity =
+          getSessionDateValue(session) === selectedEvent.date &&
+          getSessionStartValue(session) === selectedEvent.startTime &&
+          getSessionEndValue(session) === selectedEvent.endTime;
+
+        if (!sameId && !sameFallbackIdentity) {
           return session;
         }
 
@@ -769,28 +955,61 @@ export function CalendrierComplet() {
           formateur_id: formData.formateurId
             ? Number(formData.formateurId)
             : null,
+          id_formateur: formData.formateurId
+            ? Number(formData.formateurId)
+            : null,
+          remplacant_id: formData.remplacantId
+            ? Number(formData.remplacantId)
+            : null,
+          id_remplacant: formData.remplacantId
+            ? Number(formData.remplacantId)
+            : null,
           salle: formData.salle,
           lieu: formData.salle,
         };
       });
 
+      const creneaux = buildCreneauxFromSessions(updatedSessions);
+      const dateDebut = getMinDateFromSessions(updatedSessions);
+      const dateFin = getMaxDateFromSessions(updatedSessions);
+
+      if (!dateDebut || !dateFin || creneaux.length === 0) {
+        throw new Error(
+          "Impossible de reconstruire la planification de la formation."
+        );
+      }
+
       const payload = {
-        ...formation,
-        titre: formData.formationTitre,
-        title: formData.formationTitre,
-        description: formData.description,
+        nom:
+          formData.formationTitre ||
+          formation.nom ||
+          formation.titre ||
+          formation.title ||
+          "",
+        description: formData.description || formation.description || "",
         formateur_id: formData.formateurId
           ? Number(formData.formateurId)
           : null,
-        salle: formData.salle,
-        lieu: formData.salle,
-        [sessionsArrayName]: updatedSessions,
+        remplacant_id: formData.remplacantId
+          ? Number(formData.remplacantId)
+          : null,
+        lieu: formData.salle || formation.lieu || formation.salle || "",
+        nombre_participants: Number(
+          formation.nombre_participants ?? formation.participants ?? 0
+        ),
+        statut: formation.statut || "actif",
+        date_debut: dateDebut,
+        date_fin: dateFin,
+        mode_planification: "manuel",
+        creneaux,
       };
 
       const response = await fetch(
         `${API_URL}/formations/${formation.id}`,
         getFetchOptions("PUT", payload)
       );
+
+      const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -800,7 +1019,8 @@ export function CalendrierComplet() {
           throw new Error("Accès interdit. Admin requis.");
         }
         throw new Error(
-          "La sauvegarde a échoué. Vérifie le format attendu côté API."
+          responseData?.message ||
+            "La sauvegarde a échoué. Vérifie le format attendu côté API."
         );
       }
 
@@ -832,40 +1052,62 @@ export function CalendrierComplet() {
         throw new Error("Formation introuvable.");
       }
 
-      const sessionsArrayName = Array.isArray(formation.sessions)
-        ? "sessions"
-        : Array.isArray(formation.seances)
-          ? "seances"
-          : Array.isArray(formation.cours)
-            ? "cours"
-            : Array.isArray(formation.calendrier)
-              ? "calendrier"
-              : "sessions";
-
-      const currentSessions = Array.isArray(formation[sessionsArrayName])
-        ? formation[sessionsArrayName]
+      const currentSessions = Array.isArray(formation.sessions)
+        ? formation.sessions
         : [];
 
       const updatedSessions = currentSessions.filter((session) => {
-        const currentId =
-          session.id ??
-          `${formation.id}-${session.date || session.session_date || ""}`;
+        const sameId =
+          eventToDelete.rawSession?.id != null &&
+          session.id != null &&
+          String(session.id) === String(eventToDelete.rawSession.id);
 
-        return (
-          String(currentId) !==
-          String(eventToDelete.rawSession.id ?? eventToDelete.id)
-        );
+        const sameFallbackIdentity =
+          getSessionDateValue(session) === eventToDelete.date &&
+          getSessionStartValue(session) === eventToDelete.startTime &&
+          getSessionEndValue(session) === eventToDelete.endTime;
+
+        return !(sameId || sameFallbackIdentity);
       });
 
+      if (updatedSessions.length === 0) {
+        throw new Error(
+          "Impossible de supprimer le dernier créneau depuis ce calendrier."
+        );
+      }
+
+      const creneaux = buildCreneauxFromSessions(updatedSessions);
+      const dateDebut = getMinDateFromSessions(updatedSessions);
+      const dateFin = getMaxDateFromSessions(updatedSessions);
+
+      if (!dateDebut || !dateFin || creneaux.length === 0) {
+        throw new Error(
+          "Impossible de reconstruire la planification après suppression."
+        );
+      }
+
       const payload = {
-        ...formation,
-        [sessionsArrayName]: updatedSessions,
+        nom: formation.nom || formation.titre || formation.title || "",
+        description: formation.description || "",
+        formateur_id: formation.formateur_id || formation.id_formateur || null,
+        remplacant_id: getRemplacantId(formation),
+        lieu: formation.lieu || formation.salle || "",
+        nombre_participants: Number(
+          formation.nombre_participants ?? formation.participants ?? 0
+        ),
+        statut: formation.statut || "actif",
+        date_debut: dateDebut,
+        date_fin: dateFin,
+        mode_planification: "manuel",
+        creneaux,
       };
 
       const response = await fetch(
         `${API_URL}/formations/${formation.id}`,
         getFetchOptions("PUT", payload)
       );
+
+      const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -874,7 +1116,10 @@ export function CalendrierComplet() {
         if (response.status === 403) {
           throw new Error("Accès interdit. Admin requis.");
         }
-        throw new Error("La suppression du créneau a échoué côté API.");
+        throw new Error(
+          responseData?.message ||
+            "La suppression du créneau a échoué côté API."
+        );
       }
 
       setSelectedEvent(null);
@@ -1043,6 +1288,11 @@ export function CalendrierComplet() {
                               <span className="calendar-event__trainer">
                                 {eventItem.formateurNom}
                               </span>
+                              {eventItem.remplacantNom ? (
+                                <span className="calendar-event__trainer">
+                                  Remplaçant : {eventItem.remplacantNom}
+                                </span>
+                              ) : null}
                             </button>
                           ))
                         )}
@@ -1108,6 +1358,11 @@ export function CalendrierComplet() {
                               <span className="calendar-event__trainer">
                                 {eventItem.formateurNom}
                               </span>
+                              {eventItem.remplacantNom ? (
+                                <span className="calendar-event__trainer">
+                                  Remplaçant : {eventItem.remplacantNom}
+                                </span>
+                              ) : null}
                               {eventItem.salle ? (
                                 <span className="calendar-event__room">
                                   {eventItem.salle}

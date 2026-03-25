@@ -160,6 +160,33 @@ export function CartesFormations() {
     navigate(`/inscription-formations?formation=${formationId}`);
   };
 
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateY = ((x - centerX) / centerX) * 7;
+    const rotateX = -((y - centerY) / centerY) * 7;
+
+    card.style.setProperty("--rotateX", `${rotateX}deg`);
+    card.style.setProperty("--rotateY", `${rotateY}deg`);
+    card.style.setProperty("--mouseX", `${x}px`);
+    card.style.setProperty("--mouseY", `${y}px`);
+  };
+
+  const handleMouseLeave = (e) => {
+    const card = e.currentTarget;
+    card.style.setProperty("--rotateX", "0deg");
+    card.style.setProperty("--rotateY", "0deg");
+    card.style.setProperty("--mouseX", "50%");
+    card.style.setProperty("--mouseY", "50%");
+  };
+
   if (loading) {
     return (
       <section className="section_formations">
@@ -178,6 +205,11 @@ export function CartesFormations() {
 
   return (
     <section className="section_formations" id="formations">
+      <div className="bg_blur orb_1"></div>
+      <div className="bg_blur orb_2"></div>
+      <div className="bg_noise"></div>
+      <div className="bg_grid"></div>
+
       <div className="formations_entete">
         <span className="formations_badge">Nos formations</span>
         <h2 className="titre_formations">
@@ -186,7 +218,7 @@ export function CartesFormations() {
         <p className="texte_formations">
           {searchTerm
             ? `Résultats pour : "${searchTerm}"`
-            : "Des formations modernes, accessibles et conçues pour vous aider à évoluer rapidement."}
+            : "Des formations modernes, premium et pensées pour une montée en compétence rapide."}
         </p>
       </div>
 
@@ -205,8 +237,13 @@ export function CartesFormations() {
               <article
                 className="carte_formation"
                 key={formation.id}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
                 onClick={() => navigate(`/details-formations/${formation.id}`)}
               >
+                <div className="card_shine"></div>
+                <div className="card_border_glow"></div>
+
                 <div className="carte_top">
                   <span className={`badge_statut ${formation.statut}`}>
                     {formation.statut}
@@ -297,4 +334,4 @@ export function CartesFormations() {
       </div>
     </section>
   );
-} 
+}

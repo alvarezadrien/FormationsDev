@@ -6,9 +6,9 @@ use CodeIgniter\Model;
 
 class FormationSessionModel extends Model
 {
-    protected $table = 'formation_sessions';
-    protected $primaryKey = 'id';
-    protected $returnType = 'array';
+    protected $table            = 'formation_sessions';
+    protected $primaryKey       = 'id';
+    protected $returnType       = 'array';
     protected $useAutoIncrement = true;
 
     protected $allowedFields = [
@@ -17,6 +17,7 @@ class FormationSessionModel extends Model
         'heure_debut',
         'heure_fin',
         'created_at',
+        'updated_at',
     ];
 
     protected $useTimestamps = false;

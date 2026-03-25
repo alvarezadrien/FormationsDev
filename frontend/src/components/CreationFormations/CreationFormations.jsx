@@ -66,12 +66,30 @@ function normalizeFormateur(formateur) {
   };
 }
 
-function normalizeSessionsFromFormation(formation) {
-  if (!formation?.sessions || !Array.isArray(formation.sessions)) {
-    return [];
-  }
+function getFormationFormateurId(formation) {
+  return (
+    formation?.formateur_id ??
+    formation?.id_formateur ??
+    formation?.formateur?.id ??
+    ""
+  );
+}
 
-  return formation.sessions;
+function getFormationRemplacantId(formation) {
+  return (
+    formation?.remplacant_id ??
+    formation?.id_remplacant ??
+    formation?.remplacant?.id ??
+    ""
+  );
+}
+
+function normalizeSessionsFromFormation(formation) {
+  if (Array.isArray(formation?.sessions)) return formation.sessions;
+  if (Array.isArray(formation?.seances)) return formation.seances;
+  if (Array.isArray(formation?.cours)) return formation.cours;
+  if (Array.isArray(formation?.calendrier)) return formation.calendrier;
+  return [];
 }
 
 function buildInitialCreneauxFromFormation(formation) {
@@ -85,7 +103,18 @@ function buildInitialCreneauxFromFormation(formation) {
     const bySchedule = new Map();
 
     sessions.forEach((session) => {
-      const jsDate = new Date(`${session.date}T00:00:00`);
+      const sessionDate =
+        session.date ||
+        session.session_date ||
+        session.date_session ||
+        session.jour ||
+        null;
+
+      if (!sessionDate) return;
+
+      const jsDate = new Date(`${sessionDate}T00:00:00`);
+      if (Number.isNaN(jsDate.getTime())) return;
+
       const dayIndex = jsDate.getDay();
       const joursJs = [
         "dimanche",
@@ -96,9 +125,17 @@ function buildInitialCreneauxFromFormation(formation) {
         "vendredi",
         "samedi",
       ];
+
       const jour = joursJs[dayIndex];
-      const heureDebut = session.heure_debut?.slice(0, 5) || "";
-      const heureFin = session.heure_fin?.slice(0, 5) || "";
+      const heureDebut =
+        session.heure_debut?.slice(0, 5) ||
+        session.start_time?.slice(0, 5) ||
+        "";
+      const heureFin =
+        session.heure_fin?.slice(0, 5) ||
+        session.end_time?.slice(0, 5) ||
+        "";
+
       const signature = `personnalise-${heureDebut}-${heureFin}`;
 
       if (!bySchedule.has(signature)) {
@@ -111,24 +148,32 @@ function buildInitialCreneauxFromFormation(formation) {
       }
 
       const creneau = bySchedule.get(signature);
+
       if (!creneau.jours.includes(jour)) {
         creneau.jours.push(jour);
       }
     });
 
-    return Array.from(bySchedule.values()).map((creneau) => ({
+    const mapped = Array.from(bySchedule.values()).map((creneau) => ({
       ...creneau,
       jours: JOURS_OPTIONS.map((j) => j.value).filter((jour) =>
         creneau.jours.includes(jour)
       ),
     }));
+
+    if (mapped.length > 0) {
+      return mapped;
+    }
   }
 
   let joursArray = [];
 
   if (Array.isArray(formation.jours)) {
     joursArray = formation.jours;
-  } else if (typeof formation.jours === "string" && formation.jours.trim() !== "") {
+  } else if (
+    typeof formation.jours === "string" &&
+    formation.jours.trim() !== ""
+  ) {
     joursArray = formation.jours
       .split(",")
       .map((jour) => jour.trim())
@@ -145,7 +190,9 @@ function buildInitialCreneauxFromFormation(formation) {
         joursArray.includes(jour)
       ),
       type_journee: formation.type_journee || "journee_complete",
-      heure_debut: formation.heure_debut ? formation.heure_debut.slice(0, 5) : "",
+      heure_debut: formation.heure_debut
+        ? formation.heure_debut.slice(0, 5)
+        : "",
       heure_fin: formation.heure_fin ? formation.heure_fin.slice(0, 5) : "",
     },
   ];
@@ -202,8 +249,7 @@ export function CreationFormations({
               ? data
               : [];
 
-        const normalized = rawFormateurs.map(normalizeFormateur);
-        setFormateurs(normalized);
+        setFormateurs(rawFormateurs.map(normalizeFormateur));
       } catch (err) {
         setErreur(err.message || "Erreur lors du chargement des formateurs");
       } finally {
@@ -234,7 +280,15 @@ export function CreationFormations({
           throw new Error(data?.message || "Impossible de charger les lieux");
         }
 
-        setLieux(Array.isArray(data) ? data : []);
+        const rawLieux = Array.isArray(data?.lieux)
+          ? data.lieux
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
+              : [];
+
+        setLieux(rawLieux);
       } catch (err) {
         setErreur(err.message || "Erreur lors du chargement des lieux");
       } finally {
@@ -247,29 +301,32 @@ export function CreationFormations({
 
   useEffect(() => {
     if (formationEnEdition) {
-      const initialCreneaux = buildInitialCreneauxFromFormation(formationEnEdition);
+      const initialCreneaux =
+        buildInitialCreneauxFromFormation(formationEnEdition);
+      const sessions = normalizeSessionsFromFormation(formationEnEdition);
 
       setFormData({
-        nom: formationEnEdition.nom || "",
-        formateur_id: formationEnEdition.formateur_id
-          ? String(formationEnEdition.formateur_id)
+        nom: formationEnEdition.nom || formationEnEdition.titre || "",
+        formateur_id: getFormationFormateurId(formationEnEdition)
+          ? String(getFormationFormateurId(formationEnEdition))
           : "",
-        remplacant_id: formationEnEdition.remplacant_id
-          ? String(formationEnEdition.remplacant_id)
+        remplacant_id: getFormationRemplacantId(formationEnEdition)
+          ? String(getFormationRemplacantId(formationEnEdition))
           : "",
-        lieu: formationEnEdition.lieu || "",
+        lieu: formationEnEdition.lieu || formationEnEdition.salle || "",
         description: formationEnEdition.description || "",
         nombre_participants: formationEnEdition.nombre_participants ?? 0,
         statut: formationEnEdition.statut ?? "actif",
         date_debut: formationEnEdition.date_debut || "",
         date_fin: formationEnEdition.date_fin || "",
-        nombre_seances:
-          Array.isArray(formationEnEdition.sessions) &&
-          formationEnEdition.sessions.length > 0
-            ? String(formationEnEdition.sessions.length)
-            : "",
-        mode_planification: formationEnEdition.date_fin ? "manuel" : "intelligent",
-        creneaux: initialCreneaux.length > 0 ? initialCreneaux : initialForm.creneaux,
+        nombre_seances: sessions.length > 0 ? String(sessions.length) : "",
+        mode_planification: formationEnEdition.date_fin
+          ? "manuel"
+          : "intelligent",
+        creneaux:
+          initialCreneaux.length > 0
+            ? initialCreneaux
+            : initialForm.creneaux,
       });
     } else {
       setFormData(initialForm);
@@ -284,11 +341,9 @@ export function CreationFormations({
     const canPreview =
       formData.date_debut &&
       formData.creneaux.length > 0 &&
-      (
-        (formData.mode_planification === "manuel" && formData.date_fin) ||
+      ((formData.mode_planification === "manuel" && formData.date_fin) ||
         (formData.mode_planification === "intelligent" &&
-          Number(formData.nombre_seances) > 0)
-      );
+          Number(formData.nombre_seances) > 0));
 
     if (!canPreview) {
       setPreview(null);
@@ -313,14 +368,16 @@ export function CreationFormations({
     let result = [...formateurs];
 
     if (hasSaturdaySelected) {
-      result = result.filter((formateur) => formateur.travaille_samedi);
+      result = result.filter((formateur) => formateur.travaille_samedi === true);
     }
 
     return result;
   }, [formateurs, hasSaturdaySelected]);
 
   const availableRemplacants = useMemo(() => {
-    let result = formateurs.filter((formateur) => formateur.est_remplacant === true);
+    let result = formateurs.filter(
+      (formateur) => formateur.est_remplacant === true
+    );
 
     if (hasSaturdaySelected) {
       result = result.filter((formateur) => formateur.travaille_samedi === true);
@@ -335,7 +392,31 @@ export function CreationFormations({
     return result;
   }, [formateurs, hasSaturdaySelected, formData.formateur_id]);
 
+  const displayedFormateurs = useMemo(() => {
+    if (availableFormateurs.length > 0) {
+      return availableFormateurs;
+    }
+
+    return formateurs;
+  }, [availableFormateurs, formateurs]);
+
+  const displayedRemplacants = useMemo(() => {
+    const fallbackRemplacants = formateurs.filter(
+      (formateur) => String(formateur.id) !== String(formData.formateur_id)
+    );
+
+    if (availableRemplacants.length > 0) {
+      return availableRemplacants;
+    }
+
+    return fallbackRemplacants;
+  }, [availableRemplacants, formateurs, formData.formateur_id]);
+
   useEffect(() => {
+    if (loadingFormateurs) {
+      return;
+    }
+
     if (
       formData.formateur_id &&
       !availableFormateurs.some(
@@ -347,9 +428,13 @@ export function CreationFormations({
         formateur_id: "",
       }));
     }
-  }, [availableFormateurs, formData.formateur_id]);
+  }, [availableFormateurs, formData.formateur_id, loadingFormateurs]);
 
   useEffect(() => {
+    if (loadingFormateurs) {
+      return;
+    }
+
     if (
       formData.remplacant_id &&
       !availableRemplacants.some(
@@ -361,7 +446,7 @@ export function CreationFormations({
         remplacant_id: "",
       }));
     }
-  }, [availableRemplacants, formData.remplacant_id]);
+  }, [availableRemplacants, formData.remplacant_id, loadingFormateurs]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -513,7 +598,7 @@ export function CreationFormations({
         return;
       }
 
-      setPreview(data?.data || null);
+      setPreview(data?.data || data || null);
     } catch {
       setPreview(null);
     } finally {
@@ -586,7 +671,10 @@ export function CreationFormations({
         return "La date de fin ne peut pas être avant la date de début.";
       }
     } else {
-      if (!Number(formData.nombre_seances) || Number(formData.nombre_seances) <= 0) {
+      if (
+        !Number(formData.nombre_seances) ||
+        Number(formData.nombre_seances) <= 0
+      ) {
         return "Veuillez renseigner un nombre de séances valide.";
       }
     }
@@ -701,7 +789,7 @@ export function CreationFormations({
                   : "Sélectionner un formateur"}
             </option>
 
-            {availableFormateurs.map((formateur) => (
+            {displayedFormateurs.map((formateur) => (
               <option key={formateur.id} value={formateur.id}>
                 {formateur.prenom} {formateur.nom} - {formateur.email}
               </option>
@@ -729,14 +817,14 @@ export function CreationFormations({
                   : "Sélectionner un remplaçant"}
             </option>
 
-            {availableRemplacants.map((formateur) => (
+            {displayedRemplacants.map((formateur) => (
               <option key={formateur.id} value={formateur.id}>
                 {formateur.prenom} {formateur.nom} - {formateur.email}
               </option>
             ))}
           </select>
 
-          {!loadingFormateurs && availableRemplacants.length === 0 && (
+          {!loadingFormateurs && displayedRemplacants.length === 0 && (
             <div
               style={{
                 marginTop: "8px",
@@ -1107,7 +1195,9 @@ export function CreationFormations({
               </p>
               <p>
                 <strong>Nombre de sessions :</strong>{" "}
-                {Array.isArray(preview.sessions) ? preview.sessions.length : 0}
+                {Array.isArray(preview.sessions)
+                  ? preview.sessions.length
+                  : 0}
               </p>
 
               {Array.isArray(preview.sessions) && preview.sessions.length > 0 && (
@@ -1195,7 +1285,9 @@ export function CreationFormations({
         </div>
 
         {message && (
-          <div className="admin-feedback admin-feedback--success">{message}</div>
+          <div className="admin-feedback admin-feedback--success">
+            {message}
+          </div>
         )}
 
         {erreur && (
