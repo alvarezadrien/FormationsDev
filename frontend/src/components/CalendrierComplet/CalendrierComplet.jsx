@@ -1,214 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  getAvailableCoAnimateurs,
+  getAvailableRemplacants,
+  normalizeFormateur,
+} from "../../features/formateurs/utils/formateurAssignments";
+import {
+  DAYS_FULL,
+  DAYS_SHORT,
+  MONTHS,
+  addDays,
+  buildCreneauxFromSessions,
+  buildWeeksForMonth,
+  extractSessionsFromFormation,
+  formatDateKey,
+  getFetchOptions,
+  getMaxDateFromSessions,
+  getMinDateFromSessions,
+  getMonday,
+  getRemplacantId,
+  getSessionDateValue,
+  getSessionEndValue,
+  getSessionStartValue,
+  isAdminUser,
+} from "../../features/planning/utils/calendarPlanning";
 import "./CalendrierComplet.css";
 
 const API_URL = "http://localhost:8080";
-
-const MONTHS = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
-
-const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const DAYS_FULL = [
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-  "Dimanche",
-];
-
-const FORMATION_COLORS = [
-  "#2563eb",
-  "#7c3aed",
-  "#db2777",
-  "#ea580c",
-  "#16a34a",
-  "#0891b2",
-  "#4f46e5",
-  "#c2410c",
-  "#0f766e",
-  "#9333ea",
-  "#be123c",
-  "#15803d",
-  "#1d4ed8",
-  "#a21caf",
-  "#0ea5e9",
-  "#ca8a04",
-  "#dc2626",
-  "#059669",
-];
-
-const JOURS_BY_DAY_NUMBER = {
-  0: "dimanche",
-  1: "lundi",
-  2: "mardi",
-  3: "mercredi",
-  4: "jeudi",
-  5: "vendredi",
-  6: "samedi",
-};
-
-function getJsonHeaders() {
-  return {
-    "Content-Type": "application/json",
-  };
-}
-
-function getFetchOptions(method = "GET", body = null) {
-  const options = {
-    method,
-    headers: getJsonHeaders(),
-    credentials: "include",
-  };
-
-  if (body !== null) {
-    options.body = JSON.stringify(body);
-  }
-
-  return options;
-}
-
-function getStoredUser() {
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function isAdminUser() {
-  const user = getStoredUser();
-  return user?.role === "admin";
-}
-
-function normalizeBoolean(value) {
-  return value === true || value === 1 || value === "1";
-}
-
-function pad(n) {
-  return String(n).padStart(2, "0");
-}
-
-function formatDateKey(date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )}`;
-}
-
-function getMonday(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date, nb) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + nb);
-  return d;
-}
-
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function endOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
-function hashString(str = "") {
-  let hash = 0;
-  for (let i = 0; i < str.length; i += 1) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function getFormationColor(formation) {
-  const key =
-    `${formation?.id ?? ""}-${formation?.titre ?? formation?.title ?? formation?.nom ?? ""}` ||
-    "default";
-  return FORMATION_COLORS[hashString(key) % FORMATION_COLORS.length];
-}
-
-function normalizeToHHMM(value) {
-  if (!value) return "";
-  return String(value).slice(0, 5);
-}
-
-function parseDateTime(session) {
-  const rawDate =
-    session.date ||
-    session.session_date ||
-    session.date_session ||
-    session.jour ||
-    null;
-
-  const rawStart =
-    session.heure_debut ||
-    session.start_time ||
-    session.heureDebut ||
-    session.debut ||
-    session.start ||
-    "09:00";
-
-  const rawEnd =
-    session.heure_fin ||
-    session.end_time ||
-    session.heureFin ||
-    session.fin ||
-    session.end ||
-    "17:00";
-
-  if (!rawDate) return null;
-
-  const start = new Date(
-    `${rawDate}T${rawStart?.length >= 5 ? rawStart.slice(0, 5) : "09:00"}`
-  );
-  const end = new Date(
-    `${rawDate}T${rawEnd?.length >= 5 ? rawEnd.slice(0, 5) : "17:00"}`
-  );
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return null;
-  }
-
-  return { start, end };
-}
-
-function normalizeFormateur(formateur) {
-  return {
-    id: Number(formateur.id),
-    nom:
-      formateur.nom ||
-      formateur.name ||
-      formateur.full_name ||
-      `${formateur.prenom || ""} ${formateur.nom || ""}`.trim() ||
-      formateur.email ||
-      `Formateur #${formateur.id}`,
-    prenom: formateur.prenom || "",
-    email: formateur.email || "",
-    est_remplacant: normalizeBoolean(formateur.est_remplacant),
-    travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
-    est_co_animation: normalizeBoolean(formateur.est_co_animation),
-  };
-}
 
 function normalizeLieu(lieu) {
   return {
@@ -217,259 +34,6 @@ function normalizeLieu(lieu) {
     slug: lieu.slug || "",
     created_at: lieu.created_at || "",
   };
-}
-
-function getSessionDateValue(session) {
-  return (
-    session.date ||
-    session.session_date ||
-    session.date_session ||
-    session.jour ||
-    ""
-  );
-}
-
-function getSessionStartValue(session) {
-  return normalizeToHHMM(
-    session.heure_debut ||
-      session.start_time ||
-      session.heureDebut ||
-      session.debut ||
-      session.start ||
-      ""
-  );
-}
-
-function getSessionEndValue(session) {
-  return normalizeToHHMM(
-    session.heure_fin ||
-      session.end_time ||
-      session.heureFin ||
-      session.fin ||
-      session.end ||
-      ""
-  );
-}
-
-function getRemplacantId(source) {
-  if (!source) return null;
-
-  return (
-    source.remplacant_id ??
-    source.id_remplacant ??
-    source.remplacant?.id ??
-    source.remplacant?.user_id ??
-    null
-  );
-}
-
-function getSecondFormateurId(source) {
-  if (!source) return null;
-
-  return (
-    source.second_formateur_id ??
-    source.formateur_secondaire_id ??
-    source.second_formateur?.id ??
-    source.co_formateur_id ??
-    null
-  );
-}
-
-function normalizeSession(session, formation, formateursMap) {
-  const parsed = parseDateTime(session);
-  if (!parsed) return null;
-
-  const formateurId =
-    session.formateur_id ??
-    session.id_formateur ??
-    formation.formateur_id ??
-    formation.id_formateur ??
-    null;
-
-  const remplacantId = getRemplacantId(session) ?? getRemplacantId(formation) ?? null;
-  const secondFormateurId =
-    getSecondFormateurId(session) ?? getSecondFormateurId(formation) ?? null;
-
-  const formateur = formateursMap.get(Number(formateurId));
-  const remplacant = formateursMap.get(Number(remplacantId));
-  const secondFormateur = formateursMap.get(Number(secondFormateurId));
-
-  return {
-    id:
-      session.id ??
-      `${formation.id}-${formatDateKey(parsed.start)}-${pad(
-        parsed.start.getHours()
-      )}:${pad(parsed.start.getMinutes())}`,
-    formationId: formation.id,
-    formationTitre:
-      formation.titre ||
-      formation.title ||
-      formation.nom ||
-      `Formation #${formation.id}`,
-    formation,
-    rawSession: session,
-    date: formatDateKey(parsed.start),
-    start: parsed.start,
-    end: parsed.end,
-    startTime: `${pad(parsed.start.getHours())}:${pad(
-      parsed.start.getMinutes()
-    )}`,
-    endTime: `${pad(parsed.end.getHours())}:${pad(parsed.end.getMinutes())}`,
-    formateurId: formateurId ? Number(formateurId) : null,
-    formateurNom: formateur?.nom || "Non attribué",
-    secondFormateurId: secondFormateurId ? Number(secondFormateurId) : null,
-    secondFormateurNom: secondFormateur?.nom || "",
-    remplacantId: remplacantId ? Number(remplacantId) : null,
-    remplacantNom: remplacant?.nom || "",
-    salle:
-      session.salle ||
-      session.lieu ||
-      formation.salle ||
-      formation.lieu ||
-      formation.location ||
-      "",
-    color: getFormationColor(formation),
-    description:
-      formation.description ||
-      formation.resume ||
-      formation.contenu ||
-      "",
-  };
-}
-
-function extractSessionsFromFormation(formation, formateursMap) {
-  const possibleArrays = [
-    formation.sessions,
-    formation.seances,
-    formation.cours,
-    formation.calendrier,
-    formation.dates,
-    formation.occurrences,
-  ].filter(Array.isArray);
-
-  if (possibleArrays.length > 0) {
-    return possibleArrays
-      .flat()
-      .map((session) => normalizeSession(session, formation, formateursMap))
-      .filter(Boolean);
-  }
-
-  if (
-    formation.date &&
-    (formation.heure_debut || formation.start_time || formation.heureDebut)
-  ) {
-    const oneSession = normalizeSession(
-      {
-        id: formation.id,
-        date: formation.date,
-        heure_debut:
-          formation.heure_debut || formation.start_time || formation.heureDebut,
-        heure_fin:
-          formation.heure_fin || formation.end_time || formation.heureFin,
-        formateur_id: formation.formateur_id || formation.id_formateur || null,
-        second_formateur_id: getSecondFormateurId(formation),
-        remplacant_id: getRemplacantId(formation),
-      },
-      formation,
-      formateursMap
-    );
-
-    return oneSession ? [oneSession] : [];
-  }
-
-  return [];
-}
-
-function buildWeeksForMonth(currentDate) {
-  const firstDay = startOfMonth(currentDate);
-  const lastDay = endOfMonth(currentDate);
-
-  const gridStart = getMonday(firstDay);
-  const gridEnd = addDays(
-    getMonday(lastDay),
-    lastDay.getDay() === 0 ? 6 : 7 - lastDay.getDay()
-  );
-
-  const days = [];
-  const cursor = new Date(gridStart);
-
-  while (cursor <= gridEnd) {
-    days.push(new Date(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  const weeks = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-
-  return weeks;
-}
-
-function getTypeJourneeFromHours(startTime, endTime) {
-  const start = normalizeToHHMM(startTime);
-  const end = normalizeToHHMM(endTime);
-
-  if (start === "09:00" && end === "17:00") return "journee_complete";
-  if (start === "09:00" && end === "12:30") return "demi_journee_matin";
-  if (start === "13:30" && end === "17:00") return "demi_journee_apres_midi";
-  if (start === "18:00" && end === "21:00") return "soir";
-  if (start === "09:00" && end === "16:00") return "cours_du_jour";
-  return "personnalise";
-}
-
-function buildCreneauxFromSessions(sessions) {
-  const grouped = new Map();
-
-  sessions.forEach((session) => {
-    const dateValue = getSessionDateValue(session);
-    if (!dateValue) return;
-
-    const jsDate = new Date(`${dateValue}T00:00:00`);
-    if (Number.isNaN(jsDate.getTime())) return;
-
-    const jour = JOURS_BY_DAY_NUMBER[jsDate.getDay()];
-    const heureDebut = getSessionStartValue(session);
-    const heureFin = getSessionEndValue(session);
-    const typeJournee = getTypeJourneeFromHours(heureDebut, heureFin);
-    const signature = `${typeJournee}|${heureDebut}|${heureFin}`;
-
-    if (!grouped.has(signature)) {
-      grouped.set(signature, {
-        jours: [],
-        type_journee: typeJournee,
-        heure_debut: typeJournee === "personnalise" ? heureDebut : "",
-        heure_fin: typeJournee === "personnalise" ? heureFin : "",
-      });
-    }
-
-    const entry = grouped.get(signature);
-    if (!entry.jours.includes(jour)) {
-      entry.jours.push(jour);
-    }
-  });
-
-  return Array.from(grouped.values()).filter(
-    (creneau) => Array.isArray(creneau.jours) && creneau.jours.length > 0
-  );
-}
-
-function getMinDateFromSessions(sessions) {
-  const dates = sessions
-    .map((s) => getSessionDateValue(s))
-    .filter(Boolean)
-    .sort();
-
-  return dates.length > 0 ? dates[0] : "";
-}
-
-function getMaxDateFromSessions(sessions) {
-  const dates = sessions
-    .map((s) => getSessionDateValue(s))
-    .filter(Boolean)
-    .sort();
-
-  return dates.length > 0 ? dates[dates.length - 1] : "";
 }
 
 function EventModal({
@@ -505,17 +69,11 @@ function EventModal({
   }, [selectedEvent]);
 
   const availableRemplacants = useMemo(() => {
-    return formateurs.filter((f) => {
-      if (!f.est_remplacant) return false;
-      if (!formData?.formateurId) return true;
-      if (String(f.id) === String(formData.formateurId)) return false;
-      if (
-        formData?.coAnimation &&
-        String(f.id) === String(formData.secondFormateurId)
-      ) {
-        return false;
-      }
-      return true;
+    return getAvailableRemplacants(formateurs, {
+      formateurId: formData?.formateurId,
+      secondFormateurId: formData?.coAnimation
+        ? formData?.secondFormateurId
+        : "",
     });
   }, [
     formateurs,
@@ -525,12 +83,9 @@ function EventModal({
   ]);
 
   const availableSecondFormateurs = useMemo(() => {
-    return formateurs.filter((f) => {
-      if (!f.est_co_animation) return false;
-      if (!formData?.formateurId) return true;
-      if (String(f.id) === String(formData.formateurId)) return false;
-      if (String(f.id) === String(formData.remplacantId)) return false;
-      return true;
+    return getAvailableCoAnimateurs(formateurs, {
+      formateurId: formData?.formateurId,
+      remplacantId: formData?.remplacantId,
     });
   }, [formateurs, formData?.formateurId, formData?.remplacantId]);
 

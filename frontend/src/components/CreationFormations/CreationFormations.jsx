@@ -1,212 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  getAvailableCoAnimateurs,
+  getAvailablePrincipalFormateurs,
+  getAvailableRemplacants,
+  getDisplayedFormateurs,
+  getDisplayedRemplacants,
+  normalizeFormateur,
+} from "../../features/formateurs/utils/formateurAssignments";
+import {
+  ALL_JOURS_VALUES,
+  buildFormationPayload,
+  buildInitialCreneauxFromFormation,
+  createInitialFormationForm,
+  getFormationFormateurId,
+  getFormationRemplacantId,
+  getFormationSecondFormateurId,
+  getTypeLabel,
+  JOURS_OPTIONS,
+  normalizeSessionsFromFormation,
+  TYPE_JOURNEE_OPTIONS,
+} from "../../features/formations/utils/formationPlanning";
 
 const API_URL = "http://localhost:8080";
-
-const JOURS_OPTIONS = [
-  { value: "lundi", label: "Lundi" },
-  { value: "mardi", label: "Mardi" },
-  { value: "mercredi", label: "Mercredi" },
-  { value: "jeudi", label: "Jeudi" },
-  { value: "vendredi", label: "Vendredi" },
-  { value: "samedi", label: "Samedi" },
-];
-
-const ALL_JOURS_VALUES = JOURS_OPTIONS.map((jour) => jour.value);
-
-const TYPE_JOURNEE_OPTIONS = [
-  { value: "journee_complete", label: "Journée complète" },
-  { value: "demi_journee", label: "Demi-journée" },
-  { value: "demi_journee_matin", label: "Demi-journée matin" },
-  { value: "demi_journee_apres_midi", label: "Demi-journée après-midi" },
-  { value: "soir", label: "Cours du soir" },
-  { value: "cours_du_jour", label: "Cours du jour" },
-  { value: "personnalise", label: "Personnalisé" },
-];
-
-const initialForm = {
-  nom: "",
-  formateur_id: "",
-  co_animation: false,
-  second_formateur_id: "",
-  remplacant_id: "",
-  lieu: "",
-  description: "",
-  nombre_participants: 0,
-  statut: "actif",
-  date_debut: "",
-  date_fin: "",
-  nombre_seances: "",
-  mode_planification: "intelligent",
-  creneaux: [
-    {
-      jours: ["lundi"],
-      type_journee: "journee_complete",
-      heure_debut: "",
-      heure_fin: "",
-    },
-  ],
-};
-
-function getTypeLabel(value) {
-  return (
-    TYPE_JOURNEE_OPTIONS.find((option) => option.value === value)?.label || value
-  );
-}
-
-function normalizeBoolean(value) {
-  return value === true || value === 1 || value === "1";
-}
-
-function normalizeFormateur(formateur) {
-  return {
-    id: Number(formateur.id),
-    nom: formateur.nom || "",
-    prenom: formateur.prenom || "",
-    email: formateur.email || "",
-    est_remplacant: normalizeBoolean(formateur.est_remplacant),
-    travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
-    est_co_animation: normalizeBoolean(formateur.est_co_animation),
-  };
-}
-
-function getFormationFormateurId(formation) {
-  return (
-    formation?.formateur_id ??
-    formation?.id_formateur ??
-    formation?.formateur?.id ??
-    ""
-  );
-}
-
-function getFormationRemplacantId(formation) {
-  return (
-    formation?.remplacant_id ??
-    formation?.id_remplacant ??
-    formation?.remplacant?.id ??
-    ""
-  );
-}
-
-function normalizeSessionsFromFormation(formation) {
-  if (Array.isArray(formation?.sessions)) return formation.sessions;
-  if (Array.isArray(formation?.seances)) return formation.seances;
-  if (Array.isArray(formation?.cours)) return formation.cours;
-  if (Array.isArray(formation?.calendrier)) return formation.calendrier;
-  return [];
-}
-
-function buildInitialCreneauxFromFormation(formation) {
-  if (!formation) {
-    return initialForm.creneaux;
-  }
-
-  const sessions = normalizeSessionsFromFormation(formation);
-
-  if (sessions.length > 0) {
-    const bySchedule = new Map();
-
-    sessions.forEach((session) => {
-      const sessionDate =
-        session.date ||
-        session.session_date ||
-        session.date_session ||
-        session.jour ||
-        null;
-
-      if (!sessionDate) return;
-
-      const jsDate = new Date(`${sessionDate}T00:00:00`);
-      if (Number.isNaN(jsDate.getTime())) return;
-
-      const dayIndex = jsDate.getDay();
-      const joursJs = [
-        "dimanche",
-        "lundi",
-        "mardi",
-        "mercredi",
-        "jeudi",
-        "vendredi",
-        "samedi",
-      ];
-
-      const jour = joursJs[dayIndex];
-      const heureDebut =
-        session.heure_debut?.slice(0, 5) ||
-        session.start_time?.slice(0, 5) ||
-        "";
-      const heureFin =
-        session.heure_fin?.slice(0, 5) ||
-        session.end_time?.slice(0, 5) ||
-        "";
-
-      const signature = `personnalise-${heureDebut}-${heureFin}`;
-
-      if (!bySchedule.has(signature)) {
-        bySchedule.set(signature, {
-          jours: [],
-          type_journee: "personnalise",
-          heure_debut: heureDebut,
-          heure_fin: heureFin,
-        });
-      }
-
-      const creneau = bySchedule.get(signature);
-
-      if (!creneau.jours.includes(jour)) {
-        creneau.jours.push(jour);
-      }
-    });
-
-    const mapped = Array.from(bySchedule.values()).map((creneau) => ({
-      ...creneau,
-      jours: JOURS_OPTIONS.map((j) => j.value).filter((jour) =>
-        creneau.jours.includes(jour)
-      ),
-    }));
-
-    if (mapped.length > 0) {
-      return mapped;
-    }
-  }
-
-  let joursArray = [];
-
-  if (Array.isArray(formation.jours)) {
-    joursArray = formation.jours;
-  } else if (
-    typeof formation.jours === "string" &&
-    formation.jours.trim() !== ""
-  ) {
-    joursArray = formation.jours
-      .split(",")
-      .map((jour) => jour.trim())
-      .filter(Boolean);
-  }
-
-  if (joursArray.length === 0) {
-    return initialForm.creneaux;
-  }
-
-  return [
-    {
-      jours: JOURS_OPTIONS.map((j) => j.value).filter((jour) =>
-        joursArray.includes(jour)
-      ),
-      type_journee: formation.type_journee || "journee_complete",
-      heure_debut: formation.heure_debut
-        ? formation.heure_debut.slice(0, 5)
-        : "",
-      heure_fin: formation.heure_fin ? formation.heure_fin.slice(0, 5) : "",
-    },
-  ];
-}
 
 export function CreationFormations({
   formationEnEdition,
   onSaved,
   onCancelEdit,
 }) {
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] = useState(() => createInitialFormationForm());
   const [formateurs, setFormateurs] = useState([]);
   const [lieux, setLieux] = useState([]);
   const [loadingFormateurs, setLoadingFormateurs] = useState(true);
@@ -313,9 +135,9 @@ export function CreationFormations({
         formateur_id: getFormationFormateurId(formationEnEdition)
           ? String(getFormationFormateurId(formationEnEdition))
           : "",
-        co_animation: Boolean(formationEnEdition.second_formateur_id),
-        second_formateur_id: formationEnEdition.second_formateur_id
-          ? String(formationEnEdition.second_formateur_id)
+        co_animation: Boolean(getFormationSecondFormateurId(formationEnEdition)),
+        second_formateur_id: getFormationSecondFormateurId(formationEnEdition)
+          ? String(getFormationSecondFormateurId(formationEnEdition))
           : "",
         remplacant_id: getFormationRemplacantId(formationEnEdition)
           ? String(getFormationRemplacantId(formationEnEdition))
@@ -333,10 +155,10 @@ export function CreationFormations({
         creneaux:
           initialCreneaux.length > 0
             ? initialCreneaux
-            : initialForm.creneaux,
+            : createInitialFormationForm().creneaux,
       });
     } else {
-      setFormData(initialForm);
+      setFormData(createInitialFormationForm());
     }
 
     setErreur("");
@@ -372,53 +194,28 @@ export function CreationFormations({
   }, [formData.creneaux]);
 
   const availableFormateurs = useMemo(() => {
-    let result = [...formateurs];
-
-    if (hasSaturdaySelected) {
-      result = result.filter((formateur) => formateur.travaille_samedi === true);
-    }
-
-    return result;
+    return getAvailablePrincipalFormateurs(formateurs, hasSaturdaySelected);
   }, [formateurs, hasSaturdaySelected]);
 
   const availableRemplacants = useMemo(() => {
-    let result = formateurs.filter(
-      (formateur) => formateur.est_remplacant === true
-    );
-
-    if (hasSaturdaySelected) {
-      result = result.filter((formateur) => formateur.travaille_samedi === true);
-    }
-
-    if (formData.formateur_id) {
-      result = result.filter(
-        (formateur) => String(formateur.id) !== String(formData.formateur_id)
-      );
-    }
-
-    return result;
-  }, [formateurs, hasSaturdaySelected, formData.formateur_id]);
+    return getAvailableRemplacants(formateurs, {
+      hasSaturdaySelected,
+      formateurId: formData.formateur_id,
+      secondFormateurId: formData.second_formateur_id,
+    });
+  }, [
+    formateurs,
+    hasSaturdaySelected,
+    formData.formateur_id,
+    formData.second_formateur_id,
+  ]);
 
   const availableSecondFormateurs = useMemo(() => {
-    let result = formateurs.filter(
-      (formateur) => formateur.est_co_animation === true
-    );
-
-    if (hasSaturdaySelected) {
-      result = result.filter((formateur) => formateur.travaille_samedi === true);
-    }
-
-    result = result.filter(
-      (formateur) => String(formateur.id) !== String(formData.formateur_id)
-    );
-
-    if (formData.remplacant_id) {
-      result = result.filter(
-        (formateur) => String(formateur.id) !== String(formData.remplacant_id)
-      );
-    }
-
-    return result;
+    return getAvailableCoAnimateurs(formateurs, {
+      hasSaturdaySelected,
+      formateurId: formData.formateur_id,
+      remplacantId: formData.remplacant_id,
+    });
   }, [
     formateurs,
     hasSaturdaySelected,
@@ -427,23 +224,15 @@ export function CreationFormations({
   ]);
 
   const displayedFormateurs = useMemo(() => {
-    if (availableFormateurs.length > 0) {
-      return availableFormateurs;
-    }
-
-    return formateurs;
+    return getDisplayedFormateurs(formateurs, availableFormateurs);
   }, [availableFormateurs, formateurs]);
 
   const displayedRemplacants = useMemo(() => {
-    const fallbackRemplacants = formateurs.filter(
-      (formateur) => String(formateur.id) !== String(formData.formateur_id)
+    return getDisplayedRemplacants(
+      formateurs,
+      availableRemplacants,
+      formData.formateur_id
     );
-
-    if (availableRemplacants.length > 0) {
-      return availableRemplacants;
-    }
-
-    return fallbackRemplacants;
   }, [availableRemplacants, formateurs, formData.formateur_id]);
 
   useEffect(() => {
@@ -662,7 +451,7 @@ export function CreationFormations({
   };
 
   const resetForm = () => {
-    setFormData(initialForm);
+    setFormData(createInitialFormationForm());
     setErreur("");
     setMessage("");
     setPreview(null);
@@ -673,42 +462,7 @@ export function CreationFormations({
   };
 
   const buildPayload = () => {
-    const flattenedCreneaux = formData.creneaux.flatMap((creneau) => {
-      const jours = Array.isArray(creneau.jours) ? creneau.jours : [];
-
-      return jours.map((jour) => ({
-        jour,
-        type_journee: creneau.type_journee,
-        heure_debut: creneau.heure_debut,
-        heure_fin: creneau.heure_fin,
-      }));
-    });
-
-    const payload = {
-      nom: formData.nom.trim(),
-      formateur_id: Number(formData.formateur_id),
-      second_formateur_id:
-        formData.co_animation && formData.second_formateur_id
-          ? Number(formData.second_formateur_id)
-          : null,
-      remplacant_id: formData.remplacant_id
-        ? Number(formData.remplacant_id)
-        : null,
-      lieu: formData.lieu.trim(),
-      description: formData.description.trim(),
-      nombre_participants: Number(formData.nombre_participants),
-      statut: formData.statut,
-      date_debut: formData.date_debut,
-      creneaux: flattenedCreneaux,
-    };
-
-    if (formData.mode_planification === "manuel") {
-      payload.date_fin = formData.date_fin;
-    } else {
-      payload.nombre_seances = Number(formData.nombre_seances);
-    }
-
-    return payload;
+    return buildFormationPayload(formData);
   };
 
   const previewSessions = async () => {
@@ -882,7 +636,7 @@ export function CreationFormations({
           : "La formation a bien été créée."
       );
 
-      setFormData(initialForm);
+      setFormData(createInitialFormationForm());
       setPreview(null);
 
       if (onSaved) {

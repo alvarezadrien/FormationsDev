@@ -14,6 +14,7 @@ import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePr
 import { PresenceFormateur } from "../../components/PresenceFormateur/PresenceFormateur";
 import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
 import { CalendrierComplet } from "../../components/CalendrierComplet/CalendrierComplet";
+import { ADMIN_MENU_ITEMS } from "../../features/dashboard/config/adminSections";
 
 export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
@@ -26,51 +27,7 @@ export default function AdminFormationsDashboard() {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const isAdmin = localStorage.getItem("role") === "admin";
 
-  const menuItems = useMemo(
-    () => [
-      {
-        key: "creation-formation",
-        label: "Créer une formation",
-        description: "Créer ou modifier une formation",
-      },
-      {
-        key: "formations-creees",
-        label: "Formations créées",
-        description: "Consulter et gérer les formations enregistrées",
-      },
-      {
-        key: "calendrier",
-        label: "Calendrier complet",
-        description: "Voir tous les cours, créneaux et formateurs",
-      },
-      {
-        key: "formateurs",
-        label: "Comptes formateurs",
-        description: "Créer et gérer les comptes formateurs",
-      },
-      {
-        key: "users",
-        label: "Gestion des utilisateurs",
-        description: "Voir et supprimer les comptes utilisateurs",
-      },
-      {
-        key: "actives",
-        label: "Formations actives",
-        description: "Consulter les formations en cours",
-      },
-      {
-        key: "avis",
-        label: "Avis",
-        description: "Gérer les avis administrateur",
-      },
-      {
-        key: "presences",
-        label: "Présence formateurs",
-        description: "Suivre les absences et les remplaçants",
-      },
-    ],
-    []
-  );
+  const menuItems = useMemo(() => ADMIN_MENU_ITEMS, []);
 
   const activeMenuItem = useMemo(
     () => menuItems.find((item) => item.key === activeSection) ?? menuItems[0],

@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  filterFormationsByQuery,
+  formatFormationJours,
+  getFormationCatalogStats,
+} from "../../features/formations/utils/formationCatalog";
 
 const API_URL = "http://localhost:8080";
 
@@ -66,24 +71,6 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
     setFormationToDelete(null);
   };
 
-  const formatJours = (jours) => {
-    if (!jours) return "Non renseigné";
-
-    if (Array.isArray(jours)) {
-      return jours.join(", ");
-    }
-
-    if (typeof jours === "string") {
-      return jours
-        .split(",")
-        .map((jour) => jour.trim())
-        .filter(Boolean)
-        .join(", ");
-    }
-
-    return "Non renseigné";
-  };
-
   const handleDelete = async () => {
     if (!formationToDelete?.id) return;
 
@@ -121,39 +108,11 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
   };
 
   const filteredFormations = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return formations;
-    }
-
-    return formations.filter((formation) => {
-      const haystack = [
-        formation.nom,
-        formation.lieu,
-        formation.formateur_prenom,
-        formation.formateur_nom,
-        formation.remplacant_prenom,
-        formation.remplacant_nom,
-        formation.statut,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
+    return filterFormationsByQuery(formations, search);
   }, [formations, search]);
 
   const stats = useMemo(() => {
-    const actif = formations.filter((item) => item.statut === "actif").length;
-    const annule = formations.filter((item) => item.statut === "annule").length;
-
-    return {
-      total: formations.length,
-      actif,
-      annule,
-    };
+    return getFormationCatalogStats(formations);
   }, [formations]);
 
   return (
@@ -278,7 +237,8 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                       {formation.date_fin || "Non renseignée"}
                     </p>
                     <p>
-                      <strong>Jours :</strong> {formatJours(formation.jours)}
+                      <strong>Jours :</strong>{" "}
+                      {formatFormationJours(formation.jours)}
                     </p>
                     <p>
                       <strong>Type de journée :</strong>{" "}
@@ -402,7 +362,7 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
               </p>
               <p>
                 <strong>Jours :</strong>{" "}
-                {formatJours(formationToDelete?.jours)}
+                {formatFormationJours(formationToDelete?.jours)}
               </p>
               <p>
                 <strong>Type de journée :</strong>{" "}
