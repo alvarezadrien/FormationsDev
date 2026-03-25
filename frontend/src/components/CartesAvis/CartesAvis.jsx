@@ -138,7 +138,9 @@ export function CartesAvis() {
                 key={item.id}
                 style={{ animationDelay: `${index * 0.08}s` }}
               >
+                <div className="avis-card__chrome" />
                 <div className="avis-card__glow" />
+                <div className="avis-card__orb" />
 
                 <div className="avis-card__top">
                   <div className="avis-card__identity">
@@ -155,6 +157,7 @@ export function CartesAvis() {
                   </div>
 
                   <div className="avis-card__rating">
+                    <span className="avis-card__rating-label">Note</span>
                     <span className="avis-card__rating-value">{note}.0</span>
                     <div className="avis-card__stars">
                       {Array.from({ length: note }).map((_, starIndex) => (
@@ -164,7 +167,17 @@ export function CartesAvis() {
                   </div>
                 </div>
 
-                <p className="avis-card__commentaire">“{item.commentaire}”</p>
+                <div className="avis-card__body">
+                  <span className="avis-card__quote">“</span>
+                  <p className="avis-card__commentaire">{item.commentaire}</p>
+                </div>
+
+                <div className="avis-card__footer">
+                  <span className="avis-card__pill">Avis apprenant</span>
+                  <span className="avis-card__pill avis-card__pill--soft">
+                    {note}/5
+                  </span>
+                </div>
               </article>
             );
           })}

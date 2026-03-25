@@ -3,9 +3,10 @@
   overflow: hidden;
   padding: 6rem 1.25rem;
   background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 30%),
-    radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 24%),
+    radial-gradient(circle at bottom center, rgba(15, 23, 42, 0.06), transparent 38%),
+    linear-gradient(180deg, #f6f8fc 0%, #edf3fb 42%, #f8fafc 100%);
 }
 
 .cartes-avis__bg {
@@ -39,15 +40,15 @@
   justify-content: center;
   padding: 0.5rem 0.95rem;
   margin-bottom: 1rem;
-  border: 1px solid rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(14, 165, 233, 0.18);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #4f46e5;
-  box-shadow: 0 8px 30px rgba(79, 70, 229, 0.08);
+  color: #0369a1;
+  box-shadow: 0 8px 30px rgba(14, 165, 233, 0.08);
 }
 
 .cartes-avis__title {
@@ -68,52 +69,90 @@
 }
 
 .cartes-avis__grid {
+  perspective: 1800px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.4rem;
+  gap: 1.6rem;
 }
 
 .avis-card {
   position: relative;
   isolation: isolate;
-  min-height: 250px;
-  padding: 1.4rem;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  display: flex;
+  flex-direction: column;
+  min-height: 290px;
+  padding: 1.45rem;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
   background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(255, 255, 255, 0.58) 100%
+    155deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.7) 48%,
+    rgba(238, 245, 255, 0.88) 100%
   );
   backdrop-filter: blur(18px);
   box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 18px 40px rgba(15, 23, 42, 0.08),
+    0 40px 90px rgba(148, 163, 184, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition:
-    transform 0.35s ease,
-    box-shadow 0.35s ease,
-    border-color 0.35s ease;
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease,
+    background 0.35s ease;
   opacity: 0;
-  transform: translateY(18px);
-  animation: cardFadeUp 0.6s ease forwards;
+  transform: translateY(24px) rotateX(5deg) rotateY(-5deg);
+  transform-style: preserve-3d;
+  animation: cardFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .avis-card:hover {
-  transform: translateY(-8px);
-  border-color: rgba(99, 102, 241, 0.24);
+  transform: translateY(-12px) rotateX(0deg) rotateY(0deg);
+  border-color: rgba(14, 165, 233, 0.26);
   box-shadow:
-    0 20px 45px rgba(15, 23, 42, 0.1),
-    0 0 0 1px rgba(99, 102, 241, 0.04);
+    0 28px 60px rgba(15, 23, 42, 0.12),
+    0 55px 110px rgba(14, 165, 233, 0.12),
+    0 0 0 1px rgba(14, 165, 233, 0.04);
+}
+
+.avis-card:nth-child(2n) {
+  transform: translateY(24px) rotateX(5deg) rotateY(5deg);
+}
+
+.avis-card__chrome {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.75), transparent 30%),
+    linear-gradient(180deg, transparent 65%, rgba(255, 255, 255, 0.45) 100%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .avis-card__glow {
   position: absolute;
-  inset: auto -30px -30px auto;
-  width: 140px;
-  height: 140px;
+  inset: auto -40px -40px auto;
+  width: 170px;
+  height: 170px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.2), transparent 72%);
   z-index: -1;
+  pointer-events: none;
+}
+
+.avis-card__orb {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.2) 42%, transparent 70%),
+    linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(249, 115, 22, 0.12));
+  opacity: 0.75;
+  filter: blur(0.5px);
   pointer-events: none;
 }
 
@@ -122,7 +161,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.35rem;
 }
 
 .avis-card__identity {
@@ -133,18 +172,22 @@
 }
 
 .avis-card__avatar {
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   flex-shrink: 0;
-  border-radius: 18px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08)),
+    linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.28);
+  box-shadow:
+    0 16px 30px rgba(2, 132, 199, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .avis-card__nom {
@@ -158,24 +201,38 @@
 .avis-card__formation {
   margin: 0;
   font-size: 0.88rem;
-  color: #64748b;
+  color: #475569;
   line-height: 1.5;
 }
 
 .avis-card__rating {
   flex-shrink: 0;
-  padding: 0.55rem 0.75rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  min-width: 90px;
+  padding: 0.7rem 0.8rem;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.82));
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  box-shadow:
+    0 12px 24px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.avis-card__rating-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .avis-card__rating-value {
   display: block;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.38rem;
   text-align: right;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #0f172a;
 }
@@ -188,11 +245,61 @@
   font-size: 0.82rem;
 }
 
+.avis-card__body {
+  position: relative;
+  flex: 1;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1rem 1rem 1.15rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.44);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.avis-card__quote {
+  position: absolute;
+  top: -12px;
+  left: 14px;
+  font-size: 3.6rem;
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(14, 165, 233, 0.24);
+}
+
 .avis-card__commentaire {
   margin: 0;
   font-size: 0.98rem;
-  line-height: 1.85;
+  line-height: 1.82;
   color: #334155;
+}
+
+.avis-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.avis-card__pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.avis-card__pill--soft {
+  background: rgba(255, 255, 255, 0.86);
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.95);
 }
 
 .cartes-avis__state {
@@ -208,7 +315,7 @@
 @keyframes cardFadeUp {
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) rotateX(0deg) rotateY(0deg);
   }
 }
 
@@ -224,6 +331,7 @@
   .avis-card {
     padding: 1.2rem;
     border-radius: 24px;
+    min-height: 260px;
   }
 
   .avis-card__top {
@@ -239,5 +347,9 @@
   .avis-card__stars {
     text-align: left;
     justify-content: flex-start;
+  }
+
+  .avis-card__footer {
+    flex-wrap: wrap;
   }
 }
