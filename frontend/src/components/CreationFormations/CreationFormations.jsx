@@ -417,6 +417,16 @@ export function CreationFormations({
       return;
     }
 
+    const fallbackFormateur = availableFormateurs[0] || formateurs[0] || null;
+
+    if (!isEditing && !formData.formateur_id && fallbackFormateur) {
+      setFormData((prev) => ({
+        ...prev,
+        formateur_id: String(fallbackFormateur.id),
+      }));
+      return;
+    }
+
     if (
       formData.formateur_id &&
       !availableFormateurs.some(
@@ -425,13 +435,38 @@ export function CreationFormations({
     ) {
       setFormData((prev) => ({
         ...prev,
-        formateur_id: "",
+        formateur_id: fallbackFormateur ? String(fallbackFormateur.id) : "",
       }));
     }
-  }, [availableFormateurs, formData.formateur_id, loadingFormateurs]);
+  }, [
+    availableFormateurs,
+    formData.formateur_id,
+    formateurs,
+    isEditing,
+    loadingFormateurs,
+  ]);
 
   useEffect(() => {
     if (loadingFormateurs) {
+      return;
+    }
+
+    const fallbackRemplacants = formateurs.filter(
+      (formateur) => String(formateur.id) !== String(formData.formateur_id)
+    );
+    const preferredRemplacant =
+      availableRemplacants[0] || fallbackRemplacants[0] || null;
+
+    if (
+      !isEditing &&
+      formData.formateur_id &&
+      !formData.remplacant_id &&
+      preferredRemplacant
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        remplacant_id: String(preferredRemplacant.id),
+      }));
       return;
     }
 
@@ -443,10 +478,17 @@ export function CreationFormations({
     ) {
       setFormData((prev) => ({
         ...prev,
-        remplacant_id: "",
+        remplacant_id: preferredRemplacant ? String(preferredRemplacant.id) : "",
       }));
     }
-  }, [availableRemplacants, formData.remplacant_id, loadingFormateurs]);
+  }, [
+    availableRemplacants,
+    formData.formateur_id,
+    formData.remplacant_id,
+    formateurs,
+    isEditing,
+    loadingFormateurs,
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -825,6 +867,11 @@ export function CreationFormations({
                 </option>
               ))}
             </select>
+
+            <div className="admin-form__hint">
+              Attribution automatique du premier formateur disponible, modifiable
+              manuellement à tout moment.
+            </div>
           </div>
 
           <div className="admin-form__group">
@@ -853,6 +900,11 @@ export function CreationFormations({
                 </option>
               ))}
             </select>
+
+            <div className="admin-form__hint">
+              Remplaçant proposé automatiquement selon les disponibilités, avec
+              possibilité de le changer manuellement.
+            </div>
 
             {!loadingFormateurs && displayedRemplacants.length === 0 && (
               <div className="admin-form__hint admin-form__hint--error">
