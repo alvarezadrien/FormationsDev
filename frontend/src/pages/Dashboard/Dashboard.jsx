@@ -11,6 +11,7 @@ import { FormActif } from "../../components/FormActif/FormActif";
 import { AvisAdmin } from "../../components/AvisAdmin/AvisAdmin";
 import { CreationCompteFormateur } from "../../components/CreationCompteFormateur/CreationCompteFormateur";
 import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePresenceAdmin";
+import { PresenceFormateur } from "../../components/PresenceFormateur/PresenceFormateur";
 import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
 import { CalendrierComplet } from "../../components/CalendrierComplet/CalendrierComplet";
 
@@ -59,8 +60,8 @@ export default function AdminFormationsDashboard() {
       },
       {
         key: "presences",
-        label: "Fiches de présence",
-        description: "Consulter et gérer les présences",
+        label: "Présence formateurs",
+        description: "Suivre les absences et les remplaçants",
       },
     ],
     []
@@ -290,11 +291,25 @@ export default function AdminFormationsDashboard() {
             <div className="admin-list">
               <div className="admin-list__header">
                 <span className="admin-list__eyebrow">Présences</span>
-                <h2 className="admin-list__title">Fiches de présence</h2>
+                <h2 className="admin-list__title">Présence formateurs</h2>
                 <p className="admin-list__text">
-                  Contrôle les fiches de présence et centralise leur gestion.
+                  Suis les absences des formateurs et vois immédiatement si le
+                  remplaçant attribué assure le cours.
                 </p>
               </div>
+
+              <PresenceFormateur mode="admin" />
+            </div>
+
+            <div className="admin-list">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">Historique</span>
+                <h2 className="admin-list__title">Fiches de présence</h2>
+                <p className="admin-list__text">
+                  Contrôle aussi les fiches de présence détaillées déjà créées.
+                </p>
+              </div>
+
               <FichesPresenceAdmin />
             </div>
           </section>

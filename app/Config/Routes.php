@@ -44,6 +44,10 @@ $routes->get('formations/(:num)', 'Formation::show/$1');
 // =========================
 $routes->get('formateurs/(:num)', 'FormateurController::show/$1');
 $routes->put('formateur/ma-bio', 'FormateurController::updateMyBio', ['filter' => 'formateur']);
+$routes->get('presences-formateurs', 'FormateurPresenceController::index', ['filter' => 'admin']);
+$routes->get('mes-presences-formateur', 'FormateurPresenceController::myPresences', ['filter' => 'formateur']);
+$routes->put('mes-presences-formateur/(:num)', 'FormateurPresenceController::updateMyPresence/$1', ['filter' => 'formateur']);
+$routes->put('presences-formateurs/(:num)', 'FormateurPresenceController::updateAdminPresence/$1', ['filter' => 'admin']);
 
 // =========================
 // Inscriptions formations
@@ -113,6 +117,22 @@ $routes->options('users/formateurs', static function () {
 });
 
 $routes->options('formateur/ma-bio', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('presences-formateurs', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('presences-formateurs/(:num)', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('mes-presences-formateur', static function () {
+    return service('response')->setStatusCode(200);
+});
+
+$routes->options('mes-presences-formateur/(:num)', static function () {
     return service('response')->setStatusCode(200);
 });
 

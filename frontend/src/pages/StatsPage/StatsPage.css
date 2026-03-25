@@ -6,6 +6,7 @@
     radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent 24%),
     linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
   box-sizing: border-box;
+  color: var(--app-text);
 }
 
 /* HERO */
@@ -545,6 +546,82 @@
 .stats-page__state--error {
   color: #dc2626;
   background: #fff5f5;
+}
+
+[data-theme="dark"] .stats-page {
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 24%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.06), transparent 22%),
+    linear-gradient(180deg, #07111f 0%, #0b1325 100%);
+}
+
+[data-theme="dark"] .stats-page__hero-badge,
+[data-theme="dark"] .popular-card__rank,
+[data-theme="dark"] .mini-status {
+  background: rgba(14, 165, 233, 0.12);
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .popular-card__tag,
+[data-theme="dark"] .mini-fill {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .stats-panel,
+[data-theme="dark"] .popular-card,
+[data-theme="dark"] .all-formation-card,
+[data-theme="dark"] .popular-mini-stat,
+[data-theme="dark"] .all-formation-card__number,
+[data-theme="dark"] .formation-alert-card,
+[data-theme="dark"] .formation-alert-card__side,
+[data-theme="dark"] .stats-page__state {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.94));
+  border-color: rgba(51, 65, 85, 0.92);
+  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.26);
+}
+
+[data-theme="dark"] .stats-page__title,
+[data-theme="dark"] .stats-panel__title,
+[data-theme="dark"] .popular-card__title,
+[data-theme="dark"] .formation-alert-card__title,
+[data-theme="dark"] .all-formation-card__title,
+[data-theme="dark"] .circular-progress__value,
+[data-theme="dark"] .all-formation-card__number strong {
+  color: #f8fbff;
+}
+
+[data-theme="dark"] .stats-page__subtitle,
+[data-theme="dark"] .stats-panel__subtitle,
+[data-theme="dark"] .popular-card__meta,
+[data-theme="dark"] .popular-card__desc,
+[data-theme="dark"] .formation-alert-card__text,
+[data-theme="dark"] .all-formation-card__desc,
+[data-theme="dark"] .all-formation-card__meta,
+[data-theme="dark"] .circular-progress__label,
+[data-theme="dark"] .stats-empty {
+  color: #9fb0c8;
+}
+
+[data-theme="dark"] .circular-progress__inner {
+  background: #0f172a;
+  box-shadow: inset 0 0 24px rgba(2, 6, 23, 0.32);
+}
+
+[data-theme="dark"] .formation-alert-card__bar {
+  background: rgba(127, 29, 29, 0.28);
+}
+
+[data-theme="dark"] .formation-alert-card__fill,
+[data-theme="dark"] .alert-value,
+[data-theme="dark"] .alert-label,
+[data-theme="dark"] .stats-page__state--error {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .stats-page__state--error {
+  background: linear-gradient(180deg, rgba(69, 10, 10, 0.72), rgba(127, 29, 29, 0.38));
+  border-color: rgba(127, 29, 29, 0.8);
 }
 
 /* RESPONSIVE */

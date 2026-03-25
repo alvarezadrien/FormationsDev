@@ -156,6 +156,13 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                     }`.trim()
                   : "Non renseigné";
 
+              const nomRemplacant =
+                formation.remplacant_prenom || formation.remplacant_nom
+                  ? `${formation.remplacant_prenom || ""} ${
+                      formation.remplacant_nom || ""
+                    }`.trim()
+                  : "Aucun remplaçant attribué";
+
               return (
                 <article className="admin-card" key={formation.id}>
                   <h3 className="admin-card__title">{formation.nom}</h3>
@@ -167,6 +174,13 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                     <p>
                       <strong>Email formateur :</strong>{" "}
                       {formation.formateur_email || "Non renseigné"}
+                    </p>
+                    <p>
+                      <strong>Remplaçant :</strong> {nomRemplacant}
+                    </p>
+                    <p>
+                      <strong>Email remplaçant :</strong>{" "}
+                      {formation.remplacant_email || "Non renseigné"}
                     </p>
                     <p>
                       <strong>Lieu :</strong>{" "}
@@ -283,6 +297,19 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
               <p>
                 <strong>Email formateur :</strong>{" "}
                 {formationToDelete?.formateur_email || "Non renseigné"}
+              </p>
+              <p>
+                <strong>Remplaçant :</strong>{" "}
+                {formationToDelete?.remplacant_prenom ||
+                formationToDelete?.remplacant_nom
+                  ? `${formationToDelete?.remplacant_prenom || ""} ${
+                      formationToDelete?.remplacant_nom || ""
+                    }`.trim()
+                  : "Aucun remplaçant attribué"}
+              </p>
+              <p>
+                <strong>Email remplaçant :</strong>{" "}
+                {formationToDelete?.remplacant_email || "Non renseigné"}
               </p>
               <p>
                 <strong>Lieu :</strong>{" "}

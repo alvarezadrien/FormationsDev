@@ -57,7 +57,8 @@
 }
 
 .status_badge.inactif,
-.status_badge.complet {
+.status_badge.complet,
+.status_badge.annule {
   background: #ef4444;
 }
 
@@ -245,4 +246,3 @@
 .status_text.complet {
   color: #ef4444;
 }
-

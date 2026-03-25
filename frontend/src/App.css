@@ -294,6 +294,12 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
 [data-theme="dark"] .auth_panel,
 [data-theme="dark"] .admin-main,
 [data-theme="dark"] .admin-sidebar,
+[data-theme="dark"] .admin-modal,
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .admin-card--inscription,
+[data-theme="dark"] .admin-empty,
+[data-theme="dark"] .admin-loading,
+[data-theme="dark"] .admin-form__checkbox-card,
 [data-theme="dark"] .calendar-modal {
   background: var(--app-bg-elevated) !important;
   color: var(--app-text) !important;
@@ -352,6 +358,8 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
 [data-theme="dark"] .calendar-state,
 [data-theme="dark"] .admin-list__title,
 [data-theme="dark"] .admin-panel__title,
+[data-theme="dark"] .admin-card__title,
+[data-theme="dark"] .admin-modal__title,
 [data-theme="dark"] .review_form_title,
 [data-theme="dark"] .user-reviews-title,
 [data-theme="dark"] .auth_heading,
@@ -393,7 +401,12 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
 [data-theme="dark"] .calendar-day__empty,
 [data-theme="dark"] .calendar-week__empty,
 [data-theme="dark"] .admin-list__text,
-[data-theme="dark"] .admin-panel__text {
+[data-theme="dark"] .admin-panel__text,
+[data-theme="dark"] .admin-card__meta p,
+[data-theme="dark"] .admin-card__description,
+[data-theme="dark"] .admin-modal__text,
+[data-theme="dark"] .admin-modal__details p,
+[data-theme="dark"] .admin-form__checkbox-label {
   color: var(--app-text-soft) !important;
 }
 
@@ -454,11 +467,54 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
 [data-theme="dark"] .faq_question,
 [data-theme="dark"] .calendar-day,
 [data-theme="dark"] .calendar-week__column,
-[data-theme="dark"] .calendar-stat {
+[data-theme="dark"] .calendar-stat,
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .admin-card--inscription,
+[data-theme="dark"] .admin-form__checkbox-card,
+[data-theme="dark"] .admin-modal__details {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.92)) !important;
   border-color: rgba(51, 65, 85, 0.9) !important;
   color: var(--app-text) !important;
   box-shadow: var(--app-shadow) !important;
+}
+
+[data-theme="dark"] .admin-card:hover,
+[data-theme="dark"] .admin-card--inscription:hover,
+[data-theme="dark"] .admin-form__checkbox-card:hover {
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.42) !important;
+}
+
+[data-theme="dark"] .admin-card__description {
+  border-top-color: rgba(51, 65, 85, 0.78) !important;
+}
+
+[data-theme="dark"] .admin-empty,
+[data-theme="dark"] .admin-loading {
+  background: rgba(15, 23, 42, 0.76) !important;
+  border-style: dashed !important;
+}
+
+[data-theme="dark"] .admin-form__checkbox-card:has(.admin-form__checkbox:checked) {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(17, 24, 39, 0.98)) !important;
+  border-color: rgba(96, 165, 250, 0.52) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+}
+
+[data-theme="dark"] .admin-badge--actif {
+  background: rgba(22, 101, 52, 0.22) !important;
+  color: #86efac !important;
+}
+
+[data-theme="dark"] .admin-badge--inactif {
+  background: rgba(51, 65, 85, 0.72) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .admin-badge--annule,
+[data-theme="dark"] .admin-modal__badge {
+  background: rgba(127, 29, 29, 0.24) !important;
+  color: #fca5a5 !important;
 }
 
 [data-theme="dark"] .details_hero,

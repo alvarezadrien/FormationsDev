@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MesDonnees } from "../../components/MesDonnees/MesDonnees";
 import { FichePresenceFormateur } from "../../components/FichePresenceFormateur/FichePresenceFormateur";
+import { PresenceFormateur } from "../../components/PresenceFormateur/PresenceFormateur";
 import "./ProfilFormateurPage.css";
 
 function ProfilFormateurPage() {
@@ -239,6 +240,15 @@ function ProfilFormateurPage() {
 
               <button
                 className={`profile_nav_button ${
+                  activeSection === "presence" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("presence")}
+              >
+                Présence
+              </button>
+
+              <button
+                className={`profile_nav_button ${
                   activeSection === "fiches" ? "active" : ""
                 }`}
                 onClick={() => handleSectionChange("fiches")}
@@ -338,6 +348,7 @@ function ProfilFormateurPage() {
             )}
 
             {activeSection === "espace" && <MesDonnees />}
+            {activeSection === "presence" && <PresenceFormateur mode="formateur" />}
             {activeSection === "fiches" && <FichePresenceFormateur />}
           </div>
         </div>

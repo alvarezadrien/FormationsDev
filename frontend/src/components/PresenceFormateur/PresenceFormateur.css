@@ -1,0 +1,287 @@
+.trainer-presence {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.trainer-presence__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.trainer-presence__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #172033;
+}
+
+.trainer-presence__text {
+  margin: 0.45rem 0 0;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.trainer-presence__refresh,
+.trainer-presence__save,
+.trainer-presence__choice {
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.trainer-presence__refresh {
+  padding: 0.8rem 1rem;
+  background: #edf4ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.trainer-presence__save {
+  padding: 0.9rem 1.1rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+}
+
+.trainer-presence__refresh:hover,
+.trainer-presence__save:hover,
+.trainer-presence__choice:hover {
+  transform: translateY(-1px);
+}
+
+.trainer-presence__save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.trainer-presence__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.trainer-presence__summary-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid #e5eaf2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.trainer-presence__summary-card strong {
+  font-size: 1.35rem;
+  color: #172033;
+}
+
+.trainer-presence__summary-card span {
+  color: #667085;
+  font-size: 0.92rem;
+}
+
+.trainer-presence__summary-card.is-alert {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fff6f6 0%, #fff1f2 100%);
+}
+
+.trainer-presence__message,
+.trainer-presence__error,
+.trainer-presence__empty,
+.trainer-presence__warning,
+.trainer-presence__note {
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+  font-size: 0.95rem;
+}
+
+.trainer-presence__message {
+  background: #ecfdf3;
+  color: #067647;
+  border: 1px solid #abefc6;
+}
+
+.trainer-presence__error {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+}
+
+.trainer-presence__empty {
+  border: 1px dashed #d7deea;
+  background: #f8fafc;
+  color: #667085;
+  text-align: center;
+}
+
+.trainer-presence__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.trainer-presence__card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 22px;
+  border: 1px solid #e5eaf2;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+}
+
+.trainer-presence__card-title {
+  margin: 0.8rem 0 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: #172033;
+}
+
+.trainer-presence__meta {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.trainer-presence__meta p {
+  margin: 0;
+  color: #475467;
+  line-height: 1.55;
+}
+
+.trainer-presence__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.trainer-presence__badge.is-present {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.trainer-presence__badge.is-absent {
+  background: #fff1f2;
+  color: #c81e1e;
+}
+
+.trainer-presence__warning {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.trainer-presence__note {
+  background: #f8fafc;
+  color: #475467;
+  border: 1px solid #e2e8f0;
+}
+
+.trainer-presence__editor {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.trainer-presence__choices {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.trainer-presence__choice {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d8e0ef;
+  background: #ffffff;
+  color: #344054;
+  font-weight: 700;
+}
+
+.trainer-presence__choice.is-active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
+.trainer-presence__textarea {
+  width: 100%;
+  min-height: 96px;
+  border-radius: 16px;
+  border: 1px solid #d7deea;
+  background: #fbfcfe;
+  padding: 0.9rem 1rem;
+  resize: vertical;
+  box-sizing: border-box;
+  color: #182230;
+}
+
+[data-theme="dark"] .trainer-presence__summary-card,
+[data-theme="dark"] .trainer-presence__card,
+[data-theme="dark"] .trainer-presence__note,
+[data-theme="dark"] .trainer-presence__choice,
+[data-theme="dark"] .trainer-presence__textarea {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.92));
+  color: #e5eefc;
+  border-color: rgba(51, 65, 85, 0.9);
+  box-shadow: 0 20px 44px rgba(2, 6, 23, 0.36);
+}
+
+[data-theme="dark"] .trainer-presence__title,
+[data-theme="dark"] .trainer-presence__summary-card strong,
+[data-theme="dark"] .trainer-presence__card-title {
+  color: #f8fbff;
+}
+
+[data-theme="dark"] .trainer-presence__text,
+[data-theme="dark"] .trainer-presence__summary-card span,
+[data-theme="dark"] .trainer-presence__meta p,
+[data-theme="dark"] .trainer-presence__note {
+  color: #9fb0c7;
+}
+
+[data-theme="dark"] .trainer-presence__refresh {
+  background: rgba(30, 41, 59, 0.96);
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .trainer-presence__empty {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(71, 85, 105, 0.72);
+  color: #9fb0c7;
+}
+
+[data-theme="dark"] .trainer-presence__warning {
+  background: rgba(124, 45, 18, 0.24);
+  border-color: rgba(249, 115, 22, 0.34);
+  color: #fdba74;
+}
+
+[data-theme="dark"] .trainer-presence__choice.is-active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .trainer-presence__textarea::placeholder {
+  color: #7c8aa5;
+}
+
+@media (max-width: 768px) {
+  .trainer-presence__toolbar {
+    flex-direction: column;
+  }
+
+  .trainer-presence__summary {
+    grid-template-columns: 1fr;
+  }
+
+  .trainer-presence__choices {
+    flex-direction: column;
+  }
+}

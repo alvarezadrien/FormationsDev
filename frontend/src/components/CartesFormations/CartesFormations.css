@@ -247,7 +247,8 @@
 
 .badge_statut.inactif,
 .badge_statut.ferme,
-.badge_statut.complet {
+.badge_statut.complet,
+.badge_statut.annule {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
 }
