@@ -101,8 +101,8 @@ input, textarea, select {
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 820ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-duration: 980ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   transform-style: preserve-3d;
 }
 
@@ -169,8 +169,8 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
   }
 
   to {
-    opacity: 0.88;
-    filter: brightness(0.9);
+    opacity: 0.9;
+    filter: brightness(0.93);
   }
 }
 
@@ -181,36 +181,43 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
   }
 
   to {
-    opacity: 0.9;
-    filter: brightness(1.04);
+    opacity: 0.92;
+    filter: brightness(1.03);
   }
 }
 
 @keyframes theme-unroll-down {
   0% {
     clip-path: inset(0 0 100% 0 round 0 0 44px 44px);
-    transform: perspective(1600px) rotateX(-14deg) translateY(-4%);
-    filter: saturate(0.88) brightness(0.84);
-    box-shadow: 0 26px 44px rgba(2, 6, 23, 0.22);
+    transform: perspective(1800px) rotateX(-9deg) translateY(-2%);
+    filter: saturate(0.9) brightness(0.88);
+    box-shadow: 0 22px 40px rgba(2, 6, 23, 0.18);
   }
 
-  28% {
-    clip-path: inset(0 0 68% 0 round 0 0 38px 38px);
-    transform: perspective(1600px) rotateX(-8deg) translateY(-1%);
-    filter: saturate(0.94) brightness(0.9);
-    box-shadow: 0 34px 56px rgba(2, 6, 23, 0.24);
+  26% {
+    clip-path: inset(0 0 72% 0 round 0 0 40px 40px);
+    transform: perspective(1800px) rotateX(-6deg) translateY(-1%);
+    filter: saturate(0.94) brightness(0.92);
+    box-shadow: 0 28px 50px rgba(2, 6, 23, 0.2);
   }
 
-  64% {
-    clip-path: inset(0 0 0 0 round 0 0 18px 18px);
-    transform: perspective(1600px) rotateX(0deg) translateY(0);
+  58% {
+    clip-path: inset(0 0 16% 0 round 0 0 24px 24px);
+    transform: perspective(1800px) rotateX(-2deg) translateY(0);
+    filter: saturate(0.98) brightness(0.98);
+    box-shadow: 0 14px 24px rgba(2, 6, 23, 0.1);
+  }
+
+  82% {
+    clip-path: inset(0 0 0 0 round 0 0 10px 10px);
+    transform: perspective(1800px) rotateX(0deg) translateY(0);
     filter: saturate(1) brightness(1);
-    box-shadow: 0 14px 24px rgba(2, 6, 23, 0.08);
+    box-shadow: 0 6px 12px rgba(2, 6, 23, 0.05);
   }
 
   100% {
     clip-path: inset(0 0 0 0 round 0 0 0 0);
-    transform: perspective(1600px) rotateX(0deg) translateY(0);
+    transform: perspective(1800px) rotateX(0deg) translateY(0);
     filter: saturate(1) brightness(1);
     box-shadow: none;
   }
@@ -219,28 +226,35 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
 @keyframes theme-unroll-up {
   0% {
     clip-path: inset(100% 0 0 0 round 44px 44px 0 0);
-    transform: perspective(1600px) rotateX(14deg) translateY(4%);
-    filter: saturate(0.9) brightness(1.06);
-    box-shadow: 0 -26px 44px rgba(148, 163, 184, 0.2);
+    transform: perspective(1800px) rotateX(9deg) translateY(2%);
+    filter: saturate(0.92) brightness(1.05);
+    box-shadow: 0 -22px 40px rgba(148, 163, 184, 0.16);
   }
 
-  28% {
-    clip-path: inset(68% 0 0 0 round 38px 38px 0 0);
-    transform: perspective(1600px) rotateX(8deg) translateY(1%);
-    filter: saturate(0.95) brightness(1.03);
-    box-shadow: 0 -34px 56px rgba(148, 163, 184, 0.18);
+  26% {
+    clip-path: inset(72% 0 0 0 round 40px 40px 0 0);
+    transform: perspective(1800px) rotateX(6deg) translateY(1%);
+    filter: saturate(0.96) brightness(1.02);
+    box-shadow: 0 -28px 50px rgba(148, 163, 184, 0.16);
   }
 
-  64% {
-    clip-path: inset(0 0 0 0 round 18px 18px 0 0);
-    transform: perspective(1600px) rotateX(0deg) translateY(0);
-    filter: saturate(1) brightness(1);
+  58% {
+    clip-path: inset(16% 0 0 0 round 24px 24px 0 0);
+    transform: perspective(1800px) rotateX(2deg) translateY(0);
+    filter: saturate(0.98) brightness(1.01);
     box-shadow: 0 -14px 24px rgba(148, 163, 184, 0.08);
+  }
+
+  82% {
+    clip-path: inset(0 0 0 0 round 10px 10px 0 0);
+    transform: perspective(1800px) rotateX(0deg) translateY(0);
+    filter: saturate(1) brightness(1);
+    box-shadow: 0 -6px 12px rgba(148, 163, 184, 0.04);
   }
 
   100% {
     clip-path: inset(0 0 0 0 round 0 0 0 0);
-    transform: perspective(1600px) rotateX(0deg) translateY(0);
+    transform: perspective(1800px) rotateX(0deg) translateY(0);
     filter: saturate(1) brightness(1);
     box-shadow: none;
   }
