@@ -742,257 +742,264 @@ export function CreationFormations({
 
   return (
     <section className="admin-panel">
-      <h2 className="admin-panel__title">
-        {isEditing ? "Modifier une formation" : "Créer une nouvelle formation"}
-      </h2>
+      <div className="admin-crm-header">
+        <div>
+          <h2 className="admin-panel__title">
+            {isEditing ? "Modifier une formation" : "Créer une nouvelle formation"}
+          </h2>
 
-      <p className="admin-panel__text">
-        Tu peux soit fixer une date de fin manuellement, soit laisser le système
-        calculer automatiquement les sessions à partir des créneaux récurrents.
-      </p>
+          <p className="admin-panel__text">
+            Organise la formation comme dans un CRM : équipe, planning,
+            disponibilité et prévisualisation intelligente au même endroit.
+          </p>
+        </div>
+
+        <div className="admin-crm-mini-stats">
+          <div className="admin-crm-mini-stat">
+            <span>Mode</span>
+            <strong>{isEditing ? "Edition" : "Création"}</strong>
+          </div>
+          <div className="admin-crm-mini-stat">
+            <span>Planification</span>
+            <strong>
+              {formData.mode_planification === "manuel"
+                ? "Manuelle"
+                : "Intelligente"}
+            </strong>
+          </div>
+        </div>
+      </div>
 
       <form className="admin-form" onSubmit={handleSubmit}>
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="nom">
-            Nom de la formation
-          </label>
-          <input
-            id="nom"
-            className="admin-form__input"
-            type="text"
-            name="nom"
-            value={formData.nom}
-            onChange={handleChange}
-            placeholder="Ex: Développement Web"
-            required
-          />
-        </div>
-
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="formateur_id">
-            Formateur
-          </label>
-          <select
-            id="formateur_id"
-            className="admin-form__select"
-            name="formateur_id"
-            value={formData.formateur_id}
-            onChange={handleChange}
-            required
-            disabled={loadingFormateurs}
-          >
-            <option value="">
-              {loadingFormateurs
-                ? "Chargement des formateurs..."
-                : hasSaturdaySelected
-                  ? "Sélectionner un formateur dispo le samedi"
-                  : "Sélectionner un formateur"}
-            </option>
-
-            {displayedFormateurs.map((formateur) => (
-              <option key={formateur.id} value={formateur.id}>
-                {formateur.prenom} {formateur.nom} - {formateur.email}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="remplacant_id">
-            Remplaçant
-          </label>
-          <select
-            id="remplacant_id"
-            className="admin-form__select"
-            name="remplacant_id"
-            value={formData.remplacant_id}
-            onChange={handleChange}
-            disabled={loadingFormateurs}
-          >
-            <option value="">
-              {loadingFormateurs
-                ? "Chargement des remplaçants..."
-                : hasSaturdaySelected
-                  ? "Sélectionner un remplaçant dispo le samedi"
-                  : "Sélectionner un remplaçant"}
-            </option>
-
-            {displayedRemplacants.map((formateur) => (
-              <option key={formateur.id} value={formateur.id}>
-                {formateur.prenom} {formateur.nom} - {formateur.email}
-              </option>
-            ))}
-          </select>
-
-          {!loadingFormateurs && displayedRemplacants.length === 0 && (
-            <div
-              style={{
-                marginTop: "8px",
-                fontSize: "14px",
-                color: "#b42318",
-              }}
-            >
-              Aucun remplaçant disponible pour les critères sélectionnés.
+        <div className="admin-form__section">
+          <div className="admin-form__section-head">
+            <span className="admin-form__section-badge">01</span>
+            <div>
+              <h3 className="admin-form__section-title">Identité</h3>
+              <p className="admin-form__section-text">
+                Définis le nom, l’équipe pédagogique et le lieu de la formation.
+              </p>
             </div>
-          )}
-        </div>
-
-        {hasSaturdaySelected ? (
-          <div
-            style={{
-              marginTop: "10px",
-              marginBottom: "18px",
-              padding: "12px 14px",
-              borderRadius: "10px",
-              background: "#fff8e1",
-              border: "1px solid #f0d98a",
-              color: "#7a5a00",
-              fontSize: "14px",
-            }}
-          >
-            Samedi est sélectionné : seuls les formateurs et remplaçants
-            disponibles le samedi sont affichés.
           </div>
-        ) : null}
 
-        <div className="admin-form__row">
           <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="lieu">
-              Lieu
+            <label className="admin-form__label" htmlFor="nom">
+              Nom de la formation
+            </label>
+            <input
+              id="nom"
+              className="admin-form__input"
+              type="text"
+              name="nom"
+              value={formData.nom}
+              onChange={handleChange}
+              placeholder="Ex: Développement Web"
+              required
+            />
+          </div>
+
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="formateur_id">
+              Formateur
             </label>
             <select
-              id="lieu"
+              id="formateur_id"
               className="admin-form__select"
-              name="lieu"
-              value={formData.lieu}
+              name="formateur_id"
+              value={formData.formateur_id}
               onChange={handleChange}
               required
-              disabled={loadingLieux}
+              disabled={loadingFormateurs}
             >
               <option value="">
-                {loadingLieux ? "Chargement des lieux..." : "Sélectionner un lieu"}
+                {loadingFormateurs
+                  ? "Chargement des formateurs..."
+                  : hasSaturdaySelected
+                    ? "Sélectionner un formateur dispo le samedi"
+                    : "Sélectionner un formateur"}
               </option>
 
-              {lieux.map((lieu) => (
-                <option key={lieu.id} value={lieu.nom}>
-                  {lieu.nom}
+              {displayedFormateurs.map((formateur) => (
+                <option key={formateur.id} value={formateur.id}>
+                  {formateur.prenom} {formateur.nom} - {formateur.email}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="nombre_participants">
-              Participants
-            </label>
-            <input
-              id="nombre_participants"
-              className="admin-form__input"
-              type="number"
-              name="nombre_participants"
-              value={formData.nombre_participants}
-              onChange={handleChange}
-              min="0"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="admin-form__row">
-          <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="date_debut">
-              Date de début souhaitée
-            </label>
-            <input
-              id="date_debut"
-              className="admin-form__input"
-              type="date"
-              name="date_debut"
-              value={formData.date_debut}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="mode_planification">
-              Mode de planification
+            <label className="admin-form__label" htmlFor="remplacant_id">
+              Remplaçant
             </label>
             <select
-              id="mode_planification"
+              id="remplacant_id"
               className="admin-form__select"
-              name="mode_planification"
-              value={formData.mode_planification}
+              name="remplacant_id"
+              value={formData.remplacant_id}
               onChange={handleChange}
+              disabled={loadingFormateurs}
             >
-              <option value="intelligent">Calcul intelligent</option>
-              <option value="manuel">Date de fin manuelle</option>
+              <option value="">
+                {loadingFormateurs
+                  ? "Chargement des remplaçants..."
+                  : hasSaturdaySelected
+                    ? "Sélectionner un remplaçant dispo le samedi"
+                    : "Sélectionner un remplaçant"}
+              </option>
+
+              {displayedRemplacants.map((formateur) => (
+                <option key={formateur.id} value={formateur.id}>
+                  {formateur.prenom} {formateur.nom} - {formateur.email}
+                </option>
+              ))}
             </select>
+
+            {!loadingFormateurs && displayedRemplacants.length === 0 && (
+              <div className="admin-form__hint admin-form__hint--error">
+                Aucun remplaçant disponible pour les critères sélectionnés.
+              </div>
+            )}
+          </div>
+
+          {hasSaturdaySelected ? (
+            <div className="admin-form__hint admin-form__hint--warning">
+              Samedi est sélectionné : seuls les formateurs et remplaçants
+              disponibles le samedi sont affichés.
+            </div>
+          ) : null}
+
+          <div className="admin-form__row">
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="lieu">
+                Lieu
+              </label>
+              <select
+                id="lieu"
+                className="admin-form__select"
+                name="lieu"
+                value={formData.lieu}
+                onChange={handleChange}
+                required
+                disabled={loadingLieux}
+              >
+                <option value="">
+                  {loadingLieux ? "Chargement des lieux..." : "Sélectionner un lieu"}
+                </option>
+
+                {lieux.map((lieu) => (
+                  <option key={lieu.id} value={lieu.nom}>
+                    {lieu.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="nombre_participants">
+                Participants
+              </label>
+              <input
+                id="nombre_participants"
+                className="admin-form__input"
+                type="number"
+                name="nombre_participants"
+                value={formData.nombre_participants}
+                onChange={handleChange}
+                min="0"
+                required
+              />
+            </div>
           </div>
         </div>
 
-        {formData.mode_planification === "manuel" ? (
-          <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="date_fin">
-              Date de fin
-            </label>
-            <input
-              id="date_fin"
-              className="admin-form__input"
-              type="date"
-              name="date_fin"
-              value={formData.date_fin}
-              onChange={handleChange}
-              required
-            />
+        <div className="admin-form__section">
+          <div className="admin-form__section-head">
+            <span className="admin-form__section-badge">02</span>
+            <div>
+              <h3 className="admin-form__section-title">Planification</h3>
+              <p className="admin-form__section-text">
+                Cadre les dates, le mode de calcul et les créneaux récurrents.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="admin-form__group">
-            <label className="admin-form__label" htmlFor="nombre_seances">
-              Nombre de séances à générer
-            </label>
-            <input
-              id="nombre_seances"
-              className="admin-form__input"
-              type="number"
-              name="nombre_seances"
-              value={formData.nombre_seances}
-              onChange={handleChange}
-              min="1"
-              placeholder="Ex: 12"
-              required
-            />
-          </div>
-        )}
 
-        <div className="admin-form__group">
-          <label className="admin-form__label">Créneaux récurrents</label>
+          <div className="admin-form__row">
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="date_debut">
+                Date de début souhaitée
+              </label>
+              <input
+                id="date_debut"
+                className="admin-form__input"
+                type="date"
+                name="date_debut"
+                value={formData.date_debut}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div style={{ display: "grid", gap: "12px", marginTop: "10px" }}>
-            {formData.creneaux.map((creneau, index) => (
-              <div
-                key={index}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: "10px",
-                  padding: "12px",
-                  display: "grid",
-                  gap: "12px",
-                  background: "#fff",
-                }}
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="mode_planification">
+                Mode de planification
+              </label>
+              <select
+                id="mode_planification"
+                className="admin-form__select"
+                name="mode_planification"
+                value={formData.mode_planification}
+                onChange={handleChange}
               >
+                <option value="intelligent">Calcul intelligent</option>
+                <option value="manuel">Date de fin manuelle</option>
+              </select>
+            </div>
+          </div>
+
+          {formData.mode_planification === "manuel" ? (
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="date_fin">
+                Date de fin
+              </label>
+              <input
+                id="date_fin"
+                className="admin-form__input"
+                type="date"
+                name="date_fin"
+                value={formData.date_fin}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          ) : (
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="nombre_seances">
+                Nombre de séances à générer
+              </label>
+              <input
+                id="nombre_seances"
+                className="admin-form__input"
+                type="number"
+                name="nombre_seances"
+                value={formData.nombre_seances}
+                onChange={handleChange}
+                min="1"
+                placeholder="Ex: 12"
+                required
+              />
+            </div>
+          )}
+
+          <div className="admin-form__group">
+            <label className="admin-form__label">Créneaux récurrents</label>
+
+            <div className="admin-creneaux">
+            {formData.creneaux.map((creneau, index) => (
+              <div key={index} className="admin-creneau-card">
                 <div>
                   <label className="admin-form__label">Jours de la semaine</label>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                      marginTop: "8px",
-                      marginBottom: "10px",
-                    }}
-                  >
+                  <div className="admin-creneau-actions">
                     <button
                       type="button"
                       className="admin-btn admin-btn--secondary"
@@ -1010,29 +1017,13 @@ export function CreationFormations({
                     </button>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                      gap: "8px",
-                      marginTop: "8px",
-                    }}
-                  >
+                  <div className="admin-creneau-days">
                     {JOURS_OPTIONS.map((jour) => (
                       <label
                         key={jour.value}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "8px 10px",
-                          border: "1px solid #ddd",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          background: creneau.jours?.includes(jour.value)
-                            ? "#f5f5f5"
-                            : "#fff",
-                        }}
+                        className={`admin-creneau-day ${
+                          creneau.jours?.includes(jour.value) ? "is-active" : ""
+                        }`}
                       >
                         <input
                           type="checkbox"
@@ -1045,14 +1036,7 @@ export function CreationFormations({
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: "10px",
-                    alignItems: "end",
-                  }}
-                >
+                <div className="admin-creneau-grid">
                   <div>
                     <label className="admin-form__label">Format</label>
                     <select
@@ -1108,7 +1092,7 @@ export function CreationFormations({
                   </div>
                 </div>
 
-                <div style={{ fontSize: "14px", color: "#555" }}>
+                <div className="admin-creneau-summary">
                   <strong>Jours sélectionnés :</strong>{" "}
                   {creneau.jours && creneau.jours.length > 0
                     ? creneau.jours
@@ -1121,9 +1105,9 @@ export function CreationFormations({
                 </div>
               </div>
             ))}
-          </div>
+            </div>
 
-          <div style={{ marginTop: "12px" }}>
+            <div className="admin-creneaux-footer">
             <button
               type="button"
               className="admin-btn admin-btn--secondary"
@@ -1133,49 +1117,55 @@ export function CreationFormations({
             </button>
           </div>
         </div>
-
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="statut">
-            Statut
-          </label>
-          <select
-            id="statut"
-            className="admin-form__select"
-            name="statut"
-            value={formData.statut}
-            onChange={handleChange}
-          >
-            <option value="actif">Actif</option>
-            <option value="inactif">Inactif</option>
-            <option value="annule">Annulé</option>
-          </select>
         </div>
 
-        <div className="admin-form__group">
-          <label className="admin-form__label" htmlFor="description">
-            Description
-          </label>
-          <textarea
-            id="description"
-            className="admin-form__textarea"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Décris la formation..."
-            required
-          />
-        </div>
+        <div className="admin-form__section">
+          <div className="admin-form__section-head">
+            <span className="admin-form__section-badge">03</span>
+            <div>
+              <h3 className="admin-form__section-title">Cadre de diffusion</h3>
+              <p className="admin-form__section-text">
+                Finalise le statut, la description et vérifie le planning calculé.
+              </p>
+            </div>
+          </div>
 
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "16px",
-            border: "1px solid #ddd",
-            borderRadius: "10px",
-            background: "#fafafa",
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>Prévisualisation intelligente</h3>
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="statut">
+              Statut
+            </label>
+            <select
+              id="statut"
+              className="admin-form__select"
+              name="statut"
+              value={formData.statut}
+              onChange={handleChange}
+            >
+              <option value="actif">Actif</option>
+              <option value="inactif">Inactif</option>
+              <option value="annule">Annulé</option>
+            </select>
+          </div>
+
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="description">
+              Description
+            </label>
+            <textarea
+              id="description"
+              className="admin-form__textarea"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Décris la formation..."
+              required
+            />
+          </div>
+
+          <div className="admin-preview-card">
+            <h3 className="admin-preview-card__title">
+              Prévisualisation intelligente
+            </h3>
 
           {loadingPreview && <p>Calcul des sessions...</p>}
 
@@ -1201,41 +1191,17 @@ export function CreationFormations({
               </p>
 
               {Array.isArray(preview.sessions) && preview.sessions.length > 0 && (
-                <div style={{ overflowX: "auto", marginTop: "12px" }}>
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      background: "#fff",
-                    }}
-                  >
+                <div className="admin-preview-table-wrap">
+                  <table className="admin-preview-table">
                     <thead>
                       <tr>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            borderBottom: "1px solid #ddd",
-                            padding: "8px",
-                          }}
-                        >
+                        <th>
                           Date
                         </th>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            borderBottom: "1px solid #ddd",
-                            padding: "8px",
-                          }}
-                        >
+                        <th>
                           Heure début
                         </th>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            borderBottom: "1px solid #ddd",
-                            padding: "8px",
-                          }}
-                        >
+                        <th>
                           Heure fin
                         </th>
                       </tr>
@@ -1243,30 +1209,9 @@ export function CreationFormations({
                     <tbody>
                       {preview.sessions.map((session, index) => (
                         <tr key={`${session.date}-${session.heure_debut}-${index}`}>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "8px",
-                            }}
-                          >
-                            {session.date}
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "8px",
-                            }}
-                          >
-                            {session.heure_debut}
-                          </td>
-                          <td
-                            style={{
-                              borderBottom: "1px solid #eee",
-                              padding: "8px",
-                            }}
-                          >
-                            {session.heure_fin}
-                          </td>
+                          <td>{session.date}</td>
+                          <td>{session.heure_debut}</td>
+                          <td>{session.heure_fin}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1282,6 +1227,7 @@ export function CreationFormations({
               soit un nombre de séances pour voir la planification.
             </p>
           )}
+          </div>
         </div>
 
         {message && (

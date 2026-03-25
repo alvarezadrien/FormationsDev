@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const API_URL = "http://localhost:8080";
 
@@ -7,6 +7,7 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
   const [loading, setLoading] = useState(true);
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [formationToDelete, setFormationToDelete] = useState(null);
@@ -119,14 +120,79 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
     }
   };
 
+  const filteredFormations = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return formations;
+    }
+
+    return formations.filter((formation) => {
+      const haystack = [
+        formation.nom,
+        formation.lieu,
+        formation.formateur_prenom,
+        formation.formateur_nom,
+        formation.remplacant_prenom,
+        formation.remplacant_nom,
+        formation.statut,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [formations, search]);
+
+  const stats = useMemo(() => {
+    const actif = formations.filter((item) => item.statut === "actif").length;
+    const annule = formations.filter((item) => item.statut === "annule").length;
+
+    return {
+      total: formations.length,
+      actif,
+      annule,
+    };
+  }, [formations]);
+
   return (
     <>
       <section className="admin-list">
-        <h2 className="admin-list__title">Liste des formations</h2>
-        <p className="admin-list__text">
-          Clique sur une carte pour modifier ou supprimer une formation
-          existante.
-        </p>
+        <div className="admin-crm-toolbar">
+          <div className="admin-crm-toolbar__content">
+            <h2 className="admin-list__title">Liste des formations</h2>
+            <p className="admin-list__text">
+              Retrouve rapidement les formations, leur statut, leur formateur et
+              leur remplaçant.
+            </p>
+          </div>
+
+          <div className="admin-crm-toolbar__actions">
+            <input
+              type="text"
+              className="admin-crm-search"
+              placeholder="Rechercher une formation, un lieu, un formateur..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="admin-crm-kpis">
+          <div className="admin-crm-kpi">
+            <span>Total</span>
+            <strong>{stats.total}</strong>
+          </div>
+          <div className="admin-crm-kpi">
+            <span>Actives</span>
+            <strong>{stats.actif}</strong>
+          </div>
+          <div className="admin-crm-kpi is-alert">
+            <span>Annulées</span>
+            <strong>{stats.annule}</strong>
+          </div>
+        </div>
 
         {message && (
           <div className="admin-feedback admin-feedback--success">{message}</div>
@@ -142,9 +208,13 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
           <div className="admin-empty">
             Aucune formation disponible pour le moment.
           </div>
+        ) : filteredFormations.length === 0 ? (
+          <div className="admin-empty">
+            Aucune formation ne correspond à ta recherche.
+          </div>
         ) : (
           <div className="admin-list__grid">
-            {formations.map((formation) => {
+            {filteredFormations.map((formation) => {
               const badgeClass = `admin-badge admin-badge--${
                 formation.statut || "actif"
               }`;
@@ -165,7 +235,16 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
 
               return (
                 <article className="admin-card" key={formation.id}>
-                  <h3 className="admin-card__title">{formation.nom}</h3>
+                  <div className="admin-card__header">
+                    <div>
+                      <span className="admin-card__eyebrow">
+                        Formation #{formation.id}
+                      </span>
+                      <h3 className="admin-card__title">{formation.nom}</h3>
+                    </div>
+
+                    <span className={badgeClass}>{formation.statut || "actif"}</span>
+                  </div>
 
                   <div className="admin-card__meta">
                     <p>
@@ -204,12 +283,6 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                     <p>
                       <strong>Type de journée :</strong>{" "}
                       {formation.type_journee || "Non renseigné"}
-                    </p>
-                    <p>
-                      <strong>Statut :</strong>{" "}
-                      <span className={badgeClass}>
-                        {formation.statut || "actif"}
-                      </span>
                     </p>
                   </div>
 

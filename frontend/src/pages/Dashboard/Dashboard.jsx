@@ -19,7 +19,7 @@ export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("formations");
+  const [activeSection, setActiveSection] = useState("creation-formation");
   const [authChecked, setAuthChecked] = useState(false);
   const [authValid, setAuthValid] = useState(false);
 
@@ -29,9 +29,14 @@ export default function AdminFormationsDashboard() {
   const menuItems = useMemo(
     () => [
       {
-        key: "formations",
-        label: "Gestion des formations",
-        description: "Créer, modifier et supprimer les formations",
+        key: "creation-formation",
+        label: "Créer une formation",
+        description: "Créer ou modifier une formation",
+      },
+      {
+        key: "formations-creees",
+        label: "Formations créées",
+        description: "Consulter et gérer les formations enregistrées",
       },
       {
         key: "calendrier",
@@ -67,9 +72,14 @@ export default function AdminFormationsDashboard() {
     []
   );
 
+  const activeMenuItem = useMemo(
+    () => menuItems.find((item) => item.key === activeSection) ?? menuItems[0],
+    [activeSection, menuItems]
+  );
+
   useEffect(() => {
     if (formationEnEdition) {
-      setActiveSection("formations");
+      setActiveSection("creation-formation");
     }
   }, [formationEnEdition]);
 
@@ -135,68 +145,124 @@ export default function AdminFormationsDashboard() {
 
   const renderActiveSection = () => {
     switch (activeSection) {
-      case "formations":
+      case "creation-formation":
         return (
-          <div className="admin-section admin-section--formations">
-            <div className="admin-dashboard__layout">
-              <div className="admin-panel">
-                <div className="admin-panel__header">
-                  <span className="admin-panel__eyebrow">
-                    {formationEnEdition ? "Mode édition" : "Nouvelle formation"}
-                  </span>
-                  <h2 className="admin-panel__title">
-                    {formationEnEdition
-                      ? "Modifier une formation"
-                      : "Créer une formation"}
-                  </h2>
-                  <p className="admin-panel__text">
-                    {formationEnEdition
-                      ? "Mets à jour les informations de la formation sélectionnée."
-                      : "Ajoute une nouvelle formation à ton catalogue."}
-                  </p>
-                </div>
-
-                <CreationFormations
-                  formationEnEdition={formationEnEdition}
-                  onSaved={() => {
-                    setFormationEnEdition(null);
-                    setRefreshKey((prev) => prev + 1);
-                  }}
-                  onCancelEdit={() => setFormationEnEdition(null)}
-                />
+          <section className="admin-section admin-section--composer">
+            <div className="admin-module-hero admin-module-hero--creation">
+              <div className="admin-module-hero__content">
+                <span className="admin-module-hero__eyebrow">
+                  Production formation
+                </span>
+                <h3 className="admin-module-hero__title">
+                  {formationEnEdition
+                    ? "Edition guidée de la formation"
+                    : "Nouveau dossier de formation"}
+                </h3>
+                <p className="admin-module-hero__text">
+                  Prépare la fiche, l’équipe pédagogique, les créneaux et la
+                  planification dans un espace dédié à la création.
+                </p>
               </div>
 
-              <div className="admin-dashboard__content">
-                <div className="admin-list">
-                  <div className="admin-list__header">
-                    <span className="admin-list__eyebrow">
-                      Catalogue formations
-                    </span>
-                    <h2 className="admin-list__title">Formations créées</h2>
-                    <p className="admin-list__text">
-                      Retrouve toutes les formations enregistrées et gère-les
-                      rapidement depuis cet espace.
-                    </p>
-                  </div>
-
-                  <FormationsCrees
-                    refreshKey={refreshKey}
-                    onEdit={(formation) => {
-                      setFormationEnEdition(formation);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    onDeleted={(deletedId) => {
-                      setRefreshKey((prev) => prev + 1);
-
-                      if (formationEnEdition?.id === deletedId) {
-                        setFormationEnEdition(null);
-                      }
-                    }}
-                  />
+              <div className="admin-module-hero__stats">
+                <div className="admin-module-hero__stat">
+                  <span>Etat</span>
+                  <strong>{formationEnEdition ? "Edition" : "Brouillon"}</strong>
+                </div>
+                <div className="admin-module-hero__stat">
+                  <span>Workflow</span>
+                  <strong>Création</strong>
                 </div>
               </div>
             </div>
-          </div>
+
+            <div className="admin-panel admin-panel--composer">
+              <div className="admin-panel__header">
+                <span className="admin-panel__eyebrow">
+                  {formationEnEdition ? "Mode édition" : "Nouvelle formation"}
+                </span>
+                <h2 className="admin-panel__title">
+                  {formationEnEdition
+                    ? "Modifier une formation"
+                    : "Créer une formation"}
+                </h2>
+                <p className="admin-panel__text">
+                  {formationEnEdition
+                    ? "Mets à jour les informations de la formation sélectionnée."
+                    : "Ajoute une nouvelle formation à ton catalogue."}
+                </p>
+              </div>
+
+              <CreationFormations
+                formationEnEdition={formationEnEdition}
+                onSaved={() => {
+                  setFormationEnEdition(null);
+                  setRefreshKey((prev) => prev + 1);
+                }}
+                onCancelEdit={() => setFormationEnEdition(null)}
+              />
+            </div>
+          </section>
+        );
+
+      case "formations-creees":
+        return (
+          <section className="admin-section admin-section--catalog">
+            <div className="admin-module-hero admin-module-hero--catalog">
+              <div className="admin-module-hero__content">
+                <span className="admin-module-hero__eyebrow">
+                  Pilotage catalogue
+                </span>
+                <h3 className="admin-module-hero__title">
+                  Vue CRM des formations enregistrées
+                </h3>
+                <p className="admin-module-hero__text">
+                  Parcours le catalogue, retrouve rapidement chaque formation
+                  et ouvre l’édition depuis cette vue dédiée.
+                </p>
+              </div>
+
+              <div className="admin-module-hero__stats">
+                <div className="admin-module-hero__stat">
+                  <span>Vue</span>
+                  <strong>Catalogue</strong>
+                </div>
+                <div className="admin-module-hero__stat">
+                  <span>Mode</span>
+                  <strong>Gestion</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-list admin-list--catalog">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">
+                  Catalogue formations
+                </span>
+                <h2 className="admin-list__title">Formations créées</h2>
+                <p className="admin-list__text">
+                  Retrouve toutes les formations enregistrées et gère-les
+                  rapidement depuis cet espace dédié.
+                </p>
+              </div>
+
+              <FormationsCrees
+                refreshKey={refreshKey}
+                onEdit={(formation) => {
+                  setFormationEnEdition(formation);
+                  setActiveSection("creation-formation");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                onDeleted={(deletedId) => {
+                  setRefreshKey((prev) => prev + 1);
+
+                  if (formationEnEdition?.id === deletedId) {
+                    setFormationEnEdition(null);
+                  }
+                }}
+              />
+            </div>
+          </section>
         );
 
       case "calendrier":
@@ -332,7 +398,7 @@ export default function AdminFormationsDashboard() {
     <main className="admin-dashboard">
       <div className="admin-dashboard__topbar">
         <div className="admin-dashboard__header">
-          <div>
+          <div className="admin-dashboard__intro">
             <span className="admin-dashboard__eyebrow">
               Espace administration
             </span>
@@ -344,6 +410,12 @@ export default function AdminFormationsDashboard() {
               avis, les fiches de présence et désormais tout le planning depuis
               un espace structuré et plus lisible.
             </p>
+
+            <div className="admin-dashboard__chips">
+              <span className="admin-dashboard__chip">Pilotage centralisé</span>
+              <span className="admin-dashboard__chip">Vue CRM</span>
+              <span className="admin-dashboard__chip">Modules connectés</span>
+            </div>
           </div>
 
           <button
@@ -362,6 +434,29 @@ export default function AdminFormationsDashboard() {
         <StatsFormations />
       </div>
 
+      <div className="admin-mobile-bar">
+        <div className="admin-mobile-bar__content">
+          <span className="admin-mobile-bar__label">Section active</span>
+          <strong className="admin-mobile-bar__title">
+            {activeMenuItem?.label || "Navigation"}
+          </strong>
+        </div>
+
+        <button
+          type="button"
+          className={`admin-menu-toggle admin-menu-toggle--sticky ${
+            menuOpen ? "is-open" : ""
+          }`}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Ouvrir le menu de navigation"
+          aria-expanded={menuOpen}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </div>
+
       <div className="admin-shell">
         <aside className={`admin-sidebar ${menuOpen ? "is-open" : ""}`}>
           <div className="admin-sidebar__header">
@@ -372,7 +467,7 @@ export default function AdminFormationsDashboard() {
           </div>
 
           <nav className="admin-sidebar__nav">
-            {menuItems.map((item) => (
+            {menuItems.map((item, index) => (
               <button
                 key={item.key}
                 type="button"
@@ -381,6 +476,9 @@ export default function AdminFormationsDashboard() {
                 }`}
                 onClick={() => handleSectionChange(item.key)}
               >
+                <span className="admin-nav-btn__index">
+                  {(index + 1).toString().padStart(2, "0")}
+                </span>
                 <span className="admin-nav-btn__label">{item.label}</span>
                 <span className="admin-nav-btn__desc">{item.description}</span>
               </button>
@@ -399,11 +497,17 @@ export default function AdminFormationsDashboard() {
 
         <section className="admin-main">
           <div className="admin-main__header">
-            <div>
+            <div className="admin-main__heading">
               <span className="admin-main__eyebrow">Module actif</span>
               <h2 className="admin-main__title">
                 {menuItems.find((item) => item.key === activeSection)?.label}
               </h2>
+              <p className="admin-main__subtitle">
+                {
+                  menuItems.find((item) => item.key === activeSection)
+                    ?.description
+                }
+              </p>
             </div>
           </div>
 
