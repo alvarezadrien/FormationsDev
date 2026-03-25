@@ -133,6 +133,7 @@ function App() {
     }
 
     document.documentElement.classList.add("theme-transitioning");
+    document.documentElement.classList.add(`theme-transition-${nextTheme}`);
 
     const transition = startViewTransition(() => {
       flushSync(() => {
@@ -142,6 +143,8 @@ function App() {
 
     transition.finished.finally(() => {
       document.documentElement.classList.remove("theme-transitioning");
+      document.documentElement.classList.remove("theme-transition-dark");
+      document.documentElement.classList.remove("theme-transition-light");
     });
   };
 
