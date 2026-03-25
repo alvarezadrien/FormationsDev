@@ -354,40 +354,6 @@ export default function AdminFormationsDashboard() {
   return (
     <main className="admin-dashboard">
       <div className="admin-dashboard__topbar">
-        <div className="admin-dashboard__header">
-          <div className="admin-dashboard__intro">
-            <span className="admin-dashboard__eyebrow">
-              Espace administration
-            </span>
-            <h1 className="admin-dashboard__title">
-              Dashboard Admin Formations
-            </h1>
-            <p className="admin-dashboard__subtitle">
-              Gère les formations, les comptes formateurs, les utilisateurs, les
-              avis, les fiches de présence et désormais tout le planning depuis
-              un espace structuré et plus lisible.
-            </p>
-
-            <div className="admin-dashboard__chips">
-              <span className="admin-dashboard__chip">Pilotage centralisé</span>
-              <span className="admin-dashboard__chip">Vue CRM</span>
-              <span className="admin-dashboard__chip">Modules connectés</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={`admin-menu-toggle ${menuOpen ? "is-open" : ""}`}
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Ouvrir le menu de navigation"
-            aria-expanded={menuOpen}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-
         <StatsFormations />
       </div>
 
