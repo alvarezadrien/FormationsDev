@@ -202,6 +202,18 @@ export function FormFormations() {
         throw new Error("Veuillez sélectionner un diplôme");
       }
 
+      const selectedFormation = formations.find(
+        (f) => Number(f.id) === Number(formData.formation_id)
+      );
+
+      if (!selectedFormation) {
+        throw new Error("Formation sélectionnée introuvable ou indisponible");
+      }
+
+      if (selectedFormation.nombre_participants <= 0) {
+        throw new Error("La formation sélectionnée est complète");
+      }
+
       const payload = {
         nom: formData.nom.trim(),
         prenom: formData.prenom.trim(),

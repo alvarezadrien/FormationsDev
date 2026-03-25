@@ -229,16 +229,28 @@ class InscriptionFormation extends Controller
 
             $inscriptionId = $inscriptionModel->getInsertID();
 
-            $updated = $formationModel->update($payload['formation_id'], [
-                'nombre_participants' => $placesRestantes - 1,
-            ]);
+            $updated = $formationModel
+                ->set('nombre_participants', 'nombre_participants - 1', false)
+                ->where('id', $payload['formation_id'])
+                ->where('nombre_participants >', 0)
+                ->update();
 
             if (!$updated) {
                 $db->transRollback();
 
                 return $this->response->setStatusCode(500)->setJSON([
                     'error' => true,
-                    'message' => 'Impossible de mettre à jour le nombre de places',
+                    'message' => 'Impossible de mettre à jour le nombre de places (formation complète ou introuvable)',
+                ]);
+            }
+
+            $formationUpdated = $formationModel->find($payload['formation_id']);
+            if (!$formationUpdated) {
+                $db->transRollback();
+
+                return $this->response->setStatusCode(500)->setJSON([
+                    'error' => true,
+                    'message' => 'Erreur interne: formation introuvable après inscription',
                 ]);
             }
 
@@ -322,11 +334,10 @@ class InscriptionFormation extends Controller
             }
 
             if ($formation) {
-                $placesRestantes = (int) ($formation['nombre_participants'] ?? 0);
-
-                $formationModel->update($formation['id'], [
-                    'nombre_participants' => $placesRestantes + 1,
-                ]);
+                $formationModel
+                    ->set('nombre_participants', 'nombre_participants + 1', false)
+                    ->where('id', $formation['id'])
+                    ->update();
             }
 
             $db->transComplete();
