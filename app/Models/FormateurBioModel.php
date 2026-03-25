@@ -19,6 +19,7 @@ class FormateurBioModel extends Model
         'telephone',
         'travaille_samedi',
         'est_remplacant',
+        'est_co_animation',
         'experience',
         'competences',
         'formations',

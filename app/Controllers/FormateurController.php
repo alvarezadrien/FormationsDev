@@ -8,6 +8,20 @@ use App\Models\FormateurBioModel;
 
 class FormateurController extends Controller
 {
+    private function ensureBioSchema(): void
+    {
+        $db = \Config\Database::connect();
+        $fields = $db->getFieldData('formateur_bios');
+
+        foreach ($fields as $field) {
+            if (($field->name ?? null) === 'est_co_animation') {
+                return;
+            }
+        }
+
+        $db->query('ALTER TABLE formateur_bios ADD COLUMN est_co_animation TINYINT(1) NOT NULL DEFAULT 0 AFTER est_remplacant');
+    }
+
     private function getLinkedFormations(int $formateurId): array
     {
         $db = \Config\Database::connect();
@@ -55,6 +69,7 @@ class FormateurController extends Controller
     public function show($id = null)
     {
         try {
+            $this->ensureBioSchema();
             $userModel = new UserModel();
             $bioModel  = new FormateurBioModel();
 
@@ -97,6 +112,7 @@ class FormateurController extends Controller
                     'telephone'         => $bio['telephone'] ?? '',
                     'travaille_samedi'  => isset($bio['travaille_samedi']) ? (bool) $bio['travaille_samedi'] : false,
                     'est_remplacant'    => isset($bio['est_remplacant']) ? (bool) $bio['est_remplacant'] : false,
+                    'est_co_animation'  => isset($bio['est_co_animation']) ? (bool) $bio['est_co_animation'] : false,
                     'experience'        => $this->parseStoredArray($bio['experience'] ?? null),
                     'competences'       => $this->parseStoredArray($bio['competences'] ?? null),
                     'formations'        => $mergedFormations,
@@ -113,6 +129,7 @@ class FormateurController extends Controller
     public function updateMyBio()
     {
         try {
+            $this->ensureBioSchema();
             $session = session();
             $userId  = $session->get('user_id');
 
@@ -155,6 +172,7 @@ class FormateurController extends Controller
                 'telephone'        => $input['telephone'] ?? null,
                 'travaille_samedi' => !empty($input['travaille_samedi']) ? 1 : 0,
                 'est_remplacant'   => !empty($input['est_remplacant']) ? 1 : 0,
+                'est_co_animation' => !empty($input['est_co_animation']) ? 1 : 0,
                 'experience'       => json_encode(
                     is_array($input['experience'] ?? null)
                         ? $input['experience']
@@ -199,6 +217,7 @@ class FormateurController extends Controller
                     'telephone'          => $updatedBio['telephone'] ?? '',
                     'travaille_samedi'   => isset($updatedBio['travaille_samedi']) ? (bool) $updatedBio['travaille_samedi'] : false,
                     'est_remplacant'     => isset($updatedBio['est_remplacant']) ? (bool) $updatedBio['est_remplacant'] : false,
+                    'est_co_animation'   => isset($updatedBio['est_co_animation']) ? (bool) $updatedBio['est_co_animation'] : false,
                     'experience'         => $this->parseStoredArray($updatedBio['experience'] ?? null),
                     'competences'        => $this->parseStoredArray($updatedBio['competences'] ?? null),
                     'formations'         => $this->parseStoredArray($updatedBio['formations'] ?? null),

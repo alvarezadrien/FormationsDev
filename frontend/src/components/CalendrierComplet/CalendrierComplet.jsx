@@ -206,6 +206,7 @@ function normalizeFormateur(formateur) {
     email: formateur.email || "",
     est_remplacant: normalizeBoolean(formateur.est_remplacant),
     travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
+    est_co_animation: normalizeBoolean(formateur.est_co_animation),
   };
 }
 
@@ -262,6 +263,18 @@ function getRemplacantId(source) {
   );
 }
 
+function getSecondFormateurId(source) {
+  if (!source) return null;
+
+  return (
+    source.second_formateur_id ??
+    source.formateur_secondaire_id ??
+    source.second_formateur?.id ??
+    source.co_formateur_id ??
+    null
+  );
+}
+
 function normalizeSession(session, formation, formateursMap) {
   const parsed = parseDateTime(session);
   if (!parsed) return null;
@@ -274,9 +287,12 @@ function normalizeSession(session, formation, formateursMap) {
     null;
 
   const remplacantId = getRemplacantId(session) ?? getRemplacantId(formation) ?? null;
+  const secondFormateurId =
+    getSecondFormateurId(session) ?? getSecondFormateurId(formation) ?? null;
 
   const formateur = formateursMap.get(Number(formateurId));
   const remplacant = formateursMap.get(Number(remplacantId));
+  const secondFormateur = formateursMap.get(Number(secondFormateurId));
 
   return {
     id:
@@ -301,6 +317,8 @@ function normalizeSession(session, formation, formateursMap) {
     endTime: `${pad(parsed.end.getHours())}:${pad(parsed.end.getMinutes())}`,
     formateurId: formateurId ? Number(formateurId) : null,
     formateurNom: formateur?.nom || "Non attribué",
+    secondFormateurId: secondFormateurId ? Number(secondFormateurId) : null,
+    secondFormateurNom: secondFormateur?.nom || "",
     remplacantId: remplacantId ? Number(remplacantId) : null,
     remplacantNom: remplacant?.nom || "",
     salle:
@@ -349,6 +367,7 @@ function extractSessionsFromFormation(formation, formateursMap) {
         heure_fin:
           formation.heure_fin || formation.end_time || formation.heureFin,
         formateur_id: formation.formateur_id || formation.id_formateur || null,
+        second_formateur_id: getSecondFormateurId(formation),
         remplacant_id: getRemplacantId(formation),
       },
       formation,
@@ -477,6 +496,8 @@ function EventModal({
       startTime: selectedEvent.startTime || "09:00",
       endTime: selectedEvent.endTime || "17:00",
       formateurId: selectedEvent.formateurId || "",
+      coAnimation: Boolean(selectedEvent.secondFormateurId),
+      secondFormateurId: selectedEvent.secondFormateurId || "",
       remplacantId: selectedEvent.remplacantId || "",
       salle: selectedEvent.salle || "",
       description: selectedEvent.description || "",
@@ -487,9 +508,64 @@ function EventModal({
     return formateurs.filter((f) => {
       if (!f.est_remplacant) return false;
       if (!formData?.formateurId) return true;
-      return String(f.id) !== String(formData.formateurId);
+      if (String(f.id) === String(formData.formateurId)) return false;
+      if (
+        formData?.coAnimation &&
+        String(f.id) === String(formData.secondFormateurId)
+      ) {
+        return false;
+      }
+      return true;
     });
-  }, [formateurs, formData?.formateurId]);
+  }, [
+    formateurs,
+    formData?.coAnimation,
+    formData?.formateurId,
+    formData?.secondFormateurId,
+  ]);
+
+  const availableSecondFormateurs = useMemo(() => {
+    return formateurs.filter((f) => {
+      if (!f.est_co_animation) return false;
+      if (!formData?.formateurId) return true;
+      if (String(f.id) === String(formData.formateurId)) return false;
+      if (String(f.id) === String(formData.remplacantId)) return false;
+      return true;
+    });
+  }, [formateurs, formData?.formateurId, formData?.remplacantId]);
+
+  useEffect(() => {
+    if (!formData?.coAnimation) {
+      return;
+    }
+
+    const fallbackSecond = availableSecondFormateurs[0] || null;
+
+    if (!formData.secondFormateurId && fallbackSecond) {
+      setFormData((prev) => ({
+        ...prev,
+        secondFormateurId: String(fallbackSecond.id),
+      }));
+      return;
+    }
+
+    if (
+      formData.secondFormateurId &&
+      !availableSecondFormateurs.some(
+        (formateur) =>
+          String(formateur.id) === String(formData.secondFormateurId)
+      )
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        secondFormateurId: fallbackSecond ? String(fallbackSecond.id) : "",
+      }));
+    }
+  }, [
+    availableSecondFormateurs,
+    formData?.coAnimation,
+    formData?.secondFormateurId,
+  ]);
 
   const displayedRemplacants = useMemo(() => {
     const fallbackRemplacants = formateurs.filter((f) => {
@@ -521,7 +597,39 @@ function EventModal({
         next.remplacantId = "";
       }
 
+      if (
+        field === "formateurId" &&
+        value &&
+        String(prev.secondFormateurId) === String(value)
+      ) {
+        next.secondFormateurId = "";
+      }
+
+      if (
+        field === "secondFormateurId" &&
+        value &&
+        String(prev.remplacantId) === String(value)
+      ) {
+        next.remplacantId = "";
+      }
+
       return next;
+    });
+  };
+
+  const handleToggleCoAnimation = () => {
+    setFormData((prev) => {
+      const nextEnabled = !prev.coAnimation;
+      const fallbackSecond = availableSecondFormateurs[0] || null;
+
+      return {
+        ...prev,
+        coAnimation: nextEnabled,
+        secondFormateurId: nextEnabled
+          ? prev.secondFormateurId ||
+            (fallbackSecond ? String(fallbackSecond.id) : "")
+          : "",
+      };
     });
   };
 
@@ -621,6 +729,42 @@ function EventModal({
                 ))}
               </select>
             </label>
+
+            <label className="calendar-form__field">
+              <span>Co-animation</span>
+              <button
+                type="button"
+                className={`calendar-btn ${
+                  formData.coAnimation
+                    ? "calendar-btn--primary"
+                    : "calendar-btn--ghost"
+                }`}
+                disabled={!canEdit}
+                onClick={handleToggleCoAnimation}
+              >
+                {formData.coAnimation ? "Activée" : "Activer"}
+              </button>
+            </label>
+
+            {formData.coAnimation ? (
+              <label className="calendar-form__field">
+                <span>Deuxième formateur</span>
+                <select
+                  value={formData.secondFormateurId}
+                  disabled={!canEdit}
+                  onChange={(e) =>
+                    handleChange("secondFormateurId", e.target.value)
+                  }
+                >
+                  <option value="">Sélectionner un 2e formateur</option>
+                  {availableSecondFormateurs.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.nom}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
             <label className="calendar-form__field">
               <span>Remplaçant</span>
@@ -934,6 +1078,31 @@ export function CalendrierComplet() {
       return;
     }
 
+    if (
+      formData.coAnimation &&
+      !formData.secondFormateurId
+    ) {
+      alert("Veuillez sélectionner le deuxième formateur pour la co-animation.");
+      return;
+    }
+
+    if (
+      formData.coAnimation &&
+      String(formData.secondFormateurId) === String(formData.formateurId)
+    ) {
+      alert("Le deuxième formateur doit être différent du formateur principal.");
+      return;
+    }
+
+    if (
+      formData.coAnimation &&
+      formData.remplacantId &&
+      String(formData.remplacantId) === String(formData.secondFormateurId)
+    ) {
+      alert("Le remplaçant doit être différent du deuxième formateur.");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -979,6 +1148,10 @@ export function CalendrierComplet() {
           id_formateur: formData.formateurId
             ? Number(formData.formateurId)
             : null,
+          second_formateur_id:
+            formData.coAnimation && formData.secondFormateurId
+              ? Number(formData.secondFormateurId)
+              : null,
           remplacant_id: formData.remplacantId
             ? Number(formData.remplacantId)
             : null,
@@ -1011,6 +1184,10 @@ export function CalendrierComplet() {
         formateur_id: formData.formateurId
           ? Number(formData.formateurId)
           : null,
+        second_formateur_id:
+          formData.coAnimation && formData.secondFormateurId
+            ? Number(formData.secondFormateurId)
+            : null,
         remplacant_id: formData.remplacantId
           ? Number(formData.remplacantId)
           : null,
@@ -1322,6 +1499,11 @@ export function CalendrierComplet() {
                               <span className="calendar-event__trainer">
                                 {eventItem.formateurNom}
                               </span>
+                              {eventItem.secondFormateurNom ? (
+                                <span className="calendar-event__trainer">
+                                  Co-animation : {eventItem.secondFormateurNom}
+                                </span>
+                              ) : null}
                               {eventItem.remplacantNom ? (
                                 <span className="calendar-event__trainer">
                                   Remplaçant : {eventItem.remplacantNom}
@@ -1392,6 +1574,11 @@ export function CalendrierComplet() {
                               <span className="calendar-event__trainer">
                                 {eventItem.formateurNom}
                               </span>
+                              {eventItem.secondFormateurNom ? (
+                                <span className="calendar-event__trainer">
+                                  Co-animation : {eventItem.secondFormateurNom}
+                                </span>
+                              ) : null}
                               {eventItem.remplacantNom ? (
                                 <span className="calendar-event__trainer">
                                   Remplaçant : {eventItem.remplacantNom}

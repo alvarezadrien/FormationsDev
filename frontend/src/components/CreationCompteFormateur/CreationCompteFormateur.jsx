@@ -11,6 +11,7 @@ const initialForm = {
   confirmPassword: "",
   travaille_samedi: false,
   est_remplacant: false,
+  est_co_animation: false,
 };
 
 export function CreationCompteFormateur() {
@@ -98,6 +99,7 @@ export function CreationCompteFormateur() {
       password: formData.password,
       travaille_samedi: formData.travaille_samedi ? 1 : 0,
       est_remplacant: formData.est_remplacant ? 1 : 0,
+      est_co_animation: formData.est_co_animation ? 1 : 0,
     };
   };
 
@@ -270,6 +272,18 @@ export function CreationCompteFormateur() {
               {formData.est_remplacant ? "✓ " : ""}
               Remplaçant
             </button>
+
+            <button
+              type="button"
+              onClick={() => toggleField("est_co_animation")}
+              className={`creation-formateur__toggle ${
+                formData.est_co_animation ? "is-active" : ""
+              }`}
+              disabled={saving}
+            >
+              {formData.est_co_animation ? "✓ " : ""}
+              Co-animation
+            </button>
           </div>
 
           <div className="creation-formateur__summary">
@@ -280,6 +294,10 @@ export function CreationCompteFormateur() {
             <div>
               <strong>Remplaçant :</strong>{" "}
               {formData.est_remplacant ? "Oui" : "Non"}
+            </div>
+            <div>
+              <strong>Co-animation :</strong>{" "}
+              {formData.est_co_animation ? "Oui" : "Non"}
             </div>
           </div>
         </div>

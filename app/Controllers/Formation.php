@@ -18,10 +18,31 @@ class Formation extends Controller
         'dimanche' => 7,
     ];
 
+    private function ensureSchema(): void
+    {
+        $db = \Config\Database::connect();
+        $fields = $db->getFieldData('formations');
+        $hasSecondFormateur = false;
+
+        foreach ($fields as $field) {
+            if (($field->name ?? null) === 'second_formateur_id') {
+                $hasSecondFormateur = true;
+                break;
+            }
+        }
+
+        if (!$hasSecondFormateur) {
+            $db->query(
+                'ALTER TABLE formations ADD COLUMN second_formateur_id INT NULL AFTER formateur_id'
+            );
+        }
+    }
+
     public function index()
     {
         try {
             $db = \Config\Database::connect();
+            $this->ensureSchema();
 
             $formations = $db->table('formations')
                 ->select('
@@ -32,12 +53,18 @@ class Formation extends Controller
                     formateur.prenom AS formateur_prenom,
                     formateur.email AS formateur_email,
 
+                    second_formateur.id AS second_formateur_id,
+                    second_formateur.nom AS second_formateur_nom,
+                    second_formateur.prenom AS second_formateur_prenom,
+                    second_formateur.email AS second_formateur_email,
+
                     remplacant.id AS remplacant_id,
                     remplacant.nom AS remplacant_nom,
                     remplacant.prenom AS remplacant_prenom,
                     remplacant.email AS remplacant_email
                 ')
                 ->join('users AS formateur', 'formateur.id = formations.formateur_id', 'left')
+                ->join('users AS second_formateur', 'second_formateur.id = formations.second_formateur_id', 'left')
                 ->join('users AS remplacant', 'remplacant.id = formations.remplacant_id', 'left')
                 ->orderBy('formations.id', 'DESC')
                 ->get()
@@ -77,6 +104,7 @@ class Formation extends Controller
     {
         try {
             $db = \Config\Database::connect();
+            $this->ensureSchema();
 
             $formation = $db->table('formations')
                 ->select('
@@ -87,12 +115,18 @@ class Formation extends Controller
                     formateur.prenom AS formateur_prenom,
                     formateur.email AS formateur_email,
 
+                    second_formateur.id AS second_formateur_id,
+                    second_formateur.nom AS second_formateur_nom,
+                    second_formateur.prenom AS second_formateur_prenom,
+                    second_formateur.email AS second_formateur_email,
+
                     remplacant.id AS remplacant_id,
                     remplacant.nom AS remplacant_nom,
                     remplacant.prenom AS remplacant_prenom,
                     remplacant.email AS remplacant_email
                 ')
                 ->join('users AS formateur', 'formateur.id = formations.formateur_id', 'left')
+                ->join('users AS second_formateur', 'second_formateur.id = formations.second_formateur_id', 'left')
                 ->join('users AS remplacant', 'remplacant.id = formations.remplacant_id', 'left')
                 ->where('formations.id', $id)
                 ->get()
@@ -127,6 +161,7 @@ class Formation extends Controller
             $model = new FormationModel();
             $sessionModel = new FormationSessionModel();
             $db = \Config\Database::connect();
+            $this->ensureSchema();
 
             $data = $this->request->getJSON(true);
 
@@ -190,12 +225,18 @@ class Formation extends Controller
                     formateur.prenom AS formateur_prenom,
                     formateur.email AS formateur_email,
 
+                    second_formateur.id AS second_formateur_id,
+                    second_formateur.nom AS second_formateur_nom,
+                    second_formateur.prenom AS second_formateur_prenom,
+                    second_formateur.email AS second_formateur_email,
+
                     remplacant.id AS remplacant_id,
                     remplacant.nom AS remplacant_nom,
                     remplacant.prenom AS remplacant_prenom,
                     remplacant.email AS remplacant_email
                 ')
                 ->join('users AS formateur', 'formateur.id = formations.formateur_id', 'left')
+                ->join('users AS second_formateur', 'second_formateur.id = formations.second_formateur_id', 'left')
                 ->join('users AS remplacant', 'remplacant.id = formations.remplacant_id', 'left')
                 ->where('formations.id', $formationId)
                 ->get()
@@ -227,6 +268,7 @@ class Formation extends Controller
             $model = new FormationModel();
             $sessionModel = new FormationSessionModel();
             $db = \Config\Database::connect();
+            $this->ensureSchema();
 
             $formation = $model->find($id);
 
@@ -301,12 +343,18 @@ class Formation extends Controller
                     formateur.prenom AS formateur_prenom,
                     formateur.email AS formateur_email,
 
+                    second_formateur.id AS second_formateur_id,
+                    second_formateur.nom AS second_formateur_nom,
+                    second_formateur.prenom AS second_formateur_prenom,
+                    second_formateur.email AS second_formateur_email,
+
                     remplacant.id AS remplacant_id,
                     remplacant.nom AS remplacant_nom,
                     remplacant.prenom AS remplacant_prenom,
                     remplacant.email AS remplacant_email
                 ')
                 ->join('users AS formateur', 'formateur.id = formations.formateur_id', 'left')
+                ->join('users AS second_formateur', 'second_formateur.id = formations.second_formateur_id', 'left')
                 ->join('users AS remplacant', 'remplacant.id = formations.remplacant_id', 'left')
                 ->where('formations.id', $id)
                 ->get()
@@ -425,6 +473,9 @@ class Formation extends Controller
         $formateurId = isset($data['formateur_id'])
             ? (int) $data['formateur_id']
             : (int) ($existingFormation['formateur_id'] ?? 0);
+        $secondFormateurId = array_key_exists('second_formateur_id', $data)
+            ? (($data['second_formateur_id'] === null || $data['second_formateur_id'] === '') ? null : (int) $data['second_formateur_id'])
+            : ($existingFormation['second_formateur_id'] ?? null);
 
         $remplacantId = array_key_exists('remplacant_id', $data)
             ? (($data['remplacant_id'] === null || $data['remplacant_id'] === '') ? null : (int) $data['remplacant_id'])
@@ -456,6 +507,27 @@ class Formation extends Controller
         }
 
         $remplacant = null;
+        $secondFormateur = null;
+
+        if ($secondFormateurId !== null) {
+            $secondFormateur = $this->getFormateurWithBio($secondFormateurId);
+
+            if (!$secondFormateur || ($secondFormateur['role'] ?? '') !== 'formateur') {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Le deuxième formateur sélectionné est invalide'
+                ];
+            }
+
+            if ((int) $secondFormateurId === (int) $formateurId) {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Le deuxième formateur doit être différent du formateur principal'
+                ];
+            }
+        }
 
         if ($remplacantId !== null) {
             $remplacant = $this->getFormateurWithBio($remplacantId);
@@ -473,6 +545,14 @@ class Formation extends Controller
                     'error' => true,
                     'status' => 422,
                     'message' => 'Le remplaçant doit être différent du formateur principal'
+                ];
+            }
+
+            if ($secondFormateurId !== null && (int) $remplacantId === (int) $secondFormateurId) {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Le remplaçant doit être différent du deuxième formateur'
                 ];
             }
 
@@ -511,11 +591,28 @@ class Formation extends Controller
                     'message' => 'Le formateur principal n’est pas disponible le samedi'
                 ];
             }
+
+            if ($secondFormateurId !== null && (!isset($secondFormateur['travaille_samedi']) || (int) $secondFormateur['travaille_samedi'] !== 1)) {
+                return [
+                    'error' => true,
+                    'status' => 422,
+                    'message' => 'Le deuxième formateur n’est pas disponible le samedi'
+                ];
+            }
+        }
+
+        if ($secondFormateurId !== null && (!isset($secondFormateur['est_co_animation']) || (int) $secondFormateur['est_co_animation'] !== 1)) {
+            return [
+                'error' => true,
+                'status' => 422,
+                'message' => 'Le deuxième formateur n’est pas disponible pour la co-animation'
+            ];
         }
 
         $payload = [
             'nom' => $nom,
             'formateur_id' => $formateurId,
+            'second_formateur_id' => $secondFormateurId,
             'remplacant_id' => $remplacantId,
             'lieu' => $lieu,
             'description' => $description,
@@ -548,7 +645,8 @@ class Formation extends Controller
             ->select('
                 u.*,
                 COALESCE(fb.est_remplacant, 0) AS est_remplacant,
-                COALESCE(fb.travaille_samedi, 0) AS travaille_samedi
+                COALESCE(fb.travaille_samedi, 0) AS travaille_samedi,
+                COALESCE(fb.est_co_animation, 0) AS est_co_animation
             ')
             ->join('formateur_bios fb', 'fb.user_id = u.id', 'left')
             ->where('u.id', $userId)

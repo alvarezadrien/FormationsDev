@@ -9,6 +9,20 @@ use Config\Database;
 
 class Auth extends Controller
 {
+    private function ensureBioSchema(): void
+    {
+        $db = Database::connect();
+        $fields = $db->getFieldData('formateur_bios');
+
+        foreach ($fields as $field) {
+            if (($field->name ?? null) === 'est_co_animation') {
+                return;
+            }
+        }
+
+        $db->query('ALTER TABLE formateur_bios ADD COLUMN est_co_animation TINYINT(1) NOT NULL DEFAULT 0 AFTER est_remplacant');
+    }
+
     private function normalizeArrayField($value): array
     {
         if (is_array($value)) {
@@ -323,6 +337,7 @@ class Auth extends Controller
     public function createFormateur()
     {
         try {
+            $this->ensureBioSchema();
             $session = session();
             $userModel = new UserModel();
             $bioModel = new FormateurBioModel();
@@ -405,6 +420,7 @@ class Auth extends Controller
                 'telephone'         => trim($data['telephone'] ?? ''),
                 'travaille_samedi'  => !empty($data['travaille_samedi']) ? 1 : 0,
                 'est_remplacant'    => !empty($data['est_remplacant']) ? 1 : 0,
+                'est_co_animation'  => !empty($data['est_co_animation']) ? 1 : 0,
                 'experience'        => json_encode(
                     $this->normalizeArrayField($data['experience'] ?? []),
                     JSON_UNESCAPED_UNICODE
@@ -471,6 +487,7 @@ class Auth extends Controller
                     'role'              => $user['role'],
                     'est_remplacant'    => (int) $bioPayload['est_remplacant'],
                     'travaille_samedi'  => (int) $bioPayload['travaille_samedi'],
+                    'est_co_animation'  => (int) $bioPayload['est_co_animation'],
                 ]
             ]);
         } catch (\Throwable $e) {
@@ -484,6 +501,7 @@ class Auth extends Controller
     public function getFormateurs()
     {
         try {
+            $this->ensureBioSchema();
             $session = session();
             $db = Database::connect();
 
@@ -503,6 +521,7 @@ class Auth extends Controller
                 u.role,
                 COALESCE(fb.est_remplacant, 0) AS est_remplacant,
                 COALESCE(fb.travaille_samedi, 0) AS travaille_samedi,
+                COALESCE(fb.est_co_animation, 0) AS est_co_animation,
                 fb.poste,
                 fb.specialite,
                 fb.telephone
@@ -526,6 +545,7 @@ class Auth extends Controller
                     'telephone'         => $row['telephone'] ?? '',
                     'est_remplacant'    => (int) ($row['est_remplacant'] ?? 0),
                     'travaille_samedi'  => (int) ($row['travaille_samedi'] ?? 0),
+                    'est_co_animation'  => (int) ($row['est_co_animation'] ?? 0),
                 ];
             }, $formateurs);
 

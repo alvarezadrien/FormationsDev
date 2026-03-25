@@ -14,6 +14,7 @@ class FormationModel extends Model
     protected $allowedFields = [
         'nom',
         'formateur_id',
+        'second_formateur_id',
         'remplacant_id',
         'lieu',
         'description',

@@ -26,6 +26,8 @@ const TYPE_JOURNEE_OPTIONS = [
 const initialForm = {
   nom: "",
   formateur_id: "",
+  co_animation: false,
+  second_formateur_id: "",
   remplacant_id: "",
   lieu: "",
   description: "",
@@ -63,6 +65,7 @@ function normalizeFormateur(formateur) {
     email: formateur.email || "",
     est_remplacant: normalizeBoolean(formateur.est_remplacant),
     travaille_samedi: normalizeBoolean(formateur.travaille_samedi),
+    est_co_animation: normalizeBoolean(formateur.est_co_animation),
   };
 }
 
@@ -310,6 +313,10 @@ export function CreationFormations({
         formateur_id: getFormationFormateurId(formationEnEdition)
           ? String(getFormationFormateurId(formationEnEdition))
           : "",
+        co_animation: Boolean(formationEnEdition.second_formateur_id),
+        second_formateur_id: formationEnEdition.second_formateur_id
+          ? String(formationEnEdition.second_formateur_id)
+          : "",
         remplacant_id: getFormationRemplacantId(formationEnEdition)
           ? String(getFormationRemplacantId(formationEnEdition))
           : "",
@@ -392,6 +399,33 @@ export function CreationFormations({
     return result;
   }, [formateurs, hasSaturdaySelected, formData.formateur_id]);
 
+  const availableSecondFormateurs = useMemo(() => {
+    let result = formateurs.filter(
+      (formateur) => formateur.est_co_animation === true
+    );
+
+    if (hasSaturdaySelected) {
+      result = result.filter((formateur) => formateur.travaille_samedi === true);
+    }
+
+    result = result.filter(
+      (formateur) => String(formateur.id) !== String(formData.formateur_id)
+    );
+
+    if (formData.remplacant_id) {
+      result = result.filter(
+        (formateur) => String(formateur.id) !== String(formData.remplacant_id)
+      );
+    }
+
+    return result;
+  }, [
+    formateurs,
+    hasSaturdaySelected,
+    formData.formateur_id,
+    formData.remplacant_id,
+  ]);
+
   const displayedFormateurs = useMemo(() => {
     if (availableFormateurs.length > 0) {
       return availableFormateurs;
@@ -447,6 +481,42 @@ export function CreationFormations({
   ]);
 
   useEffect(() => {
+    if (loadingFormateurs || !formData.co_animation) {
+      return;
+    }
+
+    const fallbackSecondFormateur = availableSecondFormateurs[0] || null;
+
+    if (!formData.second_formateur_id && fallbackSecondFormateur) {
+      setFormData((prev) => ({
+        ...prev,
+        second_formateur_id: String(fallbackSecondFormateur.id),
+      }));
+      return;
+    }
+
+    if (
+      formData.second_formateur_id &&
+      !availableSecondFormateurs.some(
+        (formateur) =>
+          String(formateur.id) === String(formData.second_formateur_id)
+      )
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        second_formateur_id: fallbackSecondFormateur
+          ? String(fallbackSecondFormateur.id)
+          : "",
+      }));
+    }
+  }, [
+    availableSecondFormateurs,
+    formData.co_animation,
+    formData.second_formateur_id,
+    loadingFormateurs,
+  ]);
+
+  useEffect(() => {
     if (loadingFormateurs) {
       return;
     }
@@ -497,6 +567,23 @@ export function CreationFormations({
       ...prev,
       [name]: name === "nombre_participants" ? Number(value) : value,
     }));
+  };
+
+  const handleToggleCoAnimation = () => {
+    setFormData((prev) => {
+      const nextEnabled = !prev.co_animation;
+      const fallbackSecondFormateur =
+        availableSecondFormateurs[0] || null;
+
+      return {
+        ...prev,
+        co_animation: nextEnabled,
+        second_formateur_id: nextEnabled
+          ? prev.second_formateur_id ||
+            (fallbackSecondFormateur ? String(fallbackSecondFormateur.id) : "")
+          : "",
+      };
+    });
   };
 
   const handleCreneauChange = (index, field, value) => {
@@ -600,6 +687,10 @@ export function CreationFormations({
     const payload = {
       nom: formData.nom.trim(),
       formateur_id: Number(formData.formateur_id),
+      second_formateur_id:
+        formData.co_animation && formData.second_formateur_id
+          ? Number(formData.second_formateur_id)
+          : null,
       remplacant_id: formData.remplacant_id
         ? Number(formData.remplacant_id)
         : null,
@@ -698,10 +789,32 @@ export function CreationFormations({
     }
 
     if (
+      formData.co_animation &&
+      !formData.second_formateur_id
+    ) {
+      return "Veuillez sélectionner le deuxième formateur pour la co-animation.";
+    }
+
+    if (
       formData.remplacant_id &&
       String(formData.remplacant_id) === String(formData.formateur_id)
     ) {
       return "Le remplaçant doit être différent du formateur principal.";
+    }
+
+    if (
+      formData.co_animation &&
+      String(formData.second_formateur_id) === String(formData.formateur_id)
+    ) {
+      return "Le deuxième formateur doit être différent du formateur principal.";
+    }
+
+    if (
+      formData.co_animation &&
+      formData.remplacant_id &&
+      String(formData.remplacant_id) === String(formData.second_formateur_id)
+    ) {
+      return "Le remplaçant doit être différent du deuxième formateur.";
     }
 
     if (formData.mode_planification === "manuel") {
@@ -912,6 +1025,56 @@ export function CreationFormations({
               </div>
             )}
           </div>
+
+          <div className="admin-form__group">
+            <label className="admin-form__label">Co-animation</label>
+            <button
+              type="button"
+              className={`admin-btn ${
+                formData.co_animation
+                  ? "admin-btn--primary"
+                  : "admin-btn--secondary"
+              }`}
+              onClick={handleToggleCoAnimation}
+            >
+              {formData.co_animation
+                ? "Co-animation activée"
+                : "Activer la co-animation"}
+            </button>
+          </div>
+
+          {formData.co_animation && (
+            <div className="admin-form__group">
+              <label className="admin-form__label" htmlFor="second_formateur_id">
+                Deuxième formateur
+              </label>
+              <select
+                id="second_formateur_id"
+                className="admin-form__select"
+                name="second_formateur_id"
+                value={formData.second_formateur_id}
+                onChange={handleChange}
+                disabled={loadingFormateurs}
+              >
+                <option value="">
+                  {loadingFormateurs
+                    ? "Chargement des formateurs..."
+                    : "Sélectionner le deuxième formateur"}
+                </option>
+
+                {availableSecondFormateurs.map((formateur) => (
+                  <option key={formateur.id} value={formateur.id}>
+                    {formateur.prenom} {formateur.nom} - {formateur.email}
+                  </option>
+                ))}
+              </select>
+
+              <div className="admin-form__hint">
+                Le deuxième formateur est attribué automatiquement s’il est
+                disponible, puis reste modifiable manuellement.
+              </div>
+            </div>
+          )}
 
           {hasSaturdaySelected ? (
             <div className="admin-form__hint admin-form__hint--warning">

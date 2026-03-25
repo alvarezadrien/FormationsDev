@@ -84,6 +84,7 @@ export function BioFormateur() {
           telephone: data.telephone?.trim() || "",
           travaille_samedi: toBoolean(data.travaille_samedi),
           est_remplacant: toBoolean(data.est_remplacant),
+          est_co_animation: toBoolean(data.est_co_animation),
         });
       } catch (err) {
         setErreur(err.message || "Une erreur est survenue");
@@ -154,6 +155,10 @@ export function BioFormateur() {
               {formateur.travaille_samedi && (
                 <span className="trainer_tag">Disponible le samedi</span>
               )}
+
+              {formateur.est_co_animation && (
+                <span className="trainer_tag">Co-animation</span>
+              )}
             </div>
           </div>
         </div>
@@ -181,6 +186,10 @@ export function BioFormateur() {
                 <p className="trainer_contact_item">
                   <strong>Disponible le samedi :</strong>{" "}
                   {formateur.travaille_samedi ? "Oui" : "Non"}
+                </p>
+                <p className="trainer_contact_item">
+                  <strong>Co-animation :</strong>{" "}
+                  {formateur.est_co_animation ? "Oui" : "Non"}
                 </p>
               </div>
             </div>

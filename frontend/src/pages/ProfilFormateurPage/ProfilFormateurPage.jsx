@@ -23,6 +23,7 @@ function ProfilFormateurPage() {
     role: "formateur",
     travaille_samedi: false,
     est_remplacant: false,
+    est_co_animation: false,
   });
 
   const [activeSection, setActiveSection] = useState("infos");
@@ -31,6 +32,7 @@ function ProfilFormateurPage() {
   const [preferencesForm, setPreferencesForm] = useState({
     travaille_samedi: false,
     est_remplacant: false,
+    est_co_animation: false,
   });
 
   const [bioForm, setBioForm] = useState({
@@ -75,12 +77,14 @@ function ProfilFormateurPage() {
         role: parsedUser.role || "formateur",
         travaille_samedi: normalizeBoolean(parsedUser.travaille_samedi),
         est_remplacant: normalizeBoolean(parsedUser.est_remplacant),
+        est_co_animation: normalizeBoolean(parsedUser.est_co_animation),
       };
 
       setUserData(normalizedUser);
       setPreferencesForm({
         travaille_samedi: normalizedUser.travaille_samedi,
         est_remplacant: normalizedUser.est_remplacant,
+        est_co_animation: normalizedUser.est_co_animation,
       });
 
       if (!parsedUser.id) {
@@ -106,12 +110,14 @@ function ProfilFormateurPage() {
           ...normalizedUser,
           travaille_samedi: normalizeBoolean(data.data.travaille_samedi),
           est_remplacant: normalizeBoolean(data.data.est_remplacant),
+          est_co_animation: normalizeBoolean(data.data.est_co_animation),
         };
 
         setUserData(updatedUser);
         setPreferencesForm({
           travaille_samedi: updatedUser.travaille_samedi,
           est_remplacant: updatedUser.est_remplacant,
+          est_co_animation: updatedUser.est_co_animation,
         });
         setBioForm({
           poste: data.data.poste ?? "",
@@ -161,6 +167,7 @@ function ProfilFormateurPage() {
     return {
       travaille_samedi: preferencesForm.travaille_samedi ? 1 : 0,
       est_remplacant: preferencesForm.est_remplacant ? 1 : 0,
+      est_co_animation: preferencesForm.est_co_animation ? 1 : 0,
     };
   };
 
@@ -201,12 +208,16 @@ function ProfilFormateurPage() {
         est_remplacant: normalizeBoolean(
           data?.data?.est_remplacant ?? payload.est_remplacant
         ),
+        est_co_animation: normalizeBoolean(
+          data?.data?.est_co_animation ?? payload.est_co_animation
+        ),
       };
 
       setUserData(updatedUser);
       setPreferencesForm({
         travaille_samedi: updatedUser.travaille_samedi,
         est_remplacant: updatedUser.est_remplacant,
+        est_co_animation: updatedUser.est_co_animation,
       });
 
       // 🔥 IMPORTANT
@@ -241,6 +252,7 @@ function ProfilFormateurPage() {
         formations: bioForm.formations,
         travaille_samedi: preferencesForm.travaille_samedi ? 1 : 0,
         est_remplacant: preferencesForm.est_remplacant ? 1 : 0,
+        est_co_animation: preferencesForm.est_co_animation ? 1 : 0,
       };
 
       const response = await fetch(`${API_URL}/formateur/ma-bio`, {
@@ -437,6 +449,34 @@ function ProfilFormateurPage() {
                         }`}
                         onClick={() =>
                           handlePreferenceChange("est_remplacant", false)
+                        }
+                      >
+                        Non
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="profile_toggle_card">
+                    <span>Peut faire de la co-animation</span>
+
+                    <div className="profile_toggle_actions">
+                      <button
+                        className={`profile_choice_btn ${
+                          preferencesForm.est_co_animation ? "active" : ""
+                        }`}
+                        onClick={() =>
+                          handlePreferenceChange("est_co_animation", true)
+                        }
+                      >
+                        Oui
+                      </button>
+
+                      <button
+                        className={`profile_choice_btn ${
+                          !preferencesForm.est_co_animation ? "active" : ""
+                        }`}
+                        onClick={() =>
+                          handlePreferenceChange("est_co_animation", false)
                         }
                       >
                         Non
