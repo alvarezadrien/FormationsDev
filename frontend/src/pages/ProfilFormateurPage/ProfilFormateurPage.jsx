@@ -7,6 +7,14 @@ import "./ProfilFormateurPage.css";
 function ProfilFormateurPage() {
   const API_URL = "http://localhost:8080";
 
+  const formatArrayInput = (value) => {
+    if (Array.isArray(value)) {
+      return value.filter(Boolean).join(", ");
+    }
+
+    return typeof value === "string" ? value : "";
+  };
+
   const [userData, setUserData] = useState({
     id: "",
     nom: "",
@@ -25,9 +33,22 @@ function ProfilFormateurPage() {
     est_remplacant: false,
   });
 
+  const [bioForm, setBioForm] = useState({
+    poste: "",
+    specialite: "",
+    bio: "",
+    telephone: "",
+    experience: "",
+    competences: "",
+    formations: "",
+  });
+
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [preferencesSuccess, setPreferencesSuccess] = useState("");
   const [preferencesError, setPreferencesError] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
+  const [bioSuccess, setBioSuccess] = useState("");
+  const [bioError, setBioError] = useState("");
 
   const normalizeBoolean = (value) => {
     return value === true || value === 1 || value === "1";
@@ -92,6 +113,15 @@ function ProfilFormateurPage() {
           travaille_samedi: updatedUser.travaille_samedi,
           est_remplacant: updatedUser.est_remplacant,
         });
+        setBioForm({
+          poste: data.data.poste ?? "",
+          specialite: data.data.specialite ?? "",
+          bio: data.data.bio ?? "",
+          telephone: data.data.telephone ?? "",
+          experience: formatArrayInput(data.data.experience),
+          competences: formatArrayInput(data.data.competences),
+          formations: formatArrayInput(data.data.formations),
+        });
 
         localStorage.setItem("user", JSON.stringify(updatedUser));
       } catch {
@@ -115,6 +145,16 @@ function ProfilFormateurPage() {
 
     setPreferencesSuccess("");
     setPreferencesError("");
+  };
+
+  const handleBioChange = (field, value) => {
+    setBioForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setBioSuccess("");
+    setBioError("");
   };
 
   const buildPreferencesPayload = () => {
@@ -185,6 +225,65 @@ function ProfilFormateurPage() {
     }
   };
 
+  const handleSaveBio = async () => {
+    try {
+      setSavingBio(true);
+      setBioSuccess("");
+      setBioError("");
+
+      const payload = {
+        poste: bioForm.poste.trim(),
+        specialite: bioForm.specialite.trim(),
+        bio: bioForm.bio.trim(),
+        telephone: bioForm.telephone.trim(),
+        experience: bioForm.experience,
+        competences: bioForm.competences,
+        formations: bioForm.formations,
+        travaille_samedi: preferencesForm.travaille_samedi ? 1 : 0,
+        est_remplacant: preferencesForm.est_remplacant ? 1 : 0,
+      };
+
+      const response = await fetch(`${API_URL}/formateur/ma-bio`, {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || "Impossible d'enregistrer votre fiche bio."
+        );
+      }
+
+      setBioForm({
+        poste: data?.data?.poste ?? payload.poste,
+        specialite: data?.data?.specialite ?? payload.specialite,
+        bio: data?.data?.bio ?? payload.bio,
+        telephone: data?.data?.telephone ?? payload.telephone,
+        experience: formatArrayInput(data?.data?.experience ?? payload.experience),
+        competences: formatArrayInput(
+          data?.data?.competences ?? payload.competences
+        ),
+        formations: formatArrayInput(data?.data?.formations ?? payload.formations),
+      });
+
+      setBioSuccess(
+        data?.message || "Votre fiche bio a bien été enregistrée."
+      );
+    } catch (err) {
+      setBioError(
+        err.message || "Erreur lors de l'enregistrement de la fiche bio."
+      );
+    } finally {
+      setSavingBio(false);
+    }
+  };
+
   return (
     <section className="profile_page">
       <div className="profile_wrapper">
@@ -227,6 +326,15 @@ function ProfilFormateurPage() {
                 onClick={() => handleSectionChange("infos")}
               >
                 Informations
+              </button>
+
+              <button
+                className={`profile_nav_button ${
+                  activeSection === "bio" ? "active" : ""
+                }`}
+                onClick={() => handleSectionChange("bio")}
+              >
+                Espace bio
               </button>
 
               <button
@@ -343,6 +451,116 @@ function ProfilFormateurPage() {
                   disabled={savingPreferences}
                 >
                   {savingPreferences ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
+            )}
+
+            {activeSection === "bio" && (
+              <div className="profile_info_block profile_bio_block">
+                <h2 className="profile_section_title">Espace bio</h2>
+                <p className="profile_bio_intro">
+                  Complète ici ta fiche publique. Ces informations seront ensuite
+                  visibles dans ta fiche bio formateur.
+                </p>
+
+                {bioError && (
+                  <div className="profile_preferences_alert error">{bioError}</div>
+                )}
+
+                {bioSuccess && (
+                  <div className="profile_preferences_alert success">
+                    {bioSuccess}
+                  </div>
+                )}
+
+                <div className="profile_bio_grid">
+                  <label className="profile_bio_field">
+                    <span>Poste</span>
+                    <input
+                      type="text"
+                      value={bioForm.poste}
+                      onChange={(event) =>
+                        handleBioChange("poste", event.target.value)
+                      }
+                      placeholder="Ex: Formateur certifié"
+                    />
+                  </label>
+
+                  <label className="profile_bio_field">
+                    <span>Spécialité</span>
+                    <input
+                      type="text"
+                      value={bioForm.specialite}
+                      onChange={(event) =>
+                        handleBioChange("specialite", event.target.value)
+                      }
+                      placeholder="Ex: Sécurité, secourisme, incendie"
+                    />
+                  </label>
+
+                  <label className="profile_bio_field">
+                    <span>Téléphone</span>
+                    <input
+                      type="text"
+                      value={bioForm.telephone}
+                      onChange={(event) =>
+                        handleBioChange("telephone", event.target.value)
+                      }
+                      placeholder="Ex: 0470 00 00 00"
+                    />
+                  </label>
+
+                  <label className="profile_bio_field profile_bio_field--full">
+                    <span>Biographie</span>
+                    <textarea
+                      value={bioForm.bio}
+                      onChange={(event) =>
+                        handleBioChange("bio", event.target.value)
+                      }
+                      placeholder="Présente ton parcours, ta façon d'enseigner et ce que tu apportes aux apprenants."
+                    />
+                  </label>
+
+                  <label className="profile_bio_field profile_bio_field--full">
+                    <span>Expérience</span>
+                    <textarea
+                      value={bioForm.experience}
+                      onChange={(event) =>
+                        handleBioChange("experience", event.target.value)
+                      }
+                      placeholder="Sépare les éléments par des virgules"
+                    />
+                  </label>
+
+                  <label className="profile_bio_field profile_bio_field--full">
+                    <span>Compétences</span>
+                    <textarea
+                      value={bioForm.competences}
+                      onChange={(event) =>
+                        handleBioChange("competences", event.target.value)
+                      }
+                      placeholder="Ex: Pédagogie active, SST, incendie"
+                    />
+                  </label>
+
+                  <label className="profile_bio_field profile_bio_field--full">
+                    <span>Formations enseignées</span>
+                    <textarea
+                      value={bioForm.formations}
+                      onChange={(event) =>
+                        handleBioChange("formations", event.target.value)
+                      }
+                      placeholder="Liste les formations que tu enseignes, séparées par des virgules"
+                    />
+                  </label>
+                </div>
+
+                <button
+                  className="profile_save_preferences_btn"
+                  onClick={handleSaveBio}
+                  disabled={savingBio}
+                >
+                  {savingBio ? "Enregistrement..." : "Enregistrer la fiche bio"}
                 </button>
               </div>
             )}

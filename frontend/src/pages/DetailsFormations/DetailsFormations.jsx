@@ -164,6 +164,11 @@ export function DetailsFormations() {
     navigate(`/bio-formateur/${formation.formateur_id}`);
   };
 
+  const handleVoirBioRemplacant = () => {
+    if (!formation.remplacant_id) return;
+    navigate(`/bio-formateur/${formation.remplacant_id}`);
+  };
+
   return (
     <section className="details_page">
       <button className="back_button" onClick={() => navigate(-1)}>
@@ -304,6 +309,15 @@ export function DetailsFormations() {
             >
               Voir la biographie du formateur
             </button>
+
+            {formation.remplacant_id && (
+              <button
+                className="bio_button"
+                onClick={handleVoirBioRemplacant}
+              >
+                Voir la biographie du remplaçant
+              </button>
+            )}
           </div>
         </aside>
       </div>

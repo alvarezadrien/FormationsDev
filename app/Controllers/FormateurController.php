@@ -8,6 +8,28 @@ use App\Models\FormateurBioModel;
 
 class FormateurController extends Controller
 {
+    private function getLinkedFormations(int $formateurId): array
+    {
+        $db = \Config\Database::connect();
+
+        $rows = $db->table('formations')
+            ->select('nom')
+            ->groupStart()
+                ->where('formateur_id', $formateurId)
+                ->orWhere('remplacant_id', $formateurId)
+            ->groupEnd()
+            ->orderBy('nom', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $names = array_map(
+            static fn($row) => trim((string) ($row['nom'] ?? '')),
+            $rows
+        );
+
+        return array_values(array_unique(array_filter($names)));
+    }
+
     private function parseStoredArray($value): array
     {
         if (is_array($value)) {
@@ -53,6 +75,12 @@ class FormateurController extends Controller
             }
 
             $bio = $bioModel->where('user_id', $id)->first();
+            $storedFormations = $this->parseStoredArray($bio['formations'] ?? null);
+            $linkedFormations = $this->getLinkedFormations((int) $id);
+            $mergedFormations = array_values(array_unique(array_filter([
+                ...$storedFormations,
+                ...$linkedFormations,
+            ])));
 
             return $this->response->setJSON([
                 'error' => false,
@@ -71,7 +99,7 @@ class FormateurController extends Controller
                     'est_remplacant'    => isset($bio['est_remplacant']) ? (bool) $bio['est_remplacant'] : false,
                     'experience'        => $this->parseStoredArray($bio['experience'] ?? null),
                     'competences'       => $this->parseStoredArray($bio['competences'] ?? null),
-                    'formations'        => $this->parseStoredArray($bio['formations'] ?? null),
+                    'formations'        => $mergedFormations,
                 ]
             ]);
         } catch (\Throwable $e) {
