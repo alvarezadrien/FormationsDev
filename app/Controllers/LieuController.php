@@ -46,6 +46,36 @@ class LieuController extends ResourceController
         return strtolower(trim($normalized));
     }
 
+    private function toBool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'oui', 'yes', 'on'], true);
+        }
+
+        return false;
+    }
+
+    private function findExistingVilleMatch(string $ville, array $existingVilles): ?string
+    {
+        $normalizedVille = $this->normalizeKey($ville);
+
+        foreach ($existingVilles as $existingVille) {
+            if ($this->normalizeKey((string) $existingVille) === $normalizedVille) {
+                return (string) $existingVille;
+            }
+        }
+
+        return null;
+    }
+
     private function getExistingVilles(?int $excludeLieuId = null): array
     {
         $builder = $this->model
@@ -67,7 +97,7 @@ class LieuController extends ResourceController
         )));
     }
 
-    private function validateLieuPayload(array $data, ?int $currentId = null): ?array
+    private function validateLieuPayload(array $data, ?int $currentId = null, bool $allowNewCity = false): ?array
     {
         $ville = trim((string) ($data['ville'] ?? ''));
         $localNom = trim((string) ($data['local_nom'] ?? ''));
@@ -81,13 +111,14 @@ class LieuController extends ResourceController
         }
 
         $existingVilles = $this->getExistingVilles($currentId);
+        $matchedVille = $this->findExistingVilleMatch($ville, $existingVilles);
 
-        if (!in_array($ville, $existingVilles, true) && $currentId === null) {
+        if ($matchedVille === null && $currentId === null && !$allowNewCity) {
             return ['ville' => 'La ville doit être choisie parmi celles déjà présentes en base'];
         }
 
         $normalizedLocalNom = $this->normalizeKey($localNom);
-        $normalizedVille = $this->normalizeKey($ville);
+        $normalizedVille = $this->normalizeKey($matchedVille ?? $ville);
         $normalizedVilles = array_map(fn($item) => $this->normalizeKey($item), $existingVilles);
 
         if ($normalizedLocalNom === $normalizedVille || in_array($normalizedLocalNom, $normalizedVilles, true)) {
@@ -235,9 +266,18 @@ class LieuController extends ResourceController
         $this->ensureSchema();
         $this->backfillExistingLieux();
         $this->seedDefaultLocaux();
-        $data = $this->inferLieuDetails($this->request->getJSON(true) ?? []);
+        $payload = $this->request->getJSON(true) ?? [];
+        $allowNewCity = $this->toBool($payload['allow_new_city'] ?? false);
+        $data = $this->inferLieuDetails($payload);
+        $existingVilles = $this->getExistingVilles();
+        $matchedVille = $this->findExistingVilleMatch((string) ($data['ville'] ?? ''), $existingVilles);
 
-        $validationErrors = $this->validateLieuPayload($data);
+        if ($matchedVille !== null) {
+            $data['ville'] = $matchedVille;
+            $data = $this->inferLieuDetails($data);
+        }
+
+        $validationErrors = $this->validateLieuPayload($data, null, $allowNewCity);
         if ($validationErrors !== null) {
             return $this->failValidationErrors($validationErrors);
         }
