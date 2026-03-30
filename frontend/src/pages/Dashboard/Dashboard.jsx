@@ -10,16 +10,15 @@ import {
   FiFolder,
   FiGrid,
   FiMail,
+  FiMenu,
   FiMapPin,
   FiMessageSquare,
+  FiPlus,
   FiPlayCircle,
+  FiSearch,
   FiUserPlus,
   FiUsers,
 } from "react-icons/fi";
-import "./Dashboard.css";
-
-const API_URL = "http://localhost:8080";
-
 import { StatsFormations } from "../../components/StatsFormations/StatsFormations";
 import { CreationFormations } from "../../components/CreationFormations/CreationFormations";
 import { FormationsCrees } from "../../components/FormationsCrees/FormationsCrees";
@@ -33,6 +32,9 @@ import { CalendrierComplet } from "../../components/CalendrierComplet/Calendrier
 import { CalculHeure } from "../../components/CalculHeure/CalculHeure";
 import { GestionLocaux } from "../../components/GestionLocaux/GestionLocaux";
 import { ADMIN_MENU_ITEMS } from "../../features/dashboard/config/adminSections";
+import "./Dashboard.css";
+
+const API_URL = "http://localhost:8080";
 
 const MENU_ICONS = {
   "creation-formation": FiEdit3,
@@ -83,6 +85,7 @@ export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeSection, setActiveSection] = useState("creation-formation");
   const [authChecked, setAuthChecked] = useState(false);
   const [authValid, setAuthValid] = useState(false);
@@ -111,21 +114,70 @@ export default function AdminFormationsDashboard() {
     () => menuItems.find((item) => item.key === activeSection) ?? menuItems[0],
     [activeSection, menuItems]
   );
+  const normalizedSearchQuery = useMemo(
+    () => searchQuery.trim().toLowerCase(),
+    [searchQuery]
+  );
+  const filteredMenuItems = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return menuItems;
+    }
+
+    return menuItems.filter((item) => {
+      const haystack = `${item.label} ${item.description}`.toLowerCase();
+      return haystack.includes(normalizedSearchQuery) || item.key === activeSection;
+    });
+  }, [activeSection, menuItems, normalizedSearchQuery]);
   const ActiveSectionIcon = MENU_ICONS[activeMenuItem?.key] || FiGrid;
   const activeSectionIndex = useMemo(
     () => Math.max(menuItems.findIndex((item) => item.key === activeSection), 0) + 1,
     [activeSection, menuItems]
   );
   const quickSections = useMemo(
-    () => menuItems.filter((item) => item.key !== activeSection).slice(0, 4),
-    [activeSection, menuItems]
+    () => filteredMenuItems.filter((item) => item.key !== activeSection).slice(0, 4),
+    [activeSection, filteredMenuItems]
   );
-
-  useEffect(() => {
-    if (formationEnEdition) {
-      setActiveSection("creation-formation");
-    }
-  }, [formationEnEdition]);
+  const spotlightCards = useMemo(
+    () => [
+      {
+        key: "modules",
+        label: "Modules",
+        value: String(menuItems.length).padStart(2, "0"),
+        text: "espaces de gestion disponibles",
+        tone: "primary",
+      },
+      {
+        key: "position",
+        label: "Section active",
+        value: String(activeSectionIndex).padStart(2, "0"),
+        text: activeMenuItem?.label || "Navigation",
+        tone: "neutral",
+      },
+      {
+        key: "shortcuts",
+        label: "Acces rapides",
+        value: String(quickSections.length).padStart(2, "0"),
+        text: "raccourcis visibles depuis le dashboard",
+        tone: "neutral",
+      },
+      {
+        key: "mode",
+        label: "Mode",
+        value: formationEnEdition ? "EDIT" : "LIVE",
+        text: formationEnEdition
+          ? "une formation est en cours d'edition"
+          : "pilotage administratif global",
+        tone: "neutral",
+      },
+    ],
+    [
+      activeMenuItem?.label,
+      activeSectionIndex,
+      formationEnEdition,
+      menuItems.length,
+      quickSections.length,
+    ]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -491,34 +543,44 @@ export default function AdminFormationsDashboard() {
           </div>
 
           <div className="admin-sidebar__header">
-            <p className="admin-sidebar__text">Navigation principale</p>
+            <p className="admin-sidebar__text">
+              {normalizedSearchQuery
+                ? `${filteredMenuItems.length} module(s) trouve(s)`
+                : "Navigation principale"}
+            </p>
           </div>
 
           <nav className="admin-sidebar__nav">
-            {menuItems.map((item) => {
-              const ItemIcon = MENU_ICONS[item.key] || FiGrid;
+            {filteredMenuItems.length === 0 && normalizedSearchQuery ? (
+              <div className="admin-sidebar__empty">
+                Aucun module ne correspond a votre recherche.
+              </div>
+            ) : (
+              filteredMenuItems.map((item) => {
+                const ItemIcon = MENU_ICONS[item.key] || FiGrid;
 
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`admin-nav-btn ${
-                    activeSection === item.key ? "is-active" : ""
-                  }`}
-                  onClick={() => handleSectionChange(item.key)}
-                >
-                  <span className="admin-nav-btn__icon">
-                    <ItemIcon />
-                  </span>
-                  <span className="admin-nav-btn__content">
-                    <span className="admin-nav-btn__label">{item.label}</span>
-                    <span className="admin-nav-btn__desc">
-                      {item.description}
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`admin-nav-btn ${
+                      activeSection === item.key ? "is-active" : ""
+                    }`}
+                    onClick={() => handleSectionChange(item.key)}
+                  >
+                    <span className="admin-nav-btn__icon">
+                      <ItemIcon />
                     </span>
-                  </span>
-                </button>
-              );
-            })}
+                    <span className="admin-nav-btn__content">
+                      <span className="admin-nav-btn__label">{item.label}</span>
+                      <span className="admin-nav-btn__desc">
+                        {item.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })
+            )}
           </nav>
 
           <div className="admin-sidebar__footer">
@@ -543,29 +605,111 @@ export default function AdminFormationsDashboard() {
 
         <section className="admin-main">
           <header className="admin-main-topbar">
-            <div className="admin-main-topbar__heading">
-              <span className="admin-main-topbar__eyebrow">
-                Tableau de bord
+            <button
+              type="button"
+              className={`admin-menu-toggle ${menuOpen ? "is-open" : ""}`}
+              onClick={() => setMenuOpen((prev) => !prev)}
+              aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            >
+              <FiMenu />
+            </button>
+
+            <label className="admin-searchbar" htmlFor="admin-dashboard-search">
+              <span className="admin-searchbar__icon" aria-hidden="true">
+                <FiSearch />
               </span>
-              <h1 className="admin-main-topbar__title">
-                {activeMenuItem?.label || "Navigation"}
-              </h1>
-              <p className="admin-main-topbar__subtitle">
+              <input
+                id="admin-dashboard-search"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Rechercher un module, une action ou une section"
+              />
+              <span className="admin-searchbar__hint">Ctrl K</span>
+            </label>
+
+            <div className="admin-main-topbar__actions">
+              <button
+                type="button"
+                className="admin-action-btn"
+                aria-label="Messagerie"
+              >
+                <FiMail />
+              </button>
+              <button
+                type="button"
+                className="admin-action-btn"
+                aria-label="Notifications"
+              >
+                <FiBell />
+              </button>
+
+              <div className="admin-user-chip">
+                <span className="admin-user-chip__avatar">{userInitials}</span>
+                <span className="admin-user-chip__meta">
+                  <strong>{displayName}</strong>
+                  <span>{currentUser?.email || "admin@codingformations.local"}</span>
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <section className="admin-hero">
+            <div className="admin-hero__content">
+              <span className="admin-hero__eyebrow">Dashboard</span>
+              <h1 className="admin-hero__title">Pilotez vos formations avec clarté</h1>
+              <p className="admin-hero__text">
+                {activeMenuItem?.description} Consultez vos modules, vos
+                raccourcis et vos statistiques depuis une seule interface.{" "}
                 {todayLabel}
               </p>
             </div>
-          </header>
+
+            <div className="admin-hero__actions">
+              <button
+                type="button"
+                className="admin-hero__action admin-hero__action--primary"
+                onClick={() => handleSectionChange("creation-formation")}
+              >
+                <FiPlus />
+                Nouvelle formation
+              </button>
+              <button
+                type="button"
+                className="admin-hero__action admin-hero__action--ghost"
+                onClick={() => handleSectionChange("calendrier")}
+              >
+                <FiCalendar />
+                Ouvrir le calendrier
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-spotlight-grid">
+            {spotlightCards.map((card) => (
+              <article
+                key={card.key}
+                className={`admin-spotlight-card ${
+                  card.tone === "primary" ? "is-primary" : ""
+                }`}
+              >
+                <span className="admin-spotlight-card__label">{card.label}</span>
+                <strong className="admin-spotlight-card__value">{card.value}</strong>
+                <p className="admin-spotlight-card__text">{card.text}</p>
+              </article>
+            ))}
+          </section>
 
           <section className="admin-overview">
             <div className="admin-overview__intro">
               <span className="admin-overview__eyebrow">
                 Bienvenue, {firstName} !
               </span>
-              <h2 className="admin-overview__title">Résumé des activités</h2>
+              <h2 className="admin-overview__title">Vue d'ensemble du pilotage</h2>
               <p className="admin-overview__text">
-                Retrouve les indicateurs clés, bascule rapidement entre les
-                modules et garde une vue claire sur l&apos;espace
-                d&apos;administration.
+                Retrouve les indicateurs clés, le module actuellement
+                sélectionné et les actions utiles pour avancer vite dans
+                l&apos;espace d&apos;administration.
               </p>
 
               <div className="admin-overview__chips">
@@ -582,28 +726,39 @@ export default function AdminFormationsDashboard() {
             </div>
 
             <div className="admin-shortcuts">
-              {quickSections.map((item) => {
-                const ShortcutIcon = MENU_ICONS[item.key] || FiGrid;
+              <div className="admin-shortcuts__header">
+                <span className="admin-shortcuts__eyebrow">Navigation rapide</span>
+                <h3 className="admin-shortcuts__title">Modules recommandés</h3>
+              </div>
 
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className="admin-shortcut-card"
-                    onClick={() => handleSectionChange(item.key)}
-                  >
-                    <span className="admin-shortcut-card__icon">
-                      <ShortcutIcon />
-                    </span>
-                    <strong className="admin-shortcut-card__title">
-                      {item.label}
-                    </strong>
-                    <span className="admin-shortcut-card__text">
-                      {item.description}
-                    </span>
-                  </button>
-                );
-              })}
+              {quickSections.length === 0 ? (
+                <div className="admin-shortcuts__empty">
+                  Aucun raccourci ne correspond a votre recherche.
+                </div>
+              ) : (
+                quickSections.map((item) => {
+                  const ShortcutIcon = MENU_ICONS[item.key] || FiGrid;
+
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className="admin-shortcut-card"
+                      onClick={() => handleSectionChange(item.key)}
+                    >
+                      <span className="admin-shortcut-card__icon">
+                        <ShortcutIcon />
+                      </span>
+                      <strong className="admin-shortcut-card__title">
+                        {item.label}
+                      </strong>
+                      <span className="admin-shortcut-card__text">
+                        {item.description}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </section>
 

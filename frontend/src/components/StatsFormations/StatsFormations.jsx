@@ -66,12 +66,96 @@ export function StatsFormations() {
 
     const apprenantsPct = total ? (apprenantsActifs / total) * 100 : 0;
     const placesPct = total ? (totalPlacesRestantes / total) * 100 : 0;
+    const breakdown = formations.reduce(
+      (accumulator, formation) => {
+        const status = String(formation?.statut || "").trim().toLowerCase();
+
+        if (status === "actif") {
+          accumulator.actives += 1;
+        } else if (status === "annule") {
+          accumulator.annulees += 1;
+        } else {
+          accumulator.inactives += 1;
+        }
+
+        return accumulator;
+      },
+      {
+        actives: 0,
+        inactives: 0,
+        annulees: 0,
+      }
+    );
+
+    const cards = [
+      {
+        key: "catalogue",
+        label: "Catalogue",
+        value: formations.length,
+        note: `${apprenantsActifs} apprenant(s) inscrit(s)`,
+        tone: "primary",
+      },
+      {
+        key: "actives",
+        label: "Formations actives",
+        value: breakdown.actives,
+        note: "modules en cours ou disponibles",
+        tone: "success",
+      },
+      {
+        key: "places",
+        label: "Places libres",
+        value: totalPlacesRestantes,
+        note: "capacite restante a remplir",
+        tone: "neutral",
+      },
+      {
+        key: "annulees",
+        label: "Annulations",
+        value: breakdown.annulees,
+        note: `${breakdown.inactives} formation(s) en pause`,
+        tone: "alert",
+      },
+    ];
+
+    const distribution = [
+      {
+        key: "actives",
+        label: "Actives",
+        value: breakdown.actives,
+        tone: "strong",
+      },
+      {
+        key: "inactives",
+        label: "En pause",
+        value: breakdown.inactives,
+        tone: "soft",
+      },
+      {
+        key: "annulees",
+        label: "Annulees",
+        value: breakdown.annulees,
+        tone: "alert",
+      },
+      {
+        key: "apprenants",
+        label: "Apprenants",
+        value: apprenantsActifs,
+        tone: "highlight",
+      },
+    ];
 
     return {
+      totalFormations: formations.length,
       apprenantsActifs,
       totalPlacesRestantes,
       apprenantsPct,
       placesPct,
+      actives: breakdown.actives,
+      inactives: breakdown.inactives,
+      annulees: breakdown.annulees,
+      cards,
+      distribution,
     };
   }, [formations, inscriptions]);
 
@@ -85,51 +169,112 @@ export function StatsFormations() {
 
   return (
     <section className="stats-formations">
-      <div className="stats-layout">
-        
-        {/* === LEFT (CARDS) === */}
-        <div className="stats-left">
-          <div className="stats-box stats-box--blue">
-            <span>Apprenants actifs</span>
-            <h2>{stats.apprenantsActifs}</h2>
-          </div>
-
-          <div className="stats-box stats-box--green">
-            <span>Places restantes</span>
-            <h2>{stats.totalPlacesRestantes}</h2>
-          </div>
+      <div className="stats-header">
+        <div>
+          <span className="stats-header__eyebrow">Vue synthese</span>
+          <h2 className="stats-header__title">Performance du catalogue</h2>
+          <p className="stats-header__text">
+            Suivez le volume des formations, les places encore disponibles et le
+            niveau d&apos;occupation depuis le dashboard.
+          </p>
         </div>
+      </div>
 
-        {/* === RIGHT (DONUT) === */}
-        <div className="stats-right">
+      <div className="stats-cards">
+        {stats.cards.map((card) => (
+          <article
+            key={card.key}
+            className={`stats-card stats-card--${card.tone}`}
+          >
+            <span className="stats-card__label">{card.label}</span>
+            <strong className="stats-card__value">{card.value}</strong>
+            <p className="stats-card__note">{card.note}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="stats-bottom">
+        <article className="stats-panel stats-panel--analytics">
+          <div className="stats-panel__header">
+            <div>
+              <span className="stats-panel__eyebrow">Repartition</span>
+              <h3 className="stats-panel__title">Etat des formations</h3>
+            </div>
+            <strong className="stats-panel__meta">
+              {stats.totalFormations} au total
+            </strong>
+          </div>
+
+          <div className="stats-bars">
+            {stats.distribution.map((item) => {
+              const maxValue = Math.max(
+                ...stats.distribution.map((entry) => entry.value),
+                1
+              );
+              const width = `${Math.max((item.value / maxValue) * 100, 8)}%`;
+
+              return (
+                <div className="stats-bar" key={item.key}>
+                  <div className="stats-bar__top">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                  <div className="stats-bar__track">
+                    <span
+                      className={`stats-bar__value stats-bar__value--${item.tone}`}
+                      style={{ width }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </article>
+
+        <article className="stats-panel stats-panel--progress">
+          <div className="stats-panel__header">
+            <div>
+              <span className="stats-panel__eyebrow">Occupation</span>
+              <h3 className="stats-panel__title">Taux de remplissage</h3>
+            </div>
+            <strong className="stats-panel__meta">
+              {stats.apprenantsActifs} /{" "}
+              {stats.apprenantsActifs + stats.totalPlacesRestantes}
+            </strong>
+          </div>
+
           <div className="donut-wrapper">
             <div
               className="donut"
               style={{
                 background: `conic-gradient(
-                  #2563eb ${stats.apprenantsPct}%,
-                  #10b981 ${stats.apprenantsPct}% 100%
+                  #1f7a53 ${stats.apprenantsPct}%,
+                  #cfe7da ${stats.apprenantsPct}% 100%
                 )`,
               }}
             >
               <div className="donut-inner">
                 <span>{Math.round(stats.apprenantsPct)}%</span>
+                <small>taux rempli</small>
               </div>
             </div>
 
             <div className="donut-legend">
               <div>
-                <span className="dot blue"></span>
-                Apprenants
+                <span className="dot dot--filled"></span>
+                <span>Apprenants: {stats.apprenantsActifs}</span>
               </div>
               <div>
-                <span className="dot green"></span>
-                Places restantes
+                <span className="dot dot--empty"></span>
+                <span>Places libres: {stats.totalPlacesRestantes}</span>
+              </div>
+              <div>
+                <span className="dot dot--alert"></span>
+                <span>Part libre: {Math.round(stats.placesPct)}%</span>
               </div>
             </div>
           </div>
-        </div>
-
+        </article>
       </div>
     </section>
   );

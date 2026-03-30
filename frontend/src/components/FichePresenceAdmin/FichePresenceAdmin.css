@@ -902,3 +902,83 @@
     width: 100%;
   }
 }
+
+/* Dashboard palette sync */
+.fiches-admin,
+.fiches-admin__detail,
+.fiches-admin__import,
+.fiches-admin__import-panel,
+.fiches-admin__import-report,
+.fiches-admin__correction-card,
+.fiches-admin__modal {
+  border-color: #dfe8e2;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 251, 248, 0.96));
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.fiches-admin::before,
+.fiches-admin__import::before,
+.fiches-admin__import-panel::before,
+.fiches-admin__import-report::before {
+  background: linear-gradient(90deg, #174f37 0%, #1f7a53 100%);
+}
+
+.fiches-admin__refresh {
+  background: linear-gradient(135deg, #102a1d, #174f37);
+}
+
+.fiches-admin__view,
+.fiches-admin__apply {
+  background: linear-gradient(135deg, #174f37, #1f7a53);
+  box-shadow: 0 12px 24px rgba(31, 122, 83, 0.18);
+}
+
+.fiches-admin__reset {
+  background: #e9f3ee;
+  color: #214736;
+}
+
+.fiches-admin__detail-head,
+.fiches-admin__table th,
+.fiches-admin__participants-table th,
+.fiches-admin__modal-details,
+.fiches-admin__empty,
+.fiches-admin__empty--soft,
+.fiches-admin__import-stat,
+.fiches-admin__import-list,
+.fiches-admin__import-badge,
+.fiches-admin__import-status,
+.fiches-admin__correction-raw span,
+.fiches-admin__correction-field select {
+  border-color: #e1e8e3;
+  background: #f8fbf9;
+}
+
+.fiches-admin__import-eyebrow {
+  background: #e7f4ec;
+  border-color: #d7eadf;
+  color: #1f7a53;
+}
+
+.fiches-admin__count {
+  background: #e9f8ef;
+  border-color: #cfe7da;
+  color: #1f7a53;
+}
+
+.fiches-admin__import-input {
+  border-color: #d7e2da;
+  background: #fcfefd;
+}
+
+.fiches-admin__import-input::file-selector-button {
+  border: 1px solid rgba(31, 122, 83, 0.15);
+  background: linear-gradient(135deg, #174f37, #1f7a53);
+  color: #ffffff;
+}
+
+.fiches-admin__correction-field select:focus {
+  outline: none;
+  border-color: #1f7a53;
+  box-shadow: 0 0 0 4px rgba(31, 122, 83, 0.12);
+}

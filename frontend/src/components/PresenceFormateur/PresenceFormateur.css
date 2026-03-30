@@ -624,3 +624,89 @@
     flex-direction: column;
   }
 }
+
+/* Dashboard palette sync */
+.trainer-presence__refresh {
+  background: #edf7f1;
+  color: #1f7a53;
+}
+
+.trainer-presence__save,
+.trainer-presence__choice.is-active {
+  background: linear-gradient(135deg, #174f37, #1f7a53);
+  box-shadow: 0 12px 24px rgba(31, 122, 83, 0.2);
+}
+
+.trainer-presence__summary-card,
+.trainer-presence__import,
+.trainer-presence__import-panel,
+.trainer-presence__import-report,
+.trainer-presence__card,
+.trainer-presence__choice,
+.trainer-presence__textarea {
+  border-color: #dfe8e2;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
+}
+
+.trainer-presence__import {
+  background:
+    radial-gradient(circle at top right, rgba(31, 122, 83, 0.12), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+}
+
+.trainer-presence__import::before,
+.trainer-presence__import-panel::before,
+.trainer-presence__import-report::before {
+  background: linear-gradient(90deg, #174f37 0%, #1f7a53 100%);
+}
+
+.trainer-presence__import-report.is-ready {
+  border-color: #cfe7da;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.1), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f7fcf9 100%);
+}
+
+.trainer-presence__import-eyebrow {
+  background: #e7f4ec;
+  border-color: #d7eadf;
+  color: #1f7a53;
+}
+
+.trainer-presence__import-badge,
+.trainer-presence__import-status,
+.trainer-presence__import-stat {
+  border-color: #dfe8e2;
+  background: rgba(255, 255, 255, 0.88);
+  color: #355043;
+}
+
+.trainer-presence__import-input,
+.trainer-presence__textarea {
+  border-color: #d7e2da;
+  background: #fcfefd;
+}
+
+.trainer-presence__import-input::file-selector-button {
+  border: 1px solid rgba(31, 122, 83, 0.15);
+  background: linear-gradient(135deg, #174f37, #1f7a53);
+  color: #ffffff;
+}
+
+.trainer-presence__textarea:focus {
+  outline: none;
+  border-color: #1f7a53;
+  box-shadow: 0 0 0 4px rgba(31, 122, 83, 0.12);
+}
+
+.trainer-presence__badge.is-present {
+  background: #e9f8ef;
+  color: #1f7a53;
+}
+
+.trainer-presence__note {
+  background: #f8fbf9;
+  border-color: #e2eae4;
+  color: #65766d;
+}
