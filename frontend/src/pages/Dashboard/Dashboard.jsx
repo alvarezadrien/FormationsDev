@@ -1,5 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
+import {
+  FiBell,
+  FiBookOpen,
+  FiCalendar,
+  FiCheckSquare,
+  FiClock,
+  FiEdit3,
+  FiFolder,
+  FiGrid,
+  FiMail,
+  FiMapPin,
+  FiMessageSquare,
+  FiPlayCircle,
+  FiUserPlus,
+  FiUsers,
+} from "react-icons/fi";
 import "./Dashboard.css";
 
 const API_URL = "http://localhost:8080";
@@ -18,6 +34,51 @@ import { CalculHeure } from "../../components/CalculHeure/CalculHeure";
 import { GestionLocaux } from "../../components/GestionLocaux/GestionLocaux";
 import { ADMIN_MENU_ITEMS } from "../../features/dashboard/config/adminSections";
 
+const MENU_ICONS = {
+  "creation-formation": FiEdit3,
+  "formations-creees": FiFolder,
+  calendrier: FiCalendar,
+  "calcul-heure": FiClock,
+  locaux: FiMapPin,
+  formateurs: FiUserPlus,
+  users: FiUsers,
+  actives: FiPlayCircle,
+  avis: FiMessageSquare,
+  presences: FiCheckSquare,
+};
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function getDisplayName(user) {
+  const prenom = String(user?.prenom || "").trim();
+  const nom = String(user?.nom || "").trim();
+  const fallback = String(user?.email || "").trim();
+
+  return [prenom, nom].filter(Boolean).join(" ") || fallback || "Admin";
+}
+
+function getInitials(user) {
+  const prenom = String(user?.prenom || "").trim();
+  const nom = String(user?.nom || "").trim();
+  const source = [prenom, nom].filter(Boolean).join(" ").trim();
+
+  if (!source) {
+    return "AD";
+  }
+
+  return source
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((chunk) => chunk.charAt(0).toUpperCase())
+    .join("");
+}
+
 export default function AdminFormationsDashboard() {
   const [formationEnEdition, setFormationEnEdition] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -30,9 +91,33 @@ export default function AdminFormationsDashboard() {
   const isAdmin = localStorage.getItem("role") === "admin";
 
   const menuItems = useMemo(() => ADMIN_MENU_ITEMS, []);
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const displayName = useMemo(() => getDisplayName(currentUser), [currentUser]);
+  const userInitials = useMemo(() => getInitials(currentUser), [currentUser]);
+  const firstName =
+    String(currentUser?.prenom || "").trim() || displayName.split(" ")[0];
+  const todayLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat("fr-BE", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date()),
+    []
+  );
 
   const activeMenuItem = useMemo(
     () => menuItems.find((item) => item.key === activeSection) ?? menuItems[0],
+    [activeSection, menuItems]
+  );
+  const ActiveSectionIcon = MENU_ICONS[activeMenuItem?.key] || FiGrid;
+  const activeSectionIndex = useMemo(
+    () => Math.max(menuItems.findIndex((item) => item.key === activeSection), 0) + 1,
+    [activeSection, menuItems]
+  );
+  const quickSections = useMemo(
+    () => menuItems.filter((item) => item.key !== activeSection).slice(0, 4),
     [activeSection, menuItems]
   );
 
@@ -248,11 +333,12 @@ export default function AdminFormationsDashboard() {
           <section className="admin-section">
             <div className="admin-list">
               <div className="admin-list__header">
-                <span className="admin-list__eyebrow">Outil rapide</span>
+                <span className="admin-list__eyebrow">Suivi annuel</span>
                 <h2 className="admin-list__title">Calcule heure</h2>
                 <p className="admin-list__text">
-                  Calcule le nombre d'heures d'un créneau et le volume total
-                  selon la pause et le nombre de séances.
+                  Visualise le volume attendu, les heures déjà effectuées et la
+                  progression de toutes les formations actives sur l&apos;année
+                  civile.
                 </p>
               </div>
 
@@ -392,60 +478,58 @@ export default function AdminFormationsDashboard() {
 
   return (
     <main className="admin-dashboard">
-      <div className="admin-dashboard__topbar">
-        <StatsFormations />
-      </div>
-
-      <div className="admin-mobile-bar">
-        <div className="admin-mobile-bar__content">
-          <span className="admin-mobile-bar__label">Section active</span>
-          <strong className="admin-mobile-bar__title">
-            {activeMenuItem?.label || "Navigation"}
-          </strong>
-        </div>
-
-        <button
-          type="button"
-          className={`admin-menu-toggle admin-menu-toggle--sticky ${
-            menuOpen ? "is-open" : ""
-          }`}
-          onClick={() => setMenuOpen((prev) => !prev)}
-          aria-label="Ouvrir le menu de navigation"
-          aria-expanded={menuOpen}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-      </div>
-
       <div className="admin-shell">
         <aside className={`admin-sidebar ${menuOpen ? "is-open" : ""}`}>
+          <div className="admin-sidebar__brand">
+            <span className="admin-sidebar__brand-mark">
+              <FiBookOpen />
+            </span>
+            <div>
+              <span className="admin-sidebar__brand-kicker">Espace admin</span>
+              <h2 className="admin-sidebar__title">Centre de Formations</h2>
+            </div>
+          </div>
+
           <div className="admin-sidebar__header">
-            <h2 className="admin-sidebar__title">Navigation</h2>
-            <p className="admin-sidebar__text">
-              Choisis le module à afficher.
-            </p>
+            <p className="admin-sidebar__text">Navigation principale</p>
           </div>
 
           <nav className="admin-sidebar__nav">
-            {menuItems.map((item, index) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`admin-nav-btn ${
-                  activeSection === item.key ? "is-active" : ""
-                }`}
-                onClick={() => handleSectionChange(item.key)}
-              >
-                <span className="admin-nav-btn__index">
-                  {(index + 1).toString().padStart(2, "0")}
-                </span>
-                <span className="admin-nav-btn__label">{item.label}</span>
-                <span className="admin-nav-btn__desc">{item.description}</span>
-              </button>
-            ))}
+            {menuItems.map((item) => {
+              const ItemIcon = MENU_ICONS[item.key] || FiGrid;
+
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`admin-nav-btn ${
+                    activeSection === item.key ? "is-active" : ""
+                  }`}
+                  onClick={() => handleSectionChange(item.key)}
+                >
+                  <span className="admin-nav-btn__icon">
+                    <ItemIcon />
+                  </span>
+                  <span className="admin-nav-btn__content">
+                    <span className="admin-nav-btn__label">{item.label}</span>
+                    <span className="admin-nav-btn__desc">
+                      {item.description}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </nav>
+
+          <div className="admin-sidebar__footer">
+            <span className="admin-sidebar__footer-label">Module actif</span>
+            <strong className="admin-sidebar__footer-title">
+              {activeMenuItem?.label}
+            </strong>
+            <p className="admin-sidebar__text">
+              {activeMenuItem?.description}
+            </p>
+          </div>
         </aside>
 
         {menuOpen && (
@@ -458,17 +542,84 @@ export default function AdminFormationsDashboard() {
         )}
 
         <section className="admin-main">
+          <header className="admin-main-topbar">
+            <div className="admin-main-topbar__heading">
+              <span className="admin-main-topbar__eyebrow">
+                Tableau de bord
+              </span>
+              <h1 className="admin-main-topbar__title">
+                {activeMenuItem?.label || "Navigation"}
+              </h1>
+              <p className="admin-main-topbar__subtitle">
+                {todayLabel}
+              </p>
+            </div>
+          </header>
+
+          <section className="admin-overview">
+            <div className="admin-overview__intro">
+              <span className="admin-overview__eyebrow">
+                Bienvenue, {firstName}!
+              </span>
+              <h2 className="admin-overview__title">Résumé des activités</h2>
+              <p className="admin-overview__text">
+                Retrouve les indicateurs clés, bascule rapidement entre les
+                modules et garde une vue claire sur l&apos;espace
+                d&apos;administration.
+              </p>
+
+              <div className="admin-overview__chips">
+                <span className="admin-overview__chip">
+                  Section {activeSectionIndex.toString().padStart(2, "0")}
+                </span>
+                <span className="admin-overview__chip">
+                  {menuItems.length} modules disponibles
+                </span>
+                <span className="admin-overview__chip">
+                  Connexion sécurisée
+                </span>
+              </div>
+            </div>
+
+            <div className="admin-shortcuts">
+              {quickSections.map((item) => {
+                const ShortcutIcon = MENU_ICONS[item.key] || FiGrid;
+
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className="admin-shortcut-card"
+                    onClick={() => handleSectionChange(item.key)}
+                  >
+                    <span className="admin-shortcut-card__icon">
+                      <ShortcutIcon />
+                    </span>
+                    <strong className="admin-shortcut-card__title">
+                      {item.label}
+                    </strong>
+                    <span className="admin-shortcut-card__text">
+                      {item.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <StatsFormations />
+
           <div className="admin-main__header">
+            <span className="admin-main__icon">
+              <ActiveSectionIcon />
+            </span>
             <div className="admin-main__heading">
               <span className="admin-main__eyebrow">Module actif</span>
               <h2 className="admin-main__title">
-                {menuItems.find((item) => item.key === activeSection)?.label}
+                {activeMenuItem?.label}
               </h2>
               <p className="admin-main__subtitle">
-                {
-                  menuItems.find((item) => item.key === activeSection)
-                    ?.description
-                }
+                {activeMenuItem?.description}
               </p>
             </div>
           </div>

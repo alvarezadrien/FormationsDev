@@ -1,109 +1,139 @@
 .stats-formations {
   width: 100%;
-  padding: 24px;
-  margin-bottom: 24px;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  border-radius: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  padding: 1.2rem;
+  background: rgba(250, 251, 253, 0.94);
+  border: 1px solid rgba(205, 214, 228, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
+  box-sizing: border-box;
 }
 
-/* === LAYOUT GLOBAL === */
 .stats-layout {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
 }
 
-/* === LEFT === */
 .stats-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .stats-box {
-  padding: 20px;
-  border-radius: 16px;
-  color: white;
-  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem 1.2rem 1.55rem;
+  border: 1px solid #dde4ee;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+.stats-box::after {
+  content: "";
+  position: absolute;
+  left: 1.2rem;
+  right: 1.2rem;
+  bottom: 1rem;
+  height: 8px;
+  border-radius: 999px;
+  background: #d8e0ea;
 }
 
 .stats-box span {
   display: block;
-  font-size: 0.92rem;
-  font-weight: 700;
-  opacity: 0.92;
+  color: #304f83;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .stats-box h2 {
-  margin: 10px 0 0;
-  font-size: 2rem;
+  margin: 0.7rem 0 0;
+  color: #243b63;
+  font-size: 3rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
 }
 
-.stats-box--blue {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+.stats-box--blue::before,
+.stats-box--green::before {
+  content: "";
+  position: absolute;
+  inset: auto 1.2rem 1rem 1.2rem;
+  height: 8px;
+  border-radius: 999px;
+  z-index: 1;
 }
 
-.stats-box--green {
-  background: linear-gradient(135deg, #10b981, #059669);
+.stats-box--blue::before {
+  background: linear-gradient(90deg, #1f8ff7 0%, #2b67cb 78%, transparent 78%);
 }
 
-/* === RIGHT === */
+.stats-box--green::before {
+  background: linear-gradient(90deg, #15b7c7 0%, #1dbf88 72%, transparent 72%);
+}
+
 .stats-right {
-  width: 220px;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 20px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 1.1rem;
+  border: 1px solid #dde4ee;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
 }
 
-/* === DONUT === */
 .donut-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
 }
 
 .donut {
-  width: 160px;
-  height: 160px;
+  position: relative;
+  width: 182px;
+  height: 182px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: 0.4s;
+  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.18);
 }
 
 .donut-inner {
-  width: 100px;
-  height: 100px;
+  width: 116px;
+  height: 116px;
   background: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
   box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.06);
 }
 
 .donut-inner span {
-  font-size: 1.3rem;
-  color: #0f172a;
+  color: #243b63;
+  font-size: 2rem;
+  font-weight: 800;
 }
 
-/* === LEGEND === */
 .donut-legend {
-  margin-top: 16px;
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  color: #50627d;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.donut-legend div {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: #475569;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .dot {
@@ -111,7 +141,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  margin-right: 6px;
+  flex-shrink: 0;
 }
 
 .dot.blue {
@@ -122,26 +152,32 @@
   background: #10b981;
 }
 
-/* === STATES === */
 .stats-message {
-  padding: 16px;
-  color: #475569;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(250, 251, 253, 0.94);
+  border: 1px solid rgba(205, 214, 228, 0.95);
+  color: #50627d;
   font-weight: 700;
 }
 
 .stats-message.error {
-  color: #dc2626;
+  color: #b42318;
 }
 
-[data-theme="dark"] .stats-formations {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.94));
+[data-theme="dark"] .stats-formations,
+[data-theme="dark"] .stats-right,
+[data-theme="dark"] .stats-box,
+[data-theme="dark"] .stats-message {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.96));
   border-color: rgba(51, 65, 85, 0.92);
-  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.28);
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.24);
 }
 
-[data-theme="dark"] .stats-right {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(17, 28, 49, 0.94));
-  border-color: rgba(51, 65, 85, 0.92);
+[data-theme="dark"] .stats-box span,
+[data-theme="dark"] .donut-inner span,
+[data-theme="dark"] .stats-message {
+  color: #eff6ff;
 }
 
 [data-theme="dark"] .donut-inner {
@@ -149,21 +185,37 @@
   box-shadow: inset 0 0 22px rgba(2, 6, 23, 0.32);
 }
 
-[data-theme="dark"] .donut-inner span,
-[data-theme="dark"] .donut-legend,
-[data-theme="dark"] .stats-message {
-  color: #e5eefb;
+[data-theme="dark"] .donut-legend {
+  color: #94a3b8;
 }
 
-/* === RESPONSIVE === */
-@media (max-width: 768px) {
+[data-theme="dark"] .stats-box::after {
+  background: rgba(71, 85, 105, 0.7);
+}
+
+@media (max-width: 1080px) {
   .stats-layout {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .stats-formations,
+  .stats-box,
+  .stats-right {
+    border-radius: 20px;
   }
 
-  .stats-right {
-    width: 100%;
-    justify-content: center;
+  .stats-left {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-box h2 {
+    font-size: 2.5rem;
+  }
+
+  .donut {
+    width: 162px;
+    height: 162px;
   }
 }
