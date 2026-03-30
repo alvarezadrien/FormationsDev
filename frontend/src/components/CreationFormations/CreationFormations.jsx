@@ -987,21 +987,33 @@ export function CreationFormations({
                   </div>
 
                   <div className="admin-creneau-days">
-                    {JOURS_OPTIONS.map((jour) => (
-                      <label
-                        key={jour.value}
-                        className={`admin-creneau-day ${
-                          creneau.jours?.includes(jour.value) ? "is-active" : ""
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={creneau.jours?.includes(jour.value) || false}
-                          onChange={() => handleJourToggle(index, jour.value)}
-                        />
-                        <span>{jour.label}</span>
-                      </label>
-                    ))}
+                    {JOURS_OPTIONS.map((jour) => {
+                      const isSelected =
+                        creneau.jours?.includes(jour.value) || false;
+
+                      return (
+                        <label
+                          key={jour.value}
+                          className={`admin-creneau-day ${
+                            isSelected ? "is-active" : ""
+                          }`}
+                        >
+                          <input
+                            className="admin-creneau-day__input"
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleJourToggle(index, jour.value)}
+                          />
+                          <span
+                            className="admin-creneau-day__check"
+                            aria-hidden="true"
+                          />
+                          <span className="admin-creneau-day__label">
+                            {jour.label}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
