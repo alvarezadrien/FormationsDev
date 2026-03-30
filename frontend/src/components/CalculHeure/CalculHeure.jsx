@@ -1,80 +1,81 @@
 import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import "dayjs/locale/fr";
+
+dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrBefore);
+dayjs.locale("fr");
 
 const API_URL = "http://localhost:8080";
 
-function parseTimeToMinutes(value) {
-  if (typeof value !== "string") {
-    return null;
+function normalizeTimeValue(value = "00:00:00") {
+  const time = String(value).trim();
+
+  if (/^\d{2}:\d{2}$/.test(time)) {
+    return `${time}:00`;
   }
 
-  const match = value.trim().match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
-
-  if (!match) {
-    return null;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(time)) {
+    return time;
   }
 
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-
-  if (
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes) ||
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-  ) {
-    return null;
-  }
-
-  return hours * 60 + minutes;
+  return null;
 }
 
-function toLocalDateTime(dateValue, timeValue = "00:00:00") {
+function parseDate(dateValue) {
   if (typeof dateValue !== "string") {
     return null;
   }
 
-  const dateMatch = dateValue.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const timeMatch = String(timeValue)
-    .trim()
-    .match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  const parsedDate = dayjs(dateValue.trim(), "YYYY-MM-DD", true);
 
-  if (!dateMatch || !timeMatch) {
+  return parsedDate.isValid() ? parsedDate : null;
+}
+
+function parseDateTime(dateValue, timeValue = "00:00:00") {
+  const parsedDate = parseDate(dateValue);
+  const normalizedTime = normalizeTimeValue(timeValue);
+
+  if (!parsedDate || !normalizedTime) {
     return null;
   }
 
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-  const hours = Number(timeMatch[1]);
-  const minutes = Number(timeMatch[2]);
-  const seconds = Number(timeMatch[3] ?? 0);
+  const parsedDateTime = dayjs(
+    `${parsedDate.format("YYYY-MM-DD")} ${normalizedTime}`,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
 
-  if (
-    [year, month, day, hours, minutes, seconds].some((value) =>
-      Number.isNaN(value)
-    )
-  ) {
+  return parsedDateTime.isValid() ? parsedDateTime : null;
+}
+
+function parseClockTime(timeValue) {
+  const normalizedTime = normalizeTimeValue(timeValue);
+
+  if (!normalizedTime) {
     return null;
   }
 
-  return new Date(year, month - 1, day, hours, minutes, seconds);
+  const parsedTime = dayjs(
+    `2000-01-01 ${normalizedTime}`,
+    "YYYY-MM-DD HH:mm:ss",
+    true
+  );
+
+  return parsedTime.isValid() ? parsedTime : null;
 }
 
 function getSessionDurationMinutes(session) {
-  const startMinutes = parseTimeToMinutes(session?.heure_debut);
-  const endMinutes = parseTimeToMinutes(session?.heure_fin);
+  const startTime = parseClockTime(session?.heure_debut);
+  const endTime = parseClockTime(session?.heure_fin);
 
-  if (
-    startMinutes === null ||
-    endMinutes === null ||
-    endMinutes <= startMinutes
-  ) {
+  if (!startTime || !endTime || !endTime.isAfter(startTime)) {
     return 0;
   }
 
-  return endMinutes - startMinutes;
+  return endTime.diff(startTime, "minute");
 }
 
 function formatDuration(totalMinutes) {
@@ -94,30 +95,23 @@ function formatSessionLabel(count) {
 }
 
 function formatDate(dateValue) {
-  const date = toLocalDateTime(dateValue);
+  const parsedDate = parseDate(dateValue);
 
-  if (!date) {
+  if (!parsedDate) {
     return "Date inconnue";
   }
 
-  return new Intl.DateTimeFormat("fr-BE", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  return parsedDate.format("DD MMM YYYY");
 }
 
 function formatShortDate(dateValue) {
-  const date = toLocalDateTime(dateValue);
+  const parsedDate = parseDate(dateValue);
 
-  if (!date) {
+  if (!parsedDate) {
     return "Non planifiée";
   }
 
-  return new Intl.DateTimeFormat("fr-BE", {
-    day: "2-digit",
-    month: "short",
-  }).format(date);
+  return parsedDate.format("DD MMM");
 }
 
 function isActiveFormation(formation) {
@@ -125,14 +119,34 @@ function isActiveFormation(formation) {
 }
 
 function isSessionInsideCivilYear(session, currentYear) {
-  return typeof session?.date === "string" && session.date.startsWith(`${currentYear}-`);
+  const sessionDate = parseDate(session?.date);
+
+  return Boolean(sessionDate && sessionDate.year() === currentYear);
 }
 
-function compareSessions(a, b) {
-  const first = `${a?.date ?? ""} ${a?.heure_debut ?? ""}`;
-  const second = `${b?.date ?? ""} ${b?.heure_debut ?? ""}`;
+function compareSessions(firstSession, secondSession) {
+  const firstDate = parseDateTime(
+    firstSession?.date,
+    firstSession?.heure_debut || "00:00:00"
+  );
+  const secondDate = parseDateTime(
+    secondSession?.date,
+    secondSession?.heure_debut || "00:00:00"
+  );
 
-  return first.localeCompare(second);
+  if (!firstDate && !secondDate) {
+    return 0;
+  }
+
+  if (!firstDate) {
+    return 1;
+  }
+
+  if (!secondDate) {
+    return -1;
+  }
+
+  return firstDate.valueOf() - secondDate.valueOf();
 }
 
 function getFormateurLabel(formation) {
@@ -147,13 +161,132 @@ function getFormateurLabel(formation) {
   return formation?.formateur_email || "Formateur non renseigné";
 }
 
+function getFormationWindowLabel(formation, currentYear) {
+  if (formation.dateDebut && formation.dateFin) {
+    return `${formatShortDate(formation.dateDebut)} -> ${formatShortDate(
+      formation.dateFin
+    )}`;
+  }
+
+  return `Aucune séance planifiée en ${currentYear}`;
+}
+
+function escapeCsvValue(value) {
+  const safeValue = String(value ?? "");
+
+  if (/[;"\n]/.test(safeValue)) {
+    return `"${safeValue.replaceAll('"', '""')}"`;
+  }
+
+  return safeValue;
+}
+
+function buildCsvContent(formations, currentYear) {
+  const rows = [
+    [
+      "Formation",
+      "Formateur principal",
+      "Debut",
+      "Fin",
+      "Heures attendues",
+      "Heures realisees",
+      "Heures restantes",
+      "Seances realisees",
+      "Seances totales",
+      "Seances restantes",
+      "Progression",
+      "Fenetre",
+    ],
+    ...formations.map((formation) => [
+      formation.nom,
+      formation.formateur,
+      formation.dateDebut ? formatDate(formation.dateDebut) : "Non planifiée",
+      formation.dateFin ? formatDate(formation.dateFin) : "Non planifiée",
+      formatDuration(formation.totalMinutes),
+      formatDuration(formation.completedMinutes),
+      formatDuration(formation.remainingMinutes),
+      formation.completedSessions,
+      formation.totalSessions,
+      formation.remainingSessions,
+      formatPercent(formation.progress),
+      getFormationWindowLabel(formation, currentYear),
+    ]),
+  ];
+
+  return `\uFEFF${rows
+    .map((row) => row.map(escapeCsvValue).join(";"))
+    .join("\n")}`;
+}
+
+function downloadCsv(content, fileName) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function isSelectedFormation(formationId, selectedFormationId) {
+  return String(formationId) === String(selectedFormationId);
+}
+
+function FormationStats({ formation }) {
+  return (
+    <div className="admin-hours-card__stats">
+      <div className="admin-hours-card__stat">
+        <span>Heures attendues</span>
+        <strong>{formatDuration(formation.totalMinutes)}</strong>
+      </div>
+
+      <div className="admin-hours-card__stat">
+        <span>Déjà faites</span>
+        <strong>{formatDuration(formation.completedMinutes)}</strong>
+      </div>
+
+      <div className="admin-hours-card__stat">
+        <span>Encore possibles</span>
+        <strong>{formatDuration(formation.remainingMinutes)}</strong>
+      </div>
+
+      <div className="admin-hours-card__stat">
+        <span>Séances</span>
+        <strong>
+          {formation.completedSessions}/{formation.totalSessions}
+        </strong>
+      </div>
+    </div>
+  );
+}
+
+function FormationFooter({ formation, currentYear }) {
+  return (
+    <div className="admin-hours-card__footer">
+      <p>
+        <strong>Fenêtre {currentYear} :</strong>{" "}
+        {getFormationWindowLabel(formation, currentYear)}
+      </p>
+      <p>
+        <strong>Reste planifié :</strong>{" "}
+        {formatSessionLabel(formation.remainingSessions)}
+      </p>
+    </div>
+  );
+}
+
 export function CalculHeure() {
   const [formations, setFormations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState("cards");
+  const [selectedFormationId, setSelectedFormationId] = useState(null);
 
-  const referenceDate = useMemo(() => new Date(), []);
-  const currentYear = referenceDate.getFullYear();
+  const referenceDate = useMemo(() => dayjs(), []);
+  const currentYear = referenceDate.year();
   const civilYearStart = `${currentYear}-01-01`;
   const civilYearEnd = `${currentYear}-12-31`;
 
@@ -213,11 +346,13 @@ export function CalculHeure() {
         const stats = annualSessions.reduce(
           (accumulator, session) => {
             const durationMinutes = getSessionDurationMinutes(session);
-            const sessionEnd = toLocalDateTime(
+            const sessionEnd = parseDateTime(
               session?.date,
               session?.heure_fin || session?.heure_debut || "00:00:00"
             );
-            const isCompleted = sessionEnd ? sessionEnd <= referenceDate : false;
+            const isCompleted = Boolean(
+              sessionEnd && sessionEnd.isSameOrBefore(referenceDate)
+            );
 
             accumulator.totalSessions += 1;
             accumulator.totalMinutes += durationMinutes;
@@ -299,6 +434,51 @@ export function CalculHeure() {
     };
   }, [formations, currentYear, referenceDate]);
 
+  useEffect(() => {
+    if (dashboardData.activeFormations.length === 0) {
+      setSelectedFormationId(null);
+      return;
+    }
+
+    const selectedStillExists = dashboardData.activeFormations.some((formation) =>
+      isSelectedFormation(formation.id, selectedFormationId)
+    );
+
+    if (!selectedStillExists) {
+      setSelectedFormationId(dashboardData.activeFormations[0].id);
+    }
+  }, [dashboardData.activeFormations, selectedFormationId]);
+
+  const selectedFormation = useMemo(
+    () =>
+      dashboardData.activeFormations.find((formation) =>
+        isSelectedFormation(formation.id, selectedFormationId)
+      ) ??
+      dashboardData.activeFormations[0] ??
+      null,
+    [dashboardData.activeFormations, selectedFormationId]
+  );
+
+  const csvContent = useMemo(
+    () => buildCsvContent(dashboardData.activeFormations, currentYear),
+    [dashboardData.activeFormations, currentYear]
+  );
+
+  const handleSelectFormation = (formationId) => {
+    setSelectedFormationId(formationId);
+  };
+
+  const handleTableRowKeyDown = (event, formationId) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleSelectFormation(formationId);
+    }
+  };
+
+  const handleExportCsv = () => {
+    downloadCsv(csvContent, `suivi-heures-${currentYear}.csv`);
+  };
+
   if (loading) {
     return <div className="admin-loading">Chargement du suivi horaire...</div>;
   }
@@ -377,7 +557,11 @@ export function CalculHeure() {
               {dashboardData.totals.completedSessions}/
               {dashboardData.totals.totalSessions} séances passées
             </strong>
-            <span>Reste {formatSessionLabel(dashboardData.totals.remainingSessions)} planifiées</span>
+            <span>
+              Reste{" "}
+              {formatSessionLabel(dashboardData.totals.remainingSessions)}{" "}
+              planifiées
+            </span>
           </div>
         </div>
 
@@ -406,78 +590,230 @@ export function CalculHeure() {
         </div>
       </section>
 
-      <div className="admin-hours__grid">
-        {dashboardData.activeFormations.map((formation) => (
-          <article key={formation.id} className="admin-hours-card">
-            <div className="admin-hours-card__top">
-              <div>
-                <span className="admin-card__eyebrow">Formation active</span>
-                <h3 className="admin-hours-card__title">{formation.nom}</h3>
-                <p className="admin-hours-card__meta">
-                  Formateur principal : {formation.formateur}
-                </p>
-              </div>
+      <section className="admin-hours__toolbar">
+        <div>
+          <p className="admin-hours__toolbar-label">Affichage disponible</p>
 
-              <div className="admin-hours-card__badge">
-                {formatPercent(formation.progress)}
-              </div>
-            </div>
-
-            <div
-              className="admin-hours-progress admin-hours-progress--card"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(formation.progress)}
-              aria-label={`Progression annuelle de ${formation.nom}`}
+          <div
+            className="admin-hours__view-switch"
+            role="group"
+            aria-label="Choisir une vue du suivi horaire"
+          >
+            <button
+              type="button"
+              className={`admin-hours__view-btn ${
+                viewMode === "cards" ? "is-active" : ""
+              }`}
+              onClick={() => setViewMode("cards")}
+              aria-pressed={viewMode === "cards"}
             >
-              <div
-                className="admin-hours-progress__value"
-                style={{ width: `${Math.min(formation.progress, 100)}%` }}
-              />
-            </div>
+              Vue box
+            </button>
 
-            <div className="admin-hours-card__stats">
-              <div className="admin-hours-card__stat">
-                <span>Heures attendues</span>
-                <strong>{formatDuration(formation.totalMinutes)}</strong>
-              </div>
+            <button
+              type="button"
+              className={`admin-hours__view-btn ${
+                viewMode === "table" ? "is-active" : ""
+              }`}
+              onClick={() => setViewMode("table")}
+              aria-pressed={viewMode === "table"}
+            >
+              Voir en tableau
+            </button>
+          </div>
+        </div>
 
-              <div className="admin-hours-card__stat">
-                <span>Déjà faites</span>
-                <strong>{formatDuration(formation.completedMinutes)}</strong>
-              </div>
+        <div className="admin-hours__toolbar-actions">
+          <p className="admin-hours__toolbar-text">
+            Box sélectionnée :{" "}
+            <strong>{selectedFormation?.nom ?? "Aucune formation"}</strong>
+          </p>
 
-              <div className="admin-hours-card__stat">
-                <span>Encore possibles</span>
-                <strong>{formatDuration(formation.remainingMinutes)}</strong>
-              </div>
+          <button
+            type="button"
+            className="admin-btn admin-btn--secondary admin-hours__export-btn"
+            onClick={handleExportCsv}
+          >
+            Exporter le tableau en CSV
+          </button>
+        </div>
+      </section>
 
-              <div className="admin-hours-card__stat">
-                <span>Séances</span>
-                <strong>
-                  {formation.completedSessions}/{formation.totalSessions}
-                </strong>
-              </div>
-            </div>
-
-            <div className="admin-hours-card__footer">
-              <p>
-                <strong>Fenêtre {currentYear} :</strong>{" "}
-                {formation.dateDebut && formation.dateFin
-                  ? `${formatShortDate(formation.dateDebut)} -> ${formatShortDate(
-                      formation.dateFin
-                    )}`
-                  : `Aucune séance planifiée en ${currentYear}`}
-              </p>
-              <p>
-                <strong>Reste planifié :</strong>{" "}
-                {formatSessionLabel(formation.remainingSessions)}
+      {selectedFormation ? (
+        <section className="admin-hours-card admin-hours-card--focus">
+          <div className="admin-hours-card__top">
+            <div>
+              <span className="admin-card__eyebrow">Formation sélectionnée</span>
+              <h3 className="admin-hours-card__title">{selectedFormation.nom}</h3>
+              <p className="admin-hours-card__meta">
+                Formateur principal : {selectedFormation.formateur}
               </p>
             </div>
-          </article>
-        ))}
-      </div>
+
+            <div className="admin-hours-card__badge">
+              {formatPercent(selectedFormation.progress)}
+            </div>
+          </div>
+
+          <div
+            className="admin-hours-progress admin-hours-progress--card"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(selectedFormation.progress)}
+            aria-label={`Progression annuelle de ${selectedFormation.nom}`}
+          >
+            <div
+              className="admin-hours-progress__value"
+              style={{ width: `${Math.min(selectedFormation.progress, 100)}%` }}
+            />
+          </div>
+
+          <FormationStats formation={selectedFormation} />
+          <FormationFooter formation={selectedFormation} currentYear={currentYear} />
+        </section>
+      ) : null}
+
+      {viewMode === "cards" ? (
+        <div className="admin-hours__grid">
+          {dashboardData.activeFormations.map((formation) => {
+            const selected = isSelectedFormation(
+              formation.id,
+              selectedFormation?.id
+            );
+
+            return (
+              <article
+                key={formation.id}
+                className={`admin-hours-card ${selected ? "is-selected" : ""}`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selected}
+                onClick={() => handleSelectFormation(formation.id)}
+                onKeyDown={(event) => handleTableRowKeyDown(event, formation.id)}
+              >
+                <div className="admin-hours-card__top">
+                  <div>
+                    <span className="admin-card__eyebrow">Formation active</span>
+                    <h3 className="admin-hours-card__title">{formation.nom}</h3>
+                    <p className="admin-hours-card__meta">
+                      Formateur principal : {formation.formateur}
+                    </p>
+                  </div>
+
+                  <div className="admin-hours-card__badge">
+                    {formatPercent(formation.progress)}
+                  </div>
+                </div>
+
+                <div
+                  className="admin-hours-progress admin-hours-progress--card"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(formation.progress)}
+                  aria-label={`Progression annuelle de ${formation.nom}`}
+                >
+                  <div
+                    className="admin-hours-progress__value"
+                    style={{ width: `${Math.min(formation.progress, 100)}%` }}
+                  />
+                </div>
+
+                <FormationStats formation={formation} />
+                <FormationFooter formation={formation} currentYear={currentYear} />
+
+                <div className="admin-hours-card__selection">
+                  <span>
+                    {selected
+                      ? "Cette box est affichée au-dessus."
+                      : "Cliquer pour l'afficher en priorité."}
+                  </span>
+                  <strong>{selected ? "Sélectionnée" : "Disponible"}</strong>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <section className="admin-hours__table-shell">
+          <div className="admin-hours__table-scroll">
+            <table className="admin-hours__table">
+              <caption>
+                Vue tableau du suivi horaire {currentYear}, exportable en CSV.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Formation</th>
+                  <th scope="col">Début</th>
+                  <th scope="col">Fin</th>
+                  <th scope="col">Heures attendues</th>
+                  <th scope="col">Réalisées</th>
+                  <th scope="col">Restantes</th>
+                  <th scope="col">Séances</th>
+                  <th scope="col">Progression</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {dashboardData.activeFormations.map((formation) => {
+                  const selected = isSelectedFormation(
+                    formation.id,
+                    selectedFormation?.id
+                  );
+
+                  return (
+                    <tr
+                      key={formation.id}
+                      className={selected ? "is-selected" : ""}
+                      tabIndex={0}
+                      aria-label={
+                        selected
+                          ? `${formation.nom} sélectionnée`
+                          : `Afficher ${formation.nom} dans la box de détail`
+                      }
+                      onClick={() => handleSelectFormation(formation.id)}
+                      onKeyDown={(event) =>
+                        handleTableRowKeyDown(event, formation.id)
+                      }
+                    >
+                      <td>
+                        <strong>{formation.nom}</strong>
+                        <span>{formation.formateur}</span>
+                      </td>
+                      <td>
+                        {formation.dateDebut
+                          ? formatDate(formation.dateDebut)
+                          : "Non planifiée"}
+                      </td>
+                      <td>
+                        {formation.dateFin
+                          ? formatDate(formation.dateFin)
+                          : "Non planifiée"}
+                      </td>
+                      <td>{formatDuration(formation.totalMinutes)}</td>
+                      <td>{formatDuration(formation.completedMinutes)}</td>
+                      <td>{formatDuration(formation.remainingMinutes)}</td>
+                      <td>
+                        {formation.completedSessions}/{formation.totalSessions}
+                        <span className="admin-hours__table-muted">
+                          {formatSessionLabel(formation.remainingSessions)}{" "}
+                          restantes
+                        </span>
+                      </td>
+                      <td>
+                        <span className="admin-hours__table-progress">
+                          {formatPercent(formation.progress)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -3092,3 +3092,339 @@
 [data-theme="dark"] .admin-location-chip::before {
   background: #93c5fd;
 }
+
+.admin-hours__toolbar,
+.admin-hours__table-shell {
+  border: 1px solid #e4ebf5;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 26%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+}
+
+.admin-hours__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+}
+
+.admin-hours__toolbar-label {
+  margin: 0 0 0.65rem;
+  color: #56677d;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-hours__view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-hours__view-btn {
+  border: 1px solid #d8e3f2;
+  border-radius: 14px;
+  padding: 0.78rem 1rem;
+  background: #f7faff;
+  color: #24406a;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.admin-hours__view-btn:hover {
+  transform: translateY(-1px);
+  border-color: #bfd1eb;
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.08);
+}
+
+.admin-hours__view-btn.is-active {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.18);
+}
+
+.admin-hours__toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.admin-hours__toolbar-text {
+  margin: 0;
+  color: #5f7086;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.admin-hours__toolbar-text strong {
+  color: #17325a;
+}
+
+.admin-hours__export-btn {
+  white-space: nowrap;
+}
+
+.admin-hours-card[role="button"] {
+  cursor: pointer;
+}
+
+.admin-hours-card.is-selected,
+.admin-hours-card--focus {
+  border-color: #bfd5ff;
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.08),
+    0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.admin-hours-card:focus-visible,
+.admin-hours__table tbody tr:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(79, 124, 255, 0.14),
+    0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.admin-hours-card__selection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.95rem;
+  border-top: 1px solid #e5ebf4;
+  color: #56677d;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.admin-hours-card__selection strong {
+  color: #1d4ed8;
+}
+
+.admin-hours__table-shell {
+  overflow: hidden;
+}
+
+.admin-hours__table-scroll {
+  overflow-x: auto;
+}
+
+.admin-hours__table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-hours__table caption {
+  padding: 1rem 1.15rem 0;
+  color: #667085;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.admin-hours__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid #e6edf7;
+  background: rgba(248, 251, 255, 0.96);
+  color: #55677f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.admin-hours__table tbody tr {
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.admin-hours__table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.admin-hours__table tbody tr.is-selected {
+  background: rgba(37, 99, 235, 0.07);
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+.admin-hours__table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e8eef7;
+  color: #243243;
+  font-size: 0.93rem;
+  line-height: 1.45;
+  vertical-align: top;
+}
+
+.admin-hours__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-hours__table td strong {
+  display: block;
+  color: #162033;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.admin-hours__table td span {
+  display: block;
+  margin-top: 0.24rem;
+  color: #697386;
+  font-size: 0.86rem;
+}
+
+.admin-hours__table-muted {
+  color: #697386;
+}
+
+.admin-hours__table-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 0.45rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid #dce6f5;
+  background: #eaf2ff;
+  color: #1d4ed8;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+@media (max-width: 960px) {
+  .admin-hours__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-hours__toolbar-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-hours__toolbar,
+  .admin-hours__table-shell {
+    border-radius: 20px;
+  }
+
+  .admin-hours__view-switch {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hours__view-btn,
+  .admin-hours__export-btn {
+    width: 100%;
+  }
+
+  .admin-hours__toolbar-actions {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-hours__table caption {
+    padding: 0.9rem 1rem 0;
+  }
+}
+
+[data-theme="dark"] .admin-hours__toolbar,
+[data-theme="dark"] .admin-hours__table-shell {
+  border-color: rgba(51, 65, 85, 0.92);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.96));
+  box-shadow: 0 18px 38px rgba(2, 6, 23, 0.24);
+}
+
+[data-theme="dark"] .admin-hours__toolbar-label,
+[data-theme="dark"] .admin-hours__toolbar-text,
+[data-theme="dark"] .admin-hours__table caption,
+[data-theme="dark"] .admin-hours__table td span,
+[data-theme="dark"] .admin-hours__table-muted,
+[data-theme="dark"] .admin-hours-card__selection {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .admin-hours__toolbar-text strong,
+[data-theme="dark"] .admin-hours__table td strong {
+  color: #eff6ff;
+}
+
+[data-theme="dark"] .admin-hours__view-btn {
+  border-color: rgba(51, 65, 85, 0.92);
+  background: rgba(15, 23, 42, 0.92);
+  color: #dbeafe;
+}
+
+[data-theme="dark"] .admin-hours__view-btn.is-active {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .admin-hours-card.is-selected,
+[data-theme="dark"] .admin-hours-card--focus {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: linear-gradient(180deg, rgba(12, 22, 38, 0.98), rgba(18, 31, 52, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.22),
+    0 20px 40px rgba(2, 6, 23, 0.28);
+}
+
+[data-theme="dark"] .admin-hours-card__selection {
+  border-top-color: rgba(51, 65, 85, 0.72);
+}
+
+[data-theme="dark"] .admin-hours-card__selection strong,
+[data-theme="dark"] .admin-hours__table-progress {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .admin-hours__table thead th {
+  border-bottom-color: rgba(51, 65, 85, 0.92);
+  background: rgba(15, 23, 42, 0.98);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .admin-hours__table tbody tr:hover {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+[data-theme="dark"] .admin-hours__table tbody tr.is-selected {
+  background: rgba(30, 64, 175, 0.18);
+  box-shadow: inset 4px 0 0 #60a5fa;
+}
+
+[data-theme="dark"] .admin-hours__table td {
+  border-bottom-color: rgba(51, 65, 85, 0.72);
+  color: #dbeafe;
+}
+
+[data-theme="dark"] .admin-hours__table-progress {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(37, 99, 235, 0.16);
+}
