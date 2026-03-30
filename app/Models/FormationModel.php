@@ -17,6 +17,8 @@ class FormationModel extends Model
         'second_formateur_id',
         'remplacant_id',
         'lieu',
+        'ville',
+        'local_nom',
         'description',
         'nombre_participants',
         'statut',

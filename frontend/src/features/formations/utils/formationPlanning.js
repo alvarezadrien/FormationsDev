@@ -26,6 +26,8 @@ export function createInitialFormationForm() {
     co_animation: false,
     second_formateur_id: "",
     remplacant_id: "",
+    ville: "",
+    local: "",
     lieu: "",
     description: "",
     nombre_participants: 0,
@@ -214,7 +216,13 @@ export function buildFormationPayload(formData) {
     remplacant_id: formData.remplacant_id
       ? Number(formData.remplacant_id)
       : null,
-    lieu: formData.lieu.trim(),
+    ville: formData.ville.trim(),
+    local_nom: formData.local.trim(),
+    lieu:
+      formData.lieu.trim() ||
+      [formData.ville.trim(), formData.local.trim()]
+        .filter(Boolean)
+        .join(" - "),
     description: formData.description.trim(),
     nombre_participants: Number(formData.nombre_participants),
     statut: formData.statut,

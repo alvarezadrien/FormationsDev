@@ -22,19 +22,34 @@ class Formation extends Controller
     {
         $db = \Config\Database::connect();
         $fields = $db->getFieldData('formations');
-        $hasSecondFormateur = false;
+        $fieldNames = array_map(static fn($field) => $field->name ?? '', $fields);
+        $lieuFields = $db->getFieldData('lieu');
+        $lieuFieldNames = array_map(static fn($field) => $field->name ?? '', $lieuFields);
 
-        foreach ($fields as $field) {
-            if (($field->name ?? null) === 'second_formateur_id') {
-                $hasSecondFormateur = true;
-                break;
-            }
-        }
-
-        if (!$hasSecondFormateur) {
+        if (!in_array('second_formateur_id', $fieldNames, true)) {
             $db->query(
                 'ALTER TABLE formations ADD COLUMN second_formateur_id INT NULL AFTER formateur_id'
             );
+        }
+
+        if (!in_array('ville', $fieldNames, true)) {
+            $db->query(
+                'ALTER TABLE formations ADD COLUMN ville VARCHAR(120) NULL AFTER lieu'
+            );
+        }
+
+        if (!in_array('local_nom', $fieldNames, true)) {
+            $db->query(
+                'ALTER TABLE formations ADD COLUMN local_nom VARCHAR(120) NULL AFTER ville'
+            );
+        }
+
+        if (!in_array('ville', $lieuFieldNames, true)) {
+            $db->query('ALTER TABLE lieu ADD COLUMN ville VARCHAR(120) NULL AFTER nom');
+        }
+
+        if (!in_array('local_nom', $lieuFieldNames, true)) {
+            $db->query('ALTER TABLE lieu ADD COLUMN local_nom VARCHAR(120) NULL AFTER ville');
         }
     }
 
@@ -87,6 +102,14 @@ class Formation extends Controller
 
                 foreach ($formations as &$formation) {
                     $formation['sessions'] = $sessionsByFormation[$formation['id']] ?? [];
+                    $location = $this->resolveLocationFields(
+                        $formation['ville'] ?? '',
+                        $formation['local_nom'] ?? '',
+                        $formation['lieu'] ?? ''
+                    );
+                    $formation['ville'] = $location['ville'];
+                    $formation['local_nom'] = $location['local_nom'];
+                    $formation['lieu'] = $location['lieu'];
                 }
                 unset($formation);
             }
@@ -145,6 +168,14 @@ class Formation extends Controller
                 ->orderBy('heure_debut', 'ASC')
                 ->get()
                 ->getResultArray();
+            $location = $this->resolveLocationFields(
+                $formation['ville'] ?? '',
+                $formation['local_nom'] ?? '',
+                $formation['lieu'] ?? ''
+            );
+            $formation['ville'] = $location['ville'];
+            $formation['local_nom'] = $location['local_nom'];
+            $formation['lieu'] = $location['lieu'];
 
             return $this->response->setJSON($formation);
         } catch (\Throwable $e) {
@@ -248,6 +279,14 @@ class Formation extends Controller
                 ->orderBy('heure_debut', 'ASC')
                 ->get()
                 ->getResultArray();
+            $location = $this->resolveLocationFields(
+                $formation['ville'] ?? '',
+                $formation['local_nom'] ?? '',
+                $formation['lieu'] ?? ''
+            );
+            $formation['ville'] = $location['ville'];
+            $formation['local_nom'] = $location['local_nom'];
+            $formation['lieu'] = $location['lieu'];
 
             return $this->response->setStatusCode(201)->setJSON([
                 'error' => false,
@@ -366,6 +405,14 @@ class Formation extends Controller
                 ->orderBy('heure_debut', 'ASC')
                 ->get()
                 ->getResultArray();
+            $location = $this->resolveLocationFields(
+                $formationUpdated['ville'] ?? '',
+                $formationUpdated['local_nom'] ?? '',
+                $formationUpdated['lieu'] ?? ''
+            );
+            $formationUpdated['ville'] = $location['ville'];
+            $formationUpdated['local_nom'] = $location['local_nom'];
+            $formationUpdated['lieu'] = $location['lieu'];
 
             return $this->response->setJSON([
                 'error' => false,
@@ -481,18 +528,25 @@ class Formation extends Controller
             ? (($data['remplacant_id'] === null || $data['remplacant_id'] === '') ? null : (int) $data['remplacant_id'])
             : ($existingFormation['remplacant_id'] ?? null);
 
-        $lieu = trim($data['lieu'] ?? ($existingFormation['lieu'] ?? ''));
+        $location = $this->resolveLocationFields(
+            $data['ville'] ?? ($existingFormation['ville'] ?? ''),
+            $data['local_nom'] ?? ($data['local'] ?? ($existingFormation['local_nom'] ?? '')),
+            $data['lieu'] ?? ($existingFormation['lieu'] ?? '')
+        );
+        $ville = $location['ville'];
+        $localNom = $location['local_nom'];
+        $lieu = $location['lieu'];
         $description = trim($data['description'] ?? ($existingFormation['description'] ?? ''));
         $nombreParticipants = isset($data['nombre_participants'])
             ? (int) $data['nombre_participants']
             : (int) ($existingFormation['nombre_participants'] ?? 0);
         $statut = trim($data['statut'] ?? ($existingFormation['statut'] ?? 'actif'));
 
-        if ($nom === '' || $formateurId <= 0 || $lieu === '' || $description === '') {
+        if ($nom === '' || $formateurId <= 0 || $ville === '' || $description === '') {
             return [
                 'error' => true,
                 'status' => 422,
-                'message' => 'Tous les champs principaux sont requis'
+                'message' => 'Tous les champs principaux sont requis, y compris la ville'
             ];
         }
 
@@ -609,12 +663,29 @@ class Formation extends Controller
             ];
         }
 
+        $localAssignment = $this->assignAvailableLocal(
+            $ville,
+            $localNom,
+            $preview['sessions'],
+            isset($existingFormation['id']) ? (int) $existingFormation['id'] : null
+        );
+
+        if ($localAssignment['error']) {
+            return $localAssignment;
+        }
+
+        $ville = $localAssignment['ville'];
+        $localNom = $localAssignment['local_nom'];
+        $lieu = $localAssignment['lieu'];
+
         $payload = [
             'nom' => $nom,
             'formateur_id' => $formateurId,
             'second_formateur_id' => $secondFormateurId,
             'remplacant_id' => $remplacantId,
             'lieu' => $lieu,
+            'ville' => $ville,
+            'local_nom' => $localNom,
             'description' => $description,
             'nombre_participants' => $nombreParticipants,
             'statut' => $statut,
@@ -1026,5 +1097,202 @@ class Formation extends Controller
         }
 
         return $time;
+    }
+
+    private function resolveLocationFields($villeInput, $localInput, $lieuInput): array
+    {
+        $ville = trim((string) ($villeInput ?? ''));
+        $localNom = trim((string) ($localInput ?? ''));
+        $lieu = trim((string) ($lieuInput ?? ''));
+
+        if (($ville === '' || $localNom === '') && $lieu !== '' && str_contains($lieu, ' - ')) {
+            [$parsedVille, $parsedLocal] = array_map('trim', explode(' - ', $lieu, 2));
+
+            if ($ville === '') {
+                $ville = $parsedVille;
+            }
+
+            if ($localNom === '') {
+                $localNom = $parsedLocal;
+            }
+        }
+
+        if ($lieu === '' && $ville !== '' && $localNom !== '') {
+            $lieu = $ville . ' - ' . $localNom;
+        }
+
+        if ($lieu === '' && $ville !== '') {
+            $lieu = $ville;
+        }
+
+        return [
+            'ville' => $ville,
+            'local_nom' => $localNom,
+            'lieu' => $lieu,
+        ];
+    }
+
+    private function assignAvailableLocal(string $ville, string $preferredLocal, array $sessions, ?int $excludeFormationId = null): array
+    {
+        $db = \Config\Database::connect();
+        $lieux = $db->table('lieu')
+            ->where('ville', $ville)
+            ->orderBy('local_nom', 'ASC')
+            ->orderBy('nom', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if (empty($lieux)) {
+            return [
+                'error' => true,
+                'status' => 422,
+                'message' => 'Aucun local n’est configuré pour cette ville. Ajoutez-en depuis le dashboard admin.'
+            ];
+        }
+
+        $availableLocaux = $this->getAvailableLocauxForSessions(
+            $ville,
+            $sessions,
+            $excludeFormationId
+        );
+
+        if (empty($availableLocaux)) {
+            return [
+                'error' => true,
+                'status' => 422,
+                'message' => 'Aucun local n’est disponible sur ce créneau pour cette ville. Ajoutez-en depuis le dashboard admin.'
+            ];
+        }
+
+        $selectedLocal = null;
+
+        if ($preferredLocal !== '') {
+            foreach ($availableLocaux as $lieu) {
+                $localName = trim((string) ($lieu['local_nom'] ?? ''));
+                $fullName = trim((string) ($lieu['nom'] ?? ''));
+
+                if ($preferredLocal === $localName || $preferredLocal === $fullName) {
+                    $selectedLocal = $lieu;
+                    break;
+                }
+            }
+        }
+
+        if ($selectedLocal === null) {
+            $selectedLocal = $availableLocaux[0];
+        }
+
+        $location = $this->resolveLocationFields(
+            $selectedLocal['ville'] ?? $ville,
+            $selectedLocal['local_nom'] ?? '',
+            $selectedLocal['nom'] ?? ''
+        );
+
+        return [
+            'error' => false,
+            'ville' => $location['ville'],
+            'local_nom' => $location['local_nom'],
+            'lieu' => $location['lieu'],
+        ];
+    }
+
+    private function getAvailableLocauxForSessions(string $ville, array $sessions, ?int $excludeFormationId = null): array
+    {
+        $db = \Config\Database::connect();
+        $lieux = $db->table('lieu')
+            ->where('ville', $ville)
+            ->orderBy('local_nom', 'ASC')
+            ->orderBy('nom', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        if (empty($lieux)) {
+            return [];
+        }
+
+        $formations = $db->table('formations')
+            ->select('id, lieu, ville, local_nom, statut')
+            ->where('statut !=', 'annule')
+            ->get()
+            ->getResultArray();
+
+        $candidateFormationIds = [];
+        $occupiedLocaux = [];
+
+        foreach ($formations as $formation) {
+            $formationId = (int) ($formation['id'] ?? 0);
+
+            if ($formationId <= 0 || ($excludeFormationId !== null && $formationId === $excludeFormationId)) {
+                continue;
+            }
+
+            $location = $this->resolveLocationFields(
+                $formation['ville'] ?? '',
+                $formation['local_nom'] ?? '',
+                $formation['lieu'] ?? ''
+            );
+
+            if ($location['ville'] !== $ville || $location['local_nom'] === '') {
+                continue;
+            }
+
+            $candidateFormationIds[$formationId] = $location['local_nom'];
+        }
+
+        if (!empty($candidateFormationIds)) {
+            $existingSessions = $db->table('formation_sessions')
+                ->whereIn('formation_id', array_keys($candidateFormationIds))
+                ->orderBy('date', 'ASC')
+                ->orderBy('heure_debut', 'ASC')
+                ->get()
+                ->getResultArray();
+
+            foreach ($existingSessions as $existingSession) {
+                $formationId = (int) ($existingSession['formation_id'] ?? 0);
+                $localNom = $candidateFormationIds[$formationId] ?? null;
+
+                if ($localNom === null) {
+                    continue;
+                }
+
+                foreach ($sessions as $newSession) {
+                    if ($this->sessionsOverlap($newSession, $existingSession)) {
+                        $occupiedLocaux[$localNom] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_filter($lieux, function ($lieu) use ($occupiedLocaux) {
+            $location = $this->resolveLocationFields(
+                $lieu['ville'] ?? '',
+                $lieu['local_nom'] ?? '',
+                $lieu['nom'] ?? ''
+            );
+
+            return $location['local_nom'] !== '' && !isset($occupiedLocaux[$location['local_nom']]);
+        }));
+    }
+
+    private function sessionsOverlap(array $firstSession, array $secondSession): bool
+    {
+        $firstDate = trim((string) ($firstSession['date'] ?? ''));
+        $secondDate = trim((string) ($secondSession['date'] ?? ''));
+
+        if ($firstDate === '' || $secondDate === '' || $firstDate !== $secondDate) {
+            return false;
+        }
+
+        $firstStart = $this->normalizeTime((string) ($firstSession['heure_debut'] ?? ''));
+        $firstEnd = $this->normalizeTime((string) ($firstSession['heure_fin'] ?? ''));
+        $secondStart = $this->normalizeTime((string) ($secondSession['heure_debut'] ?? ''));
+        $secondEnd = $this->normalizeTime((string) ($secondSession['heure_fin'] ?? ''));
+
+        if ($firstStart === '' || $firstEnd === '' || $secondStart === '' || $secondEnd === '') {
+            return false;
+        }
+
+        return $firstStart < $secondEnd && $secondStart < $firstEnd;
     }
 }

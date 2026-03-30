@@ -20,6 +20,11 @@ export const ADMIN_MENU_ITEMS = [
     description: "Calculer rapidement des volumes horaires",
   },
   {
+    key: "locaux",
+    label: "Gestion locaux",
+    description: "Ajouter des locaux disponibles par ville",
+  },
+  {
     key: "formateurs",
     label: "Comptes formateurs",
     description: "Créer et gérer les comptes formateurs",

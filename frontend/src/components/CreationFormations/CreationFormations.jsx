@@ -23,6 +23,138 @@ import {
 
 const API_URL = "http://localhost:8080";
 
+function normalizeLieuOption(lieu) {
+  const nom = String(lieu?.nom ?? "").trim();
+  const rawVille = String(lieu?.ville ?? "").trim();
+  const rawLocalNom = String(lieu?.local_nom ?? "").trim();
+
+  let ville = rawVille;
+  let localNom = rawLocalNom;
+
+  if ((!ville || !localNom) && nom.includes(" - ")) {
+    const [parsedVille, parsedLocalNom] = nom
+      .split(" - ", 2)
+      .map((value) => value.trim());
+
+    if (!ville) {
+      ville = parsedVille;
+    }
+
+    if (!localNom) {
+      localNom = parsedLocalNom;
+    }
+  }
+
+  if (!ville && nom) {
+    ville = nom;
+  }
+
+  const label = nom || [ville, localNom].filter(Boolean).join(" - ");
+
+  return {
+    id: lieu?.id ?? label,
+    nom: label,
+    slug: lieu?.slug ?? "",
+    ville,
+    localNom,
+  };
+}
+
+function parseStoredLieu(lieuValue, lieuOptions) {
+  const normalizedValue = String(lieuValue ?? "").trim();
+
+  if (!normalizedValue) {
+    return {
+      ville: "",
+      local: "",
+      lieu: "",
+    };
+  }
+
+  const exactMatch = lieuOptions.find((option) => option.nom === normalizedValue);
+
+  if (exactMatch) {
+    return {
+      ville: exactMatch.ville,
+      local: exactMatch.localNom || exactMatch.nom,
+      lieu: exactMatch.nom,
+    };
+  }
+
+  if (normalizedValue.includes(" - ")) {
+    const [ville, local] = normalizedValue.split(" - ", 2);
+
+    return {
+      ville: ville.trim(),
+      local: (local || "").trim(),
+      lieu: normalizedValue,
+    };
+  }
+
+  return {
+    ville: normalizedValue,
+    local: "",
+    lieu: "",
+  };
+}
+
+function getLieuOptionValue(lieu) {
+  return lieu?.localNom || lieu?.nom || "";
+}
+
+function getFormationLocation(formation) {
+  const ville = String(formation?.ville ?? "").trim();
+  const localNom = String(formation?.local_nom ?? "").trim();
+  const lieu = String(formation?.lieu ?? formation?.salle ?? "").trim();
+
+  if (ville || localNom) {
+    return {
+      ville,
+      local: localNom,
+      lieu,
+    };
+  }
+
+  return parseStoredLieu(lieu, []);
+}
+
+function toMinutes(timeValue) {
+  const value = String(timeValue ?? "").trim();
+  const match = value.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function sessionsOverlap(firstSession, secondSession) {
+  if (!firstSession?.date || !secondSession?.date) {
+    return false;
+  }
+
+  if (String(firstSession.date) !== String(secondSession.date)) {
+    return false;
+  }
+
+  const firstStart = toMinutes(firstSession.heure_debut);
+  const firstEnd = toMinutes(firstSession.heure_fin);
+  const secondStart = toMinutes(secondSession.heure_debut);
+  const secondEnd = toMinutes(secondSession.heure_fin);
+
+  if (
+    firstStart === null ||
+    firstEnd === null ||
+    secondStart === null ||
+    secondEnd === null
+  ) {
+    return false;
+  }
+
+  return firstStart < secondEnd && secondStart < firstEnd;
+}
+
 export function CreationFormations({
   formationEnEdition,
   onSaved,
@@ -31,8 +163,10 @@ export function CreationFormations({
   const [formData, setFormData] = useState(() => createInitialFormationForm());
   const [formateurs, setFormateurs] = useState([]);
   const [lieux, setLieux] = useState([]);
+  const [formationsExistantes, setFormationsExistantes] = useState([]);
   const [loadingFormateurs, setLoadingFormateurs] = useState(true);
   const [loadingLieux, setLoadingLieux] = useState(true);
+  const [loadingFormations, setLoadingFormations] = useState(true);
   const [saving, setSaving] = useState(false);
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
@@ -113,7 +247,11 @@ export function CreationFormations({
               ? data
               : [];
 
-        setLieux(rawLieux);
+        setLieux(
+          rawLieux
+            .map(normalizeLieuOption)
+            .filter((lieu) => lieu.nom && lieu.ville)
+        );
       } catch (err) {
         setErreur(err.message || "Erreur lors du chargement des lieux");
       } finally {
@@ -125,10 +263,48 @@ export function CreationFormations({
   }, []);
 
   useEffect(() => {
+    const fetchFormations = async () => {
+      try {
+        setLoadingFormations(true);
+
+        const res = await fetch(`${API_URL}/formations`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json().catch(() => ([]));
+
+        if (!res.ok) {
+          throw new Error(
+            data?.message || "Impossible de charger les formations existantes"
+          );
+        }
+
+        setFormationsExistantes(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setErreur(
+          err.message || "Erreur lors du chargement des formations existantes"
+        );
+      } finally {
+        setLoadingFormations(false);
+      }
+    };
+
+    fetchFormations();
+  }, []);
+
+  useEffect(() => {
     if (formationEnEdition) {
       const initialCreneaux =
         buildInitialCreneauxFromFormation(formationEnEdition);
       const sessions = normalizeSessionsFromFormation(formationEnEdition);
+      const parsedLieu = parseStoredLieu(
+        formationEnEdition.lieu || formationEnEdition.salle || "",
+        lieux
+      );
 
       setFormData({
         nom: formationEnEdition.nom || formationEnEdition.titre || "",
@@ -142,7 +318,9 @@ export function CreationFormations({
         remplacant_id: getFormationRemplacantId(formationEnEdition)
           ? String(getFormationRemplacantId(formationEnEdition))
           : "",
-        lieu: formationEnEdition.lieu || formationEnEdition.salle || "",
+        ville: parsedLieu.ville,
+        local: parsedLieu.local,
+        lieu: parsedLieu.lieu,
         description: formationEnEdition.description || "",
         nombre_participants: formationEnEdition.nombre_participants ?? 0,
         statut: formationEnEdition.statut ?? "actif",
@@ -165,6 +343,38 @@ export function CreationFormations({
     setMessage("");
     setPreview(null);
   }, [formationEnEdition]);
+
+  useEffect(() => {
+    if (!formationEnEdition || lieux.length === 0) {
+      return;
+    }
+
+    const parsedLieu = parseStoredLieu(
+      formationEnEdition.lieu || formationEnEdition.salle || "",
+      lieux
+    );
+
+    setFormData((prev) => {
+      const nextVille = prev.ville || parsedLieu.ville;
+      const nextLocal = prev.local || parsedLieu.local;
+      const nextLieu = prev.lieu || parsedLieu.lieu;
+
+      if (
+        prev.ville === nextVille &&
+        prev.local === nextLocal &&
+        prev.lieu === nextLieu
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        ville: nextVille,
+        local: nextLocal,
+        lieu: nextLieu,
+      };
+    });
+  }, [formationEnEdition, lieux]);
 
   useEffect(() => {
     const canPreview =
@@ -234,6 +444,137 @@ export function CreationFormations({
       formData.formateur_id
     );
   }, [availableRemplacants, formateurs, formData.formateur_id]);
+
+  const villesDisponibles = useMemo(() => {
+    const counts = new Map();
+
+    lieux.forEach((lieu) => {
+      if (!lieu.ville) {
+        return;
+      }
+
+      counts.set(lieu.ville, (counts.get(lieu.ville) || 0) + 1);
+    });
+
+    return Array.from(counts.entries())
+      .map(([ville, count]) => ({
+        ville,
+        count,
+      }))
+      .sort((a, b) =>
+        a.ville.localeCompare(b.ville, "fr", { sensitivity: "base" })
+      );
+  }, [lieux]);
+
+  const locauxDisponibles = useMemo(() => {
+    if (!formData.ville) {
+      return [];
+    }
+
+    const sessionsCibles = Array.isArray(preview?.sessions) ? preview.sessions : [];
+
+    return lieux
+      .filter((lieu) => lieu.ville === formData.ville)
+      .filter((lieu) => {
+        if (sessionsCibles.length === 0) {
+          return true;
+        }
+
+        return !formationsExistantes.some((formation) => {
+          if (
+            formationEnEdition?.id &&
+            String(formation.id) === String(formationEnEdition.id)
+          ) {
+            return false;
+          }
+
+          if (String(formation?.statut ?? "").trim().toLowerCase() === "annule") {
+            return false;
+          }
+
+          const formationLocation = getFormationLocation(formation);
+
+          if (
+            formationLocation.ville !== formData.ville ||
+            formationLocation.local !== getLieuOptionValue(lieu)
+          ) {
+            return false;
+          }
+
+          const existingSessions = normalizeSessionsFromFormation(formation);
+
+          return existingSessions.some((existingSession) =>
+            sessionsCibles.some((targetSession) =>
+              sessionsOverlap(existingSession, targetSession)
+            )
+          );
+        });
+      })
+      .sort((a, b) =>
+        getLieuOptionValue(a).localeCompare(getLieuOptionValue(b), "fr", {
+          sensitivity: "base",
+        })
+      );
+  }, [
+    formData.ville,
+    formationsExistantes,
+    formationEnEdition,
+    lieux,
+    preview?.sessions,
+  ]);
+
+  const totalLocauxVille = useMemo(() => {
+    if (!formData.ville) {
+      return 0;
+    }
+
+    return lieux.filter((lieu) => lieu.ville === formData.ville).length;
+  }, [formData.ville, lieux]);
+
+  useEffect(() => {
+    if (loadingLieux || loadingFormations || !formData.ville) {
+      return;
+    }
+
+    if (locauxDisponibles.length === 0) {
+      setFormData((prev) => {
+        if (!prev.local && !prev.lieu) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          local: "",
+          lieu: "",
+        };
+      });
+      return;
+    }
+
+    const currentLocalIsAvailable = locauxDisponibles.some(
+      (lieu) =>
+        getLieuOptionValue(lieu) === formData.local && lieu.nom === formData.lieu
+    );
+
+    if (currentLocalIsAvailable) {
+      return;
+    }
+
+    const autoAssignedLieu = locauxDisponibles[0];
+
+    setFormData((prev) => ({
+      ...prev,
+      local: getLieuOptionValue(autoAssignedLieu),
+      lieu: autoAssignedLieu.nom,
+    }));
+  }, [
+    formData.lieu,
+    formData.local,
+    formData.ville,
+    loadingFormations,
+    loadingLieux,
+    locauxDisponibles,
+  ]);
 
   useEffect(() => {
     if (loadingFormateurs) {
@@ -351,6 +692,31 @@ export function CreationFormations({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "ville") {
+      setFormData((prev) => ({
+        ...prev,
+        ville: value,
+        local: "",
+        lieu: "",
+      }));
+      return;
+    }
+
+    if (name === "local") {
+      const selectedLieu = lieux.find(
+        (lieu) =>
+          lieu.ville === formData.ville && getLieuOptionValue(lieu) === value
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        ville: selectedLieu?.ville || prev.ville,
+        local: value,
+        lieu: selectedLieu?.nom || prev.lieu,
+      }));
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -502,8 +868,14 @@ export function CreationFormations({
       return "Veuillez sélectionner un formateur.";
     }
 
-    if (!formData.lieu.trim()) {
-      return "Veuillez sélectionner un lieu.";
+    if (!formData.ville.trim()) {
+      return "Veuillez sélectionner une ville.";
+    }
+
+    if (!formData.local.trim()) {
+      return totalLocauxVille === 0
+        ? "Aucun local n'est configuré pour cette ville. Ajoute-en depuis le dashboard admin."
+        : "Aucun local n'est disponible pour ce planning. Ajoute-en depuis le dashboard admin ou change les dates.";
     }
 
     if (!formData.description.trim()) {
@@ -630,10 +1002,32 @@ export function CreationFormations({
         );
       }
 
+      const savedFormation = data?.data && typeof data.data === "object"
+        ? data.data
+        : null;
+
+      if (savedFormation) {
+        setFormationsExistantes((prev) => {
+          if (isEditing) {
+            return prev.map((formation) =>
+              String(formation.id) === String(savedFormation.id)
+                ? { ...formation, ...savedFormation }
+                : formation
+            );
+          }
+
+          return [savedFormation, ...prev];
+        });
+      }
+
       setMessage(
         isEditing
-          ? "La formation a bien été modifiée."
-          : "La formation a bien été créée."
+          ? `La formation a bien été modifiée${
+              savedFormation?.local_nom ? ` avec le local ${savedFormation.local_nom}.` : "."
+            }`
+          : `La formation a bien été créée${
+              savedFormation?.local_nom ? ` avec le local ${savedFormation.local_nom}.` : "."
+            }`
       );
 
       setFormData(createInitialFormationForm());
@@ -686,7 +1080,8 @@ export function CreationFormations({
             <div>
               <h3 className="admin-form__section-title">Identité</h3>
               <p className="admin-form__section-text">
-                Définis le nom, l’équipe pédagogique et le lieu de la formation.
+                Définis le nom, l’équipe pédagogique, la ville et le local de
+                la formation.
               </p>
             </div>
           </div>
@@ -839,28 +1234,36 @@ export function CreationFormations({
 
           <div className="admin-form__row">
             <div className="admin-form__group">
-              <label className="admin-form__label" htmlFor="lieu">
-                Lieu
+              <label className="admin-form__label" htmlFor="ville">
+                Ville
               </label>
               <select
-                id="lieu"
+                id="ville"
                 className="admin-form__select"
-                name="lieu"
-                value={formData.lieu}
+                name="ville"
+                value={formData.ville}
                 onChange={handleChange}
                 required
                 disabled={loadingLieux}
               >
                 <option value="">
-                  {loadingLieux ? "Chargement des lieux..." : "Sélectionner un lieu"}
+                  {loadingLieux
+                    ? "Chargement des villes..."
+                    : "Sélectionner une ville"}
                 </option>
 
-                {lieux.map((lieu) => (
-                  <option key={lieu.id} value={lieu.nom}>
-                    {lieu.nom}
+                {villesDisponibles.map((ville) => (
+                  <option key={ville.ville} value={ville.ville}>
+                    {ville.ville} ({ville.count} local
+                    {ville.count > 1 ? "aux" : ""})
                   </option>
                 ))}
               </select>
+
+              <div className="admin-form__hint">
+                Choisis d&apos;abord la ville pour filtrer les locaux
+                disponibles et auto-attribuer le premier local libre.
+              </div>
             </div>
 
             <div className="admin-form__group">
@@ -878,6 +1281,54 @@ export function CreationFormations({
                 required
               />
             </div>
+          </div>
+
+          <div className="admin-form__group">
+            <label className="admin-form__label" htmlFor="local">
+              Local
+            </label>
+            <select
+              id="local"
+              className="admin-form__select"
+              name="local"
+              value={formData.local}
+              onChange={handleChange}
+              required
+              disabled={loadingLieux || !formData.ville}
+            >
+              <option value="">
+                {loadingLieux
+                  ? "Chargement des locaux..."
+                  : !formData.ville
+                    ? "Sélectionner d'abord une ville"
+                    : "Sélectionner un local"}
+              </option>
+
+              {locauxDisponibles.map((lieu) => (
+                <option key={lieu.id} value={getLieuOptionValue(lieu)}>
+                  {getLieuOptionValue(lieu)}
+                </option>
+              ))}
+            </select>
+
+            {formData.ville ? (
+              <div className="admin-form__hint">
+                {formData.ville} : {locauxDisponibles.length} local
+                {locauxDisponibles.length > 1 ? "aux" : ""} disponible
+                {locauxDisponibles.length > 1 ? "s" : ""} sur{" "}
+                {totalLocauxVille}{" "}
+                configuré
+                {totalLocauxVille > 1 ? "s" : ""}
+                . Le premier local libre est attribué automatiquement.
+              </div>
+            ) : null}
+
+            {!loadingLieux && formData.ville && locauxDisponibles.length === 0 ? (
+              <div className="admin-form__hint admin-form__hint--error">
+                Aucun local n&apos;est disponible pour cette ville sur ce
+                planning. Ajoute-en depuis le dashboard admin.
+              </div>
+            ) : null}
           </div>
         </div>
 

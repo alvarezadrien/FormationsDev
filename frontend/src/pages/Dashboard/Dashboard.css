@@ -1283,6 +1283,29 @@
   line-height: 1.5;
 }
 
+.admin-locaux {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-location-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.admin-location-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.48rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #dbe4f3;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  color: #294264;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 /* MODAL */
 .admin-modal-overlay {
   position: fixed;
@@ -1779,6 +1802,12 @@
 
 [data-theme="dark"] .admin-hours-card__footer {
   border-top-color: rgba(51, 65, 85, 0.72);
+}
+
+[data-theme="dark"] .admin-location-chip {
+  background: linear-gradient(180deg, rgba(19, 33, 53, 0.96), rgba(14, 26, 44, 0.96));
+  border-color: rgba(51, 65, 85, 0.88);
+  color: #bfdbfe;
 }
 
 [data-theme="dark"] .admin-creneau-day:hover {

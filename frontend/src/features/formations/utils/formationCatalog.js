@@ -27,6 +27,8 @@ export function filterFormationsByQuery(formations, search) {
     const haystack = [
       formation.nom,
       formation.lieu,
+      formation.local_nom,
+      formation.ville,
       formation.formateur_prenom,
       formation.formateur_nom,
       formation.remplacant_prenom,

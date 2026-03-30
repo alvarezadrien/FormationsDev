@@ -15,6 +15,7 @@ import { PresenceFormateur } from "../../components/PresenceFormateur/PresenceFo
 import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
 import { CalendrierComplet } from "../../components/CalendrierComplet/CalendrierComplet";
 import { CalculHeure } from "../../components/CalculHeure/CalculHeure";
+import { GestionLocaux } from "../../components/GestionLocaux/GestionLocaux";
 import { ADMIN_MENU_ITEMS } from "../../features/dashboard/config/adminSections";
 
 export default function AdminFormationsDashboard() {
@@ -256,6 +257,25 @@ export default function AdminFormationsDashboard() {
               </div>
 
               <CalculHeure />
+            </div>
+          </section>
+        );
+
+      case "locaux":
+        return (
+          <section className="admin-section">
+            <div className="admin-list">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">Capacité</span>
+                <h2 className="admin-list__title">Gestion des locaux</h2>
+                <p className="admin-list__text">
+                  Ajoute de nouveaux locaux par ville pour augmenter les
+                  disponibilités lors de l'attribution automatique des
+                  formations.
+                </p>
+              </div>
+
+              <GestionLocaux />
             </div>
           </section>
         );

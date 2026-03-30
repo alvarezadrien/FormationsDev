@@ -13,7 +13,9 @@ class LieuModel extends Model
 
     protected $allowedFields = [
         'nom',
-        'slug'
+        'slug',
+        'ville',
+        'local_nom',
     ];
 
     protected $useTimestamps = false; // ⚠️ car pas de updated_at
@@ -21,6 +23,8 @@ class LieuModel extends Model
     protected $validationRules = [
         'nom'  => 'required|min_length[2]|max_length[255]',
         'slug' => 'required|min_length[2]|max_length[255]|is_unique[lieu.slug,id,{id}]',
+        'ville' => 'permit_empty|min_length[2]|max_length[120]',
+        'local_nom' => 'permit_empty|min_length[2]|max_length[120]',
     ];
 
     protected $validationMessages = [

@@ -7,6 +7,22 @@ import {
 
 const API_URL = "http://localhost:8080";
 
+function getLocalLabel(formation) {
+  const localNom = String(formation?.local_nom ?? "").trim();
+
+  if (localNom) {
+    return localNom;
+  }
+
+  const lieu = String(formation?.lieu ?? "").trim();
+
+  if (lieu.includes(" - ")) {
+    return lieu.split(" - ", 2)[1].trim() || "N/A";
+  }
+
+  return "N/A";
+}
+
 export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
   const [formations, setFormations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -225,6 +241,9 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
                       {formation.lieu || "Non renseigné"}
                     </p>
                     <p>
+                      <strong>Local :</strong> {getLocalLabel(formation)}
+                    </p>
+                    <p>
                       <strong>Participants :</strong>{" "}
                       {formation.nombre_participants ?? 0}
                     </p>
@@ -347,6 +366,9 @@ export function FormationsCrees({ refreshKey, onEdit, onDeleted }) {
               <p>
                 <strong>Lieu :</strong>{" "}
                 {formationToDelete?.lieu || "Non renseigné"}
+              </p>
+              <p>
+                <strong>Local :</strong> {getLocalLabel(formationToDelete)}
               </p>
               <p>
                 <strong>Participants :</strong>{" "}
