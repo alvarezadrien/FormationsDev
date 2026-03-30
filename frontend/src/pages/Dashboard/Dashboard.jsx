@@ -14,6 +14,7 @@ import { FichesPresenceAdmin } from "../../components/FichePresenceAdmin/FichePr
 import { PresenceFormateur } from "../../components/PresenceFormateur/PresenceFormateur";
 import { DetailUsers } from "../../components/DetailsUsers/DetailsUsers";
 import { CalendrierComplet } from "../../components/CalendrierComplet/CalendrierComplet";
+import { CalculHeure } from "../../components/CalculHeure/CalculHeure";
 import { ADMIN_MENU_ITEMS } from "../../features/dashboard/config/adminSections";
 
 export default function AdminFormationsDashboard() {
@@ -237,6 +238,24 @@ export default function AdminFormationsDashboard() {
               </div>
 
               <CalendrierComplet />
+            </div>
+          </section>
+        );
+
+      case "calcul-heure":
+        return (
+          <section className="admin-section">
+            <div className="admin-list">
+              <div className="admin-list__header">
+                <span className="admin-list__eyebrow">Outil rapide</span>
+                <h2 className="admin-list__title">Calcule heure</h2>
+                <p className="admin-list__text">
+                  Calcule le nombre d'heures d'un créneau et le volume total
+                  selon la pause et le nombre de séances.
+                </p>
+              </div>
+
+              <CalculHeure />
             </div>
           </section>
         );

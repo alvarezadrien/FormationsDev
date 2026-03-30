@@ -15,6 +15,11 @@ export const ADMIN_MENU_ITEMS = [
     description: "Voir tous les cours, créneaux et formateurs",
   },
   {
+    key: "calcul-heure",
+    label: "Calcule heure",
+    description: "Calculer rapidement des volumes horaires",
+  },
+  {
     key: "formateurs",
     label: "Comptes formateurs",
     description: "Créer et gérer les comptes formateurs",
