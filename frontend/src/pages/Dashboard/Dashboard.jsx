@@ -485,8 +485,8 @@ export default function AdminFormationsDashboard() {
               <FiBookOpen />
             </span>
             <div>
-              <span className="admin-sidebar__brand-kicker">Espace admin</span>
-              <h2 className="admin-sidebar__title">Centre de Formations</h2>
+              <span className="admin-sidebar__brand-kicker">Dashboard administrative</span>
+              <h2 className="admin-sidebar__title">CodingFormations</h2>
             </div>
           </div>
 
@@ -559,7 +559,7 @@ export default function AdminFormationsDashboard() {
           <section className="admin-overview">
             <div className="admin-overview__intro">
               <span className="admin-overview__eyebrow">
-                Bienvenue, {firstName}!
+                Bienvenue, {firstName} !
               </span>
               <h2 className="admin-overview__title">Résumé des activités</h2>
               <p className="admin-overview__text">

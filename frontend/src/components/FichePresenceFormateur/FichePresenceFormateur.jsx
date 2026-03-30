@@ -1,7 +1,73 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  importParticipantPresenceFile,
+  PARTICIPANT_PRESENCE_IMPORT_ACCEPT,
+  PARTICIPANT_PRESENCE_IMPORT_GUIDE,
+} from "../../features/presences/utils/participantPresenceImport";
 import "./FichePresenceFormateur.css";
 
 const API_BASE_URL = "http://localhost:8080";
+
+function buildParticipantImportEditorRows(matchedRows = [], issues = []) {
+  const readyRows = matchedRows.map((row, index) => ({
+    key: `matched-${row.participantId}-${index}`,
+    status: "ready",
+    lineNumber: null,
+    message: "Ligne prete a importer.",
+    raw: {
+      participantId: String(row.participantId ?? ""),
+      inscriptionId: "",
+      participantEmail: row.participantEmail || "",
+      participantPrenom: "",
+      participantNom: "",
+      participantFullName: row.participantName || "",
+      present: row.present ? "present" : "absent",
+    },
+    resolvedParticipantId: row.participantId,
+    resolvedPresent: row.present,
+  }));
+
+  const issueRows = issues.map((issue) => ({
+    ...issue,
+    status: "issue",
+  }));
+
+  return [...readyRows, ...issueRows];
+}
+
+function buildParticipantCorrectionDrafts(editorRows = []) {
+  return editorRows.reduce((accumulator, row) => {
+    accumulator[row.key] = {
+      participantId: row.resolvedParticipantId
+        ? String(row.resolvedParticipantId)
+        : "",
+      presentValue:
+        row.resolvedPresent === true
+          ? "present"
+          : row.resolvedPresent === false
+            ? "absent"
+            : "",
+    };
+
+    return accumulator;
+  }, {});
+}
+
+function buildIssueFromEditorRow(row) {
+  return {
+    key: row.key,
+    lineNumber: row.lineNumber,
+    message: row.message,
+    raw: row.raw,
+    resolvedParticipantId: row.resolvedParticipantId || "",
+    resolvedPresent:
+      row.resolvedPresent === true
+        ? true
+        : row.resolvedPresent === false
+          ? false
+          : null,
+  };
+}
 
 export function FichePresenceFormateur() {
   const [formations, setFormations] = useState([]);
@@ -14,6 +80,17 @@ export function FichePresenceFormateur() {
 
   const [selectedFiche, setSelectedFiche] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [participantDrafts, setParticipantDrafts] = useState({});
+  const [participantImporting, setParticipantImporting] = useState(false);
+  const [participantApplying, setParticipantApplying] = useState(false);
+  const [participantImportReport, setParticipantImportReport] = useState(null);
+  const [participantImportBatch, setParticipantImportBatch] = useState([]);
+  const [participantImportEditorRows, setParticipantImportEditorRows] =
+    useState([]);
+  const [participantCorrectionDrafts, setParticipantCorrectionDrafts] =
+    useState({});
+  const [showParticipantCorrections, setShowParticipantCorrections] =
+    useState(false);
 
   const [formData, setFormData] = useState({
     formation_id: "",
@@ -24,12 +101,7 @@ export function FichePresenceFormateur() {
     remarques: "",
   });
 
-  useEffect(() => {
-    fetchFormations();
-    fetchMesFiches();
-  }, []);
-
-  const fetchFormations = async () => {
+  const fetchFormations = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/formations`, {
         method: "GET",
@@ -44,9 +116,9 @@ export function FichePresenceFormateur() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, []);
 
-  const fetchMesFiches = async () => {
+  const fetchMesFiches = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -71,35 +143,65 @@ export function FichePresenceFormateur() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchFicheDetails = async (id) => {
-    try {
-      setLoadingDetails(true);
-      setError("");
-      setMessage("");
+  useEffect(() => {
+    fetchFormations();
+    fetchMesFiches();
+  }, [fetchFormations, fetchMesFiches]);
 
-      const response = await fetch(`${API_BASE_URL}/fiches-presence/${id}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+  const clearParticipantImportState = useCallback(() => {
+    setParticipantImportReport(null);
+    setParticipantImportBatch([]);
+    setParticipantImportEditorRows([]);
+    setParticipantCorrectionDrafts({});
+    setShowParticipantCorrections(false);
+  }, []);
 
-      const data = await response.json();
+  const resetParticipantDrafts = useCallback(
+    (participants = []) => {
+      setParticipantDrafts(
+        participants.reduce((accumulator, participant) => {
+          accumulator[participant.id] = Boolean(participant.present);
+          return accumulator;
+        }, {})
+      );
+      clearParticipantImportState();
+    },
+    [clearParticipantImportState]
+  );
 
-      if (!response.ok) {
-        throw new Error(data?.message || "Impossible de charger la fiche");
+  const fetchFicheDetails = useCallback(
+    async (id) => {
+      try {
+        setLoadingDetails(true);
+        setError("");
+        setMessage("");
+
+        const response = await fetch(`${API_BASE_URL}/fiches-presence/${id}`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.message || "Impossible de charger la fiche");
+        }
+
+        setSelectedFiche(data);
+        resetParticipantDrafts(data?.participants || []);
+      } catch (err) {
+        setError(err.message || "Erreur lors du chargement de la fiche");
+      } finally {
+        setLoadingDetails(false);
       }
-
-      setSelectedFiche(data);
-    } catch (err) {
-      setError(err.message || "Erreur lors du chargement de la fiche");
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
+    },
+    [resetParticipantDrafts]
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -212,6 +314,8 @@ export function FichePresenceFormateur() {
 
       if (selectedFiche?.fiche?.id === id) {
         setSelectedFiche(null);
+        setParticipantDrafts({});
+        clearParticipantImportState();
       }
 
       setMessage(data?.message || "Fiche supprimée avec succès");
@@ -222,12 +326,22 @@ export function FichePresenceFormateur() {
     }
   };
 
-  const togglePresence = async (participantId, currentValue) => {
-    if (!selectedFiche?.fiche?.id) return;
+  const getDisplayedParticipantPresence = useCallback(
+    (participant) => {
+      if (Object.prototype.hasOwnProperty.call(participantDrafts, participant.id)) {
+        return Boolean(participantDrafts[participant.id]);
+      }
 
-    try {
-      setError("");
-      setMessage("");
+      return Boolean(participant.present);
+    },
+    [participantDrafts]
+  );
+
+  const persistParticipantPresence = useCallback(
+    async (participantId, nextValue) => {
+      if (!selectedFiche?.fiche?.id) {
+        throw new Error("Aucune fiche selectionnee.");
+      }
 
       const response = await fetch(
         `${API_BASE_URL}/fiches-presence/${selectedFiche.fiche.id}/participants/${participantId}`,
@@ -238,7 +352,7 @@ export function FichePresenceFormateur() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            present: !currentValue,
+            present: nextValue,
           }),
         }
       );
@@ -249,18 +363,338 @@ export function FichePresenceFormateur() {
         throw new Error(data?.message || "Impossible de modifier la présence");
       }
 
-      setSelectedFiche((prev) => ({
-        ...prev,
-        participants: prev.participants.map((participant) =>
-          participant.id === participantId
-            ? { ...participant, present: currentValue ? 0 : 1 }
-            : participant
-        ),
-      }));
+      return data;
+    },
+    [selectedFiche]
+  );
+
+  const applyParticipantPresenceLocally = useCallback((participantId, nextValue) => {
+    setSelectedFiche((prev) =>
+      prev
+        ? {
+            ...prev,
+            participants: prev.participants.map((participant) =>
+              participant.id === participantId
+                ? { ...participant, present: nextValue ? 1 : 0 }
+                : participant
+            ),
+          }
+        : prev
+    );
+
+    setParticipantDrafts((prev) => ({
+      ...prev,
+      [participantId]: Boolean(nextValue),
+    }));
+  }, []);
+
+  const togglePresence = async (participantId, nextValue) => {
+    if (!selectedFiche?.fiche?.id) return;
+
+    try {
+      setError("");
+      setMessage("");
+
+      const data = await persistParticipantPresence(participantId, nextValue);
+      applyParticipantPresenceLocally(participantId, nextValue);
 
       setMessage(data?.message || "Présence mise à jour avec succès");
     } catch (err) {
       setError(err.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleParticipantImportFile = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!selectedFiche?.participants?.length) {
+      setError("Ouvre d'abord une fiche avec des participants pour importer.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setParticipantImporting(true);
+      setMessage("");
+      setError("");
+
+      const imported = await importParticipantPresenceFile(file, {
+        participants: selectedFiche.participants,
+      });
+      const editorRows = buildParticipantImportEditorRows(
+        imported.matchedRows,
+        imported.report.issues
+      );
+
+      setParticipantDrafts((prev) => {
+        const nextDrafts = { ...prev };
+
+        imported.matchedRows.forEach((row) => {
+          nextDrafts[row.participantId] = row.present;
+        });
+
+        return nextDrafts;
+      });
+
+      setParticipantImportBatch(
+        editorRows
+          .filter((row) => row.status === "ready")
+          .map((row) => ({
+            editorKey: row.key,
+            participantId: row.resolvedParticipantId,
+            participantName: row.raw.participantFullName || "Non renseigné",
+            participantEmail: row.raw.participantEmail || "",
+            present: Boolean(row.resolvedPresent),
+          }))
+      );
+      setParticipantImportEditorRows(editorRows);
+      setParticipantImportReport(imported.report);
+      setParticipantCorrectionDrafts(buildParticipantCorrectionDrafts(editorRows));
+      setShowParticipantCorrections(false);
+
+      if (imported.matchedRows.length > 0) {
+        const correctionHint =
+          imported.report.issues.length > 0
+            ? ` ${imported.report.issues.length} ligne(s) restent a corriger via le bouton du formulaire.`
+            : "";
+
+        setMessage(
+          `${imported.matchedRows.length} participant(s) charge(s) dans la fiche.${correctionHint}`
+        );
+      } else if (imported.report.issues.length > 0) {
+        setMessage(
+          `${imported.report.issues.length} ligne(s) necessitent une correction via le bouton du formulaire.`
+        );
+      }
+
+      if (imported.matchedRows.length === 0 && imported.report.errors.length > 0) {
+        setError("Aucune ligne exploitable n'a ete chargee depuis le fichier.");
+      }
+    } catch (err) {
+      clearParticipantImportState();
+      setError(
+        err.message || "Impossible d'importer ce fichier de presences participants."
+      );
+    } finally {
+      setParticipantImporting(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleClearParticipantImport = useCallback(() => {
+    resetParticipantDrafts(selectedFiche?.participants || []);
+  }, [resetParticipantDrafts, selectedFiche]);
+
+  const handleParticipantCorrectionChange = (issueKey, field, value) => {
+    setParticipantCorrectionDrafts((prev) => ({
+      ...prev,
+      [issueKey]: {
+        participantId: "",
+        presentValue: "",
+        ...(prev[issueKey] || {}),
+        [field]: value,
+      },
+    }));
+    setError("");
+    setMessage("");
+  };
+
+  const handleApplyParticipantCorrection = (issue) => {
+    const correctionDraft = participantCorrectionDrafts[issue.key] || {
+      participantId: "",
+      presentValue: "",
+    };
+
+    if (!correctionDraft.participantId || !correctionDraft.presentValue) {
+      setError("Choisis un participant et un statut avant de valider la correction.");
+      return;
+    }
+
+    const matchedParticipant = participants.find(
+      (participant) =>
+        String(participant.id) === String(correctionDraft.participantId)
+    );
+
+    if (!matchedParticipant) {
+      setError("Le participant choisi n'existe pas dans cette fiche.");
+      return;
+    }
+
+    if (
+      participantImportBatch.some(
+        (row) =>
+          row.editorKey !== issue.key &&
+          String(row.participantId) === String(matchedParticipant.id)
+      )
+    ) {
+      setError("Ce participant est deja utilise dans le formulaire d'import.");
+      return;
+    }
+
+    const present = correctionDraft.presentValue === "present";
+    const previousParticipantId = issue.resolvedParticipantId;
+    const correctedRow = {
+      editorKey: issue.key,
+      participantId: matchedParticipant.id,
+      participantName: formatFullName(matchedParticipant) || "Non renseigné",
+      participantEmail: matchedParticipant.email || "",
+      present,
+    };
+
+    const nextBatch = [
+      ...participantImportBatch.filter((row) => row.editorKey !== issue.key),
+      correctedRow,
+    ];
+
+    const nextEditorRows = participantImportEditorRows.map((row) =>
+      row.key === issue.key
+        ? {
+            ...row,
+            status: "ready",
+            message: "Ligne prete a importer.",
+            resolvedParticipantId: matchedParticipant.id,
+            resolvedPresent: present,
+          }
+        : row
+    );
+    const nextIssues = nextEditorRows
+      .filter((row) => row.status === "issue")
+      .map(buildIssueFromEditorRow);
+
+    setParticipantDrafts((prev) => {
+      const nextDrafts = {
+        ...prev,
+        [matchedParticipant.id]: present,
+      };
+
+      if (
+        previousParticipantId &&
+        String(previousParticipantId) !== String(matchedParticipant.id)
+      ) {
+        const previousParticipant = participants.find(
+          (participant) =>
+            String(participant.id) === String(previousParticipantId)
+        );
+
+        if (previousParticipant) {
+          nextDrafts[previousParticipant.id] = Boolean(previousParticipant.present);
+        }
+      }
+
+      return nextDrafts;
+    });
+    setParticipantImportBatch(nextBatch);
+    setParticipantImportEditorRows(nextEditorRows);
+    setParticipantImportReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            matchedRows: nextBatch.length,
+            issues: nextIssues,
+            errors: nextIssues.map((item) => item.message),
+          }
+        : prev
+    );
+    setParticipantCorrectionDrafts((prev) => {
+      return {
+        ...prev,
+        [issue.key]: {
+          participantId: String(matchedParticipant.id),
+          presentValue: present ? "present" : "absent",
+        },
+      };
+    });
+    setShowParticipantCorrections(true);
+    setError("");
+    setMessage("La ligne en erreur a ete corrigee et ajoutee a l'import.");
+  };
+
+  const handleApplyParticipantImport = async () => {
+    if (!selectedFiche?.fiche?.id || participantImportBatch.length === 0) {
+      return;
+    }
+
+    try {
+      setParticipantApplying(true);
+      setMessage("");
+      setError("");
+
+      const results = await Promise.allSettled(
+        participantImportBatch.map(async (row) => {
+          const nextValue =
+            participantDrafts[row.participantId] ?? Boolean(row.present);
+
+          await persistParticipantPresence(row.participantId, nextValue);
+
+          return {
+            participantId: row.participantId,
+            present: nextValue,
+          };
+        })
+      );
+
+      const successfulUpdates = new Map();
+      const failedRows = [];
+
+      results.forEach((result, index) => {
+        const sourceRow = participantImportBatch[index];
+
+        if (result.status === "fulfilled") {
+          successfulUpdates.set(
+            sourceRow.participantId,
+            Boolean(result.value.present)
+          );
+          return;
+        }
+
+        failedRows.push(sourceRow);
+      });
+
+      if (successfulUpdates.size > 0) {
+        setSelectedFiche((prev) =>
+          prev
+            ? {
+                ...prev,
+                participants: prev.participants.map((participant) =>
+                  successfulUpdates.has(participant.id)
+                    ? {
+                        ...participant,
+                        present: successfulUpdates.get(participant.id) ? 1 : 0,
+                      }
+                    : participant
+                ),
+              }
+            : prev
+        );
+      }
+
+      if (failedRows.length === 0) {
+        clearParticipantImportState();
+        setMessage(
+          `${participantImportBatch.length} presence(s) participant enregistree(s).`
+        );
+      } else {
+        setParticipantImportBatch(failedRows);
+        setParticipantImportReport((prev) =>
+          prev
+            ? {
+                ...prev,
+                matchedRows: failedRows.length,
+              }
+            : prev
+        );
+        setError(
+          `Import partiel : ${participantImportBatch.length - failedRows.length} enregistree(s), ${failedRows.length} en echec.`
+        );
+      }
+    } catch (err) {
+      setError(err.message || "Erreur lors de l'application de l'import.");
+    } finally {
+      setParticipantApplying(false);
     }
   };
 
@@ -290,15 +724,24 @@ export function FichePresenceFormateur() {
       .replace(/'/g, "&#039;");
   };
 
-  const participants = selectedFiche?.participants || [];
+  const participants = useMemo(
+    () => selectedFiche?.participants || [],
+    [selectedFiche]
+  );
 
   const participantsCount = useMemo(() => {
     return participants.length;
   }, [participants]);
 
   const presentsCount = useMemo(() => {
-    return participants.filter((participant) => Boolean(participant.present)).length;
-  }, [participants]);
+    return participants.filter((participant) => {
+      if (Object.prototype.hasOwnProperty.call(participantDrafts, participant.id)) {
+        return Boolean(participantDrafts[participant.id]);
+      }
+
+      return Boolean(participant.present);
+    }).length;
+  }, [participantDrafts, participants]);
 
   const absentsCount = useMemo(() => {
     return participantsCount - presentsCount;
@@ -876,6 +1319,307 @@ export function FichePresenceFormateur() {
               </div>
             </div>
 
+            <section className="fiche-formateur__import">
+              <div className="fiche-formateur__import-head">
+                <div>
+                  <span className="fiche-formateur__import-eyebrow">
+                    Import participants
+                  </span>
+                  <h4 className="fiche-formateur__import-title">
+                    Import des presences de la fiche
+                  </h4>
+                  <p className="fiche-formateur__import-text">
+                    Charge un Excel ou CSV pour pre-remplir les statuts des
+                    participants de cette fiche avant application en lot.
+                  </p>
+                </div>
+
+                <span className="fiche-formateur__import-badge">
+                  `.xlsx` `.xls` `.csv`
+                </span>
+              </div>
+
+              <div className="fiche-formateur__import-layout">
+                <div className="fiche-formateur__import-panel">
+                  <label
+                    className="fiche-formateur__import-label"
+                    htmlFor="participant-presence-import-formateur"
+                  >
+                    Fichier a importer
+                  </label>
+                  <input
+                    id="participant-presence-import-formateur"
+                    className="fiche-formateur__import-input"
+                    type="file"
+                    accept={PARTICIPANT_PRESENCE_IMPORT_ACCEPT}
+                    onChange={handleParticipantImportFile}
+                    disabled={participantImporting || participantApplying}
+                  />
+
+                  <div className="fiche-formateur__import-guide">
+                    {PARTICIPANT_PRESENCE_IMPORT_GUIDE.map((item) => (
+                      <span
+                        key={item}
+                        className="fiche-formateur__import-pill"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="fiche-formateur__empty fiche-formateur__empty--soft">
+                    Les lignes reconnues modifient les statuts visibles dans le
+                    tableau ci-dessous avant l&apos;enregistrement final.
+                  </div>
+                </div>
+
+                <div
+                  className={`fiche-formateur__import-report ${
+                    participantImportReport
+                      ? participantImportReport.errors.length > 0
+                        ? "is-review"
+                        : "is-ready"
+                      : ""
+                  }`}
+                >
+                  <div className="fiche-formateur__import-report-head">
+                    <div>
+                      <h4 className="fiche-formateur__import-title">
+                        Controle de l&apos;import
+                      </h4>
+                      <p className="fiche-formateur__import-text">
+                        Verifie les lignes chargees avant de mettre a jour la
+                        feuille.
+                      </p>
+                    </div>
+
+                    <span className="fiche-formateur__import-status">
+                      {participantImportReport
+                        ? participantImportReport.errors.length > 0
+                          ? "A verifier"
+                          : "Pret"
+                        : "En attente"}
+                    </span>
+                  </div>
+
+                  {participantImporting ? (
+                    <div className="fiche-formateur__empty">
+                      Analyse du fichier en cours...
+                    </div>
+                  ) : null}
+
+                  {!participantImporting && !participantImportReport ? (
+                    <div className="fiche-formateur__empty">
+                      Aucun fichier importe pour le moment.
+                    </div>
+                  ) : null}
+
+                  {!participantImporting && participantImportReport ? (
+                    <>
+                      <div className="fiche-formateur__import-stats">
+                        <div className="fiche-formateur__import-stat">
+                          <strong>{participantImportReport.totalRows}</strong>
+                          <span>Lignes</span>
+                        </div>
+                        <div className="fiche-formateur__import-stat">
+                          <strong>{participantImportReport.matchedRows}</strong>
+                          <span>Chargees</span>
+                        </div>
+                        <div className="fiche-formateur__import-stat">
+                          <strong>{participantImportReport.errors.length}</strong>
+                          <span>Erreurs</span>
+                        </div>
+                      </div>
+
+                      <div className="fiche-formateur__empty fiche-formateur__empty--soft">
+                        <strong>{participantImportReport.fileName}</strong>
+                        {" "}
+                        sur la feuille {participantImportReport.sheetName} importe
+                        le {participantImportReport.importedAt}.
+                      </div>
+
+                      {participantImportReport.errors.length > 0 ? (
+                        <div className="fiche-formateur__import-list fiche-formateur__import-list--error">
+                          <strong>Points a corriger</strong>
+                          <ul>
+                            {participantImportReport.errors.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {participantImportEditorRows.length > 0 ? (
+                        <>
+                          <div className="fiche-formateur__correction-toggle">
+                            <button
+                              type="button"
+                              className="btn-action btn-correct-import"
+                              onClick={() =>
+                                setShowParticipantCorrections((prev) => !prev)
+                              }
+                            >
+                              {showParticipantCorrections
+                                ? "Masquer le formulaire d'ajustement"
+                                : `Ouvrir le formulaire d'ajustement (${participantImportEditorRows.length})`}
+                            </button>
+                          </div>
+
+                          {showParticipantCorrections ? (
+                            <div className="fiche-formateur__corrections">
+                              {participantImportEditorRows.map((issue) => {
+                                const correctionDraft =
+                                  participantCorrectionDrafts[issue.key] || {
+                                    participantId: "",
+                                    presentValue: "",
+                                  };
+                                const importedName =
+                                  issue.raw.participantFullName ||
+                                  `${issue.raw.participantPrenom || ""} ${issue.raw.participantNom || ""}`.trim() ||
+                                  "Non renseigne";
+
+                                return (
+                                  <div
+                                    key={issue.key}
+                                    className="fiche-formateur__correction-card"
+                                  >
+                                    <div className="fiche-formateur__correction-head">
+                                      <strong>
+                                        {issue.lineNumber
+                                          ? `Ligne ${issue.lineNumber}`
+                                          : "Ligne importee"}
+                                      </strong>
+                                      <span>{issue.message}</span>
+                                    </div>
+
+                                    <div className="fiche-formateur__correction-raw">
+                                      <span>Participant importe : {importedName}</span>
+                                      <span>
+                                        Etat :{" "}
+                                        {issue.status === "ready"
+                                          ? "Pret"
+                                          : "A corriger"}
+                                      </span>
+                                      {issue.raw.participantEmail ? (
+                                        <span>Email : {issue.raw.participantEmail}</span>
+                                      ) : null}
+                                      {issue.raw.present ? (
+                                        <span>Valeur presence : {issue.raw.present}</span>
+                                      ) : null}
+                                    </div>
+
+                                    <div className="fiche-formateur__correction-grid">
+                                      <div className="fiche-formateur__correction-field">
+                                        <label>Participant de la fiche</label>
+                                        <select
+                                          value={correctionDraft.participantId}
+                                          onChange={(event) =>
+                                            handleParticipantCorrectionChange(
+                                              issue.key,
+                                              "participantId",
+                                              event.target.value
+                                            )
+                                          }
+                                        >
+                                          <option value="">
+                                            Selectionner un participant
+                                          </option>
+                                          {participants.map((participant) => (
+                                            <option
+                                              key={participant.id}
+                                              value={participant.id}
+                                            >
+                                              {formatFullName(participant) ||
+                                                "Participant sans nom"}
+                                              {participant.email
+                                                ? ` - ${participant.email}`
+                                                : ""}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+
+                                      <div className="fiche-formateur__correction-field">
+                                        <label>Statut corrige</label>
+                                        <select
+                                          value={correctionDraft.presentValue}
+                                          onChange={(event) =>
+                                            handleParticipantCorrectionChange(
+                                              issue.key,
+                                              "presentValue",
+                                              event.target.value
+                                            )
+                                          }
+                                        >
+                                          <option value="">
+                                            Selectionner un statut
+                                          </option>
+                                          <option value="present">Present</option>
+                                          <option value="absent">Absent</option>
+                                        </select>
+                                      </div>
+                                    </div>
+
+                                    <div className="fiche-formateur__correction-actions">
+                                      <button
+                                        type="button"
+                                        className="btn-action btn-correct-import"
+                                        onClick={() =>
+                                          handleApplyParticipantCorrection(issue)
+                                        }
+                                      >
+                                        Mettre a jour cette ligne
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
+
+                      {participantImportReport.warnings.length > 0 ? (
+                        <div className="fiche-formateur__import-list fiche-formateur__import-list--warning">
+                          <strong>Points de controle</strong>
+                          <ul>
+                            {participantImportReport.warnings.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      <div className="fiche-formateur__import-actions">
+                        <button
+                          type="button"
+                          className="btn-action btn-apply-import"
+                          onClick={handleApplyParticipantImport}
+                          disabled={
+                            participantApplying ||
+                            participantImportBatch.length === 0
+                          }
+                        >
+                          {participantApplying
+                            ? "Import en cours..."
+                            : `Enregistrer ${participantImportBatch.length} presence(s)`}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn-action btn-import-reset"
+                          onClick={handleClearParticipantImport}
+                          disabled={participantApplying}
+                        >
+                          Effacer l&apos;import
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+
             <div className="fiche-detail__count">
               Participants inscrits : {participantsCount} | Présents :{" "}
               {presentsCount} | Absents : {absentsCount}
@@ -899,40 +1643,42 @@ export function FichePresenceFormateur() {
                     </tr>
                   </thead>
                   <tbody>
-                    {participants.map((participant, index) => (
-                      <tr key={participant.id}>
-                        <td>{index + 1}</td>
-                        <td>{formatFullName(participant) || "Non renseigné"}</td>
-                        <td>{participant.email || "Non renseigné"}</td>
-                        <td>{participant.telephone || "Non renseigné"}</td>
-                        <td>
-                          <div className="presence-cell">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(participant.present)}
-                              onChange={() =>
-                                togglePresence(
-                                  participant.id,
-                                  Boolean(participant.present)
-                                )
-                              }
-                            />
-                            <span
-                              className={
-                                Boolean(participant.present)
-                                  ? "presence-badge presence-badge--present"
-                                  : "presence-badge presence-badge--absent"
-                              }
-                            >
-                              {Boolean(participant.present) ? "Présent" : "Absent"}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="signature-line" />
-                        </td>
-                      </tr>
-                    ))}
+                    {participants.map((participant, index) => {
+                      const displayedPresent =
+                        getDisplayedParticipantPresence(participant);
+
+                      return (
+                        <tr key={participant.id}>
+                          <td>{index + 1}</td>
+                          <td>{formatFullName(participant) || "Non renseigné"}</td>
+                          <td>{participant.email || "Non renseigné"}</td>
+                          <td>{participant.telephone || "Non renseigné"}</td>
+                          <td>
+                            <div className="presence-cell">
+                              <input
+                                type="checkbox"
+                                checked={displayedPresent}
+                                onChange={() =>
+                                  togglePresence(participant.id, !displayedPresent)
+                                }
+                              />
+                              <span
+                                className={
+                                  displayedPresent
+                                    ? "presence-badge presence-badge--present"
+                                    : "presence-badge presence-badge--absent"
+                                }
+                              >
+                                {displayedPresent ? "Présent" : "Absent"}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="signature-line" />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
