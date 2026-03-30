@@ -61,6 +61,7 @@ export function DetailsFormations() {
           remplacant_email: data.remplacant_email ?? "",
           nom_complet_remplacant: nomCompletRemplacant,
           lieu: data.lieu ?? "",
+          local_nom: data.local_nom ?? data.local ?? "",
           description: data.description ?? "",
           nombre_participants: Number(data.nombre_participants ?? 0),
           statut: String(data.statut ?? "actif").toLowerCase(),
@@ -109,6 +110,20 @@ export function DetailsFormations() {
     };
 
     return map[type] || type;
+  };
+
+  const formatLocal = (formationData) => {
+    const localNom = String(formationData?.local_nom ?? "").trim();
+
+    if (localNom) return localNom;
+
+    const lieu = String(formationData?.lieu ?? "").trim();
+
+    if (lieu.includes(" - ")) {
+      return lieu.split(" - ", 2)[1].trim() || "Non renseigné";
+    }
+
+    return "Non renseigné";
   };
 
   const formatDate = (date) => {
@@ -232,6 +247,11 @@ export function DetailsFormations() {
                 <span className="info_data">
                   {formation.lieu || "Non renseigné"}
                 </span>
+              </div>
+
+              <div className="info_card">
+                <span className="info_label">Local</span>
+                <span className="info_data">{formatLocal(formation)}</span>
               </div>
 
               <div className="info_card">
