@@ -30,6 +30,7 @@ const STATUS_LABELS = {
   inactif: "Inactif",
   annule: "Annulé",
   complet: "Complet",
+  verification: "Vérification",
 };
 
 const FORMATION_COLORS = [
@@ -142,9 +143,9 @@ function hashString(str = "") {
 }
 
 export function getFormationColor(formation) {
-  const key =
-    `${formation?.id ?? ""}-${formation?.titre ?? formation?.title ?? formation?.nom ?? ""}` ||
-    "default";
+  const key = `${
+    formation?.id ?? ""
+  }-${formation?.titre ?? formation?.title ?? formation?.nom ?? ""}`;
   return FORMATION_COLORS[hashString(key) % FORMATION_COLORS.length];
 }
 
@@ -154,6 +155,8 @@ export function getStatusColor(status) {
       return "#dc2626";
     case "complet":
       return "#b45309";
+    case "verification":
+      return "#c2410c";
     case "inactif":
       return "#475569";
     default:

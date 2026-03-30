@@ -56,6 +56,10 @@
   background: #22c55e;
 }
 
+.status_badge.verification {
+  background: #f97316;
+}
+
 .status_badge.inactif,
 .status_badge.complet,
 .status_badge.annule {
@@ -120,6 +124,10 @@
 
 .status_text.actif {
   color: green;
+}
+
+.status_text.verification {
+  color: #c2410c;
 }
 
 .status_text.inactif,
@@ -240,6 +248,10 @@
 /* Variantes couleurs */
 .status_text.actif {
   color: #22c55e;
+}
+
+.status_text.verification {
+  color: #ea580c;
 }
 
 .status_text.inactif,

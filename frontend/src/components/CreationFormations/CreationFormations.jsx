@@ -20,6 +20,11 @@ import {
   normalizeSessionsFromFormation,
   TYPE_JOURNEE_OPTIONS,
 } from "../../features/formations/utils/formationPlanning";
+import {
+  FORMATION_IMPORT_ACCEPT,
+  FORMATION_IMPORT_GUIDE,
+  importFormationFile,
+} from "../../features/formations/utils/formationImport";
 
 const API_URL = "http://localhost:8080";
 
@@ -172,6 +177,8 @@ export function CreationFormations({
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [importingFile, setImportingFile] = useState(false);
+  const [importReport, setImportReport] = useState(null);
 
   const isEditing = useMemo(
     () => formationEnEdition !== null,
@@ -342,6 +349,7 @@ export function CreationFormations({
     setErreur("");
     setMessage("");
     setPreview(null);
+    setImportReport(null);
   }, [formationEnEdition]);
 
   useEffect(() => {
@@ -821,9 +829,54 @@ export function CreationFormations({
     setErreur("");
     setMessage("");
     setPreview(null);
+    setImportReport(null);
 
     if (onCancelEdit) {
       onCancelEdit();
+    }
+  };
+
+  const handleImportFile = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      setImportingFile(true);
+      setErreur("");
+      setMessage("");
+
+      const imported = await importFormationFile(file, {
+        formateurs,
+        lieux,
+      });
+
+      setFormData({
+        ...createInitialFormationForm(),
+        ...imported.formData,
+        creneaux:
+          imported.formData.creneaux?.length > 0
+            ? imported.formData.creneaux
+            : createInitialFormationForm().creneaux,
+      });
+      setPreview(null);
+      setImportReport(imported.report);
+
+      if (imported.report.readyForVerification) {
+        setMessage(
+          `Le fichier ${file.name} a ete importe. Le brouillon est maintenant en verification.`
+        );
+      }
+    } catch (err) {
+      setImportReport(null);
+      setErreur(
+        err.message || "Impossible d'importer ce fichier de formation."
+      );
+    } finally {
+      setImportingFile(false);
+      event.target.value = "";
     }
   };
 
@@ -1074,6 +1127,218 @@ export function CreationFormations({
       </div>
 
       <form className="admin-form" onSubmit={handleSubmit}>
+        <div className="admin-form__section admin-import">
+          <div className="admin-form__section-head">
+            <span className="admin-form__section-badge">IMP</span>
+            <div>
+              <h3 className="admin-form__section-title">Import Excel / CSV</h3>
+              <p className="admin-form__section-text">
+                Importe un fichier pour pre-remplir la formation, voir les
+                erreurs detectees et corriger ensuite les champs directement
+                dans le formulaire ci-dessous.
+              </p>
+            </div>
+          </div>
+
+          <div className="admin-import__layout">
+            <div className="admin-import__panel">
+              <div className="admin-import__panel-head">
+                <span className="admin-import__eyebrow">Import guide</span>
+                <span className="admin-import__format-badge">
+                  `.xlsx` `.xls` `.csv`
+                </span>
+              </div>
+
+              <div className="admin-import__upload-card">
+                <div className="admin-import__upload-copy">
+                  <h3 className="admin-import__title">
+                    Importer un fichier source
+                  </h3>
+                  <p className="admin-import__caption">
+                    Charge ton tableau pour remplir la formation plus vite. Le
+                    systeme controle le contenu avant de te laisser valider.
+                  </p>
+                </div>
+
+                <div className="admin-form__group">
+                  <label className="admin-form__label" htmlFor="formation-import">
+                    Fichier a importer
+                  </label>
+                  <input
+                    id="formation-import"
+                    className="admin-form__input admin-import__input"
+                    type="file"
+                    accept={FORMATION_IMPORT_ACCEPT}
+                    onChange={handleImportFile}
+                    disabled={importingFile || loadingFormateurs || loadingLieux}
+                  />
+                </div>
+              </div>
+
+              <div className="admin-import__steps">
+                <div className="admin-import__step">
+                  <span>01</span>
+                  <strong>Importer</strong>
+                </div>
+                <div className="admin-import__step">
+                  <span>02</span>
+                  <strong>Verifier</strong>
+                </div>
+                <div className="admin-import__step">
+                  <span>03</span>
+                  <strong>Corriger puis creer</strong>
+                </div>
+              </div>
+
+              <div className="admin-import__guide-grid">
+                <div className="admin-import__guide-card">
+                  <strong>Feuille formation</strong>
+                  <div className="admin-import__pill-list">
+                    {FORMATION_IMPORT_GUIDE.formationColumns.map((column) => (
+                      <span key={column} className="admin-import__pill">
+                        {column}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="admin-import__guide-card">
+                  <strong>Feuille `Creneaux` optionnelle</strong>
+                  <div className="admin-import__pill-list">
+                    {FORMATION_IMPORT_GUIDE.creneauxColumns.map((column) => (
+                      <span key={column} className="admin-import__pill">
+                        {column}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="admin-form__hint admin-form__hint--warning admin-import__hint">
+                Si le fichier est exploitable, il pre-remplit le formulaire et
+                passe en verification. Sinon, tu vois tout de suite ce qu&apos;il
+                faut corriger.
+              </div>
+            </div>
+
+            <div
+              className={`admin-import__report ${
+                importReport?.readyForVerification
+                  ? "is-ready"
+                  : importReport
+                    ? "is-review"
+                    : ""
+              }`}
+            >
+              <div className="admin-import__report-head">
+                <div>
+                  <span className="admin-import__eyebrow">Controle avant creation</span>
+                  <h3 className="admin-import__title">Validation du fichier</h3>
+                </div>
+
+                <span
+                  className={`admin-import__status ${
+                    importReport?.readyForVerification
+                      ? "is-ready"
+                      : importReport
+                        ? "is-review"
+                        : "is-idle"
+                  }`}
+                >
+                  {importReport?.readyForVerification
+                    ? "Pret pour verification"
+                    : importReport
+                      ? "A corriger"
+                      : "En attente"}
+                </span>
+              </div>
+
+              {importingFile ? (
+                <p className="admin-import__text">
+                  Analyse du fichier en cours...
+                </p>
+              ) : null}
+
+              {!importingFile && !importReport ? (
+                <p className="admin-import__text">
+                  Aucun fichier importe pour le moment. Une fois le fichier lu,
+                  le formulaire sera rempli automatiquement avec ce qui a ete
+                  detecte.
+                </p>
+              ) : null}
+
+              {!importingFile && importReport ? (
+                <>
+                  <div className="admin-import__stats">
+                    <div className="admin-import__stat">
+                      <span>Erreurs</span>
+                      <strong>{importReport.errors.length}</strong>
+                    </div>
+                    <div className="admin-import__stat">
+                      <span>Controles</span>
+                      <strong>{importReport.warnings.length}</strong>
+                    </div>
+                    <div className="admin-import__stat">
+                      <span>Etat</span>
+                      <strong>
+                        {importReport.readyForVerification ? "OK" : "Check"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="admin-import__meta">
+                    <strong>{importReport.fileName}</strong>
+                    <span>Feuille formation : {importReport.formationSheetName}</span>
+                    <span>
+                      Feuille creneaux :{" "}
+                      {importReport.creneauxSheetName || "non fournie"}
+                    </span>
+                    <span>Importe le : {importReport.importedAt}</span>
+                    <span>
+                      Etat :{" "}
+                      {importReport.readyForVerification
+                        ? "pret pour verification"
+                        : "corrections necessaires"}
+                    </span>
+                  </div>
+
+                  {importReport.errors.length > 0 ? (
+                    <div className="admin-import__block admin-import__block--error">
+                      <strong>Points a corriger</strong>
+                      <ul className="admin-import__list">
+                        {importReport.errors.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {importReport.warnings.length > 0 ? (
+                    <div className="admin-import__block admin-import__block--warning">
+                      <strong>Points de controle</strong>
+                      <ul className="admin-import__list">
+                        {importReport.warnings.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  <div className="admin-import__actions">
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--secondary"
+                      onClick={() => setImportReport(null)}
+                    >
+                      Masquer le rapport
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
         <div className="admin-form__section">
           <div className="admin-form__section-head">
             <span className="admin-form__section-badge">01</span>
@@ -1574,9 +1839,14 @@ export function CreationFormations({
               onChange={handleChange}
             >
               <option value="actif">Actif</option>
+              <option value="verification">Verification</option>
               <option value="inactif">Inactif</option>
               <option value="annule">Annulé</option>
             </select>
+            <div className="admin-form__hint">
+              Les imports valides passent automatiquement en verification pour
+              etre relus avant activation.
+            </div>
           </div>
 
           <div className="admin-form__group">

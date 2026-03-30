@@ -452,6 +452,12 @@ html.theme-transitioning.theme-transition-light::view-transition-old(root) {
   color: #86efac !important;
 }
 
+[data-theme="dark"] .status_badge.verification,
+[data-theme="dark"] .badge_statut.verification,
+[data-theme="dark"] .admin-badge--verification {
+  color: #fdba74 !important;
+}
+
 [data-theme="dark"] .badge_places,
 [data-theme="dark"] .formations_badge,
 [data-theme="dark"] .cartes-avis__badge {
